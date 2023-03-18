@@ -2,20 +2,20 @@ name: gh-pages
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   compile-and-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions/setup-node@v2.1.2
-      - name: merge master
+      - name: merge main
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git fetch
           git checkout -b gh-pages origin/gh-pages
-          git merge master --allow-unrelated-histories -Xtheirs
+          git merge main --allow-unrelated-histories -Xtheirs
       - name: compile
         run: |
           npm i
