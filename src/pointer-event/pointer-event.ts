@@ -14,6 +14,7 @@ export class PointerEventListener {
   private kLongDownThresholdMs = 300;
   private kDragThresholdMagnitude = 10;
   private longDownTimer = 0;
+  private doubleClickTimer = 0;
   private downClassName: string | undefined;
   private downPoint: Point | undefined;
   private isDragging = false;
@@ -50,6 +51,13 @@ export class PointerEventListener {
         if (this.longDownTimer > 0) {
           clearTimeout(this.longDownTimer);
           this.onClick(pointerEvent);
+          if (this.doubleClickTimer > 0) {
+            clearTimeout(this.doubleClickTimer);
+            this.onDoubleClick(pointerEvent);
+          }
+          this.doubleClickTimer = setTimeout(() => {
+            this.doubleClickTimer = 0;
+          }, 300);
         }
         this.reset();
         return;
@@ -79,36 +87,49 @@ export class PointerEventListener {
   }
 
   private onMove(ev: PointerEvent) {
+    console.log("pointer-event", "onMove", ev);
     for (const h of this.handlers) {
       h.onMove(ev);
     }
   }
 
   private onDown(ev: PointerEvent) {
+    console.log("pointer-event", "onDown", ev);
     for (const h of this.handlers) {
       h.onDown(ev);
     }
   }
 
   private onUp(ev: PointerEvent, down: Point) {
+    console.log("pointer-event", "onUp", ev);
     for (const h of this.handlers) {
       h.onUp(ev, down);
     }
   }
 
   private onClick(ev: PointerEvent) {
+    console.log("pointer-event", "onClick", ev);
     for (const h of this.handlers) {
       h.onClick(ev);
     }
   }
 
+  private onDoubleClick(ev: PointerEvent) {
+    console.log("pointer-event", "onDoubleClick", ev);
+    for (const h of this.handlers) {
+      h.onDoubleClick(ev);
+    }
+  }
+
   private onLongDown(ev: PointerEvent) {
+    console.log("pointer-event", "onLongDown", ev);
     for (const h of this.handlers) {
       h.onLongDown(ev);
     }
   }
 
   private onDrag(ev: PointerEvent, down: Point) {
+    console.log("pointer-event", "onDrag", ev);
     for (const h of this.handlers) {
       h.onDrag(ev, down);
     }

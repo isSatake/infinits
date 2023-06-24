@@ -4,7 +4,7 @@ import { initCanvas } from "./paint";
 import { getPreviewHeight, getPreviewWidth } from "./score-preferences";
 import {
   getShouldRender,
-  renderScore,
+  renderStaff,
   setUpdated,
   updateMain,
 } from "./score-renderer";
@@ -39,7 +39,7 @@ window.addEventListener("load", () => {
 const scheduleRenderScore = (ctx: CanvasRenderingContext2D) => {
   requestAnimationFrame(() => {
     if (getShouldRender()) {
-      renderScore(ctx);
+      renderStaff(ctx, { x: 10, y: 1000 });
       setUpdated(false);
     }
     scheduleRenderScore(ctx);

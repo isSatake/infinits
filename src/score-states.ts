@@ -1,5 +1,5 @@
-import { BBox } from "./geometry";
-import { MusicalElement } from "./notation/types";
+import { BBox, Point } from "./geometry";
+import { Clef, MusicalElement } from "./notation/types";
 import {
   CaretStyle,
   PaintElement,
@@ -7,16 +7,17 @@ import {
   Pointing,
 } from "./style/types";
 import { BeamModes, kAccidentalModes, TieModes } from "./input-modes";
+import { DefaultMap } from "./lib/default-map";
 
-let mainElements: MusicalElement[] = [
+const elements = new DefaultMap<number, MusicalElement[]>(() => [
   { type: "note", duration: 4, pitches: [{ pitch: 1 }], tie: "start" },
   { type: "note", duration: 4, pitches: [{ pitch: 1 }], tie: "stop" },
-];
-export function getMainElements() {
-  return mainElements;
+]);
+export function getElements(id: number) {
+  return elements.get(id);
 }
-export function setMainElements(v: MusicalElement[]) {
-  mainElements = v;
+export function setElements(id: number, v: MusicalElement[]) {
+  elements.set(id, v);
 }
 
 let isNoteInputMode = true;
@@ -48,16 +49,45 @@ export const changeAccidentalMode = () => {
       : accidentalModeIdx + 1;
 };
 
-let lastEditedIdx: number;
-export const getLastEditedIndex = () => lastEditedIdx;
-export const setLastEditedIndex = (v: number) => {
-  lastEditedIdx = v;
+const lastEditedIdxMap = new DefaultMap<number, number>(() => 0);
+export const getLastEditedIndex = (id: number) => lastEditedIdxMap.get(id);
+export const setLastEditedIndex = (id: number, idx: number) => {
+  lastEditedIdxMap.set(id, idx);
 };
 
-let styles: PaintElementStyle<PaintElement>[] = [];
-export const getStyles = () => styles;
-export const setStyles = (v: PaintElementStyle<PaintElement>[]) => {
-  styles = v;
+type StaffStyle = {
+  clef: Clef;
+  position: Point;
+};
+const staffMap = new DefaultMap<number, StaffStyle>(() => ({
+  clef: { type: "g" },
+  position: { x: 0, y: 0 },
+}));
+export const getStaff = (id: number) => staffMap.get(id);
+export const setStaff = (id: number, v: StaffStyle) => {
+  staffMap.set(id, v);
+};
+export const addStaff = (v: StaffStyle): number => {
+  const id = staffMap.size;
+  staffMap.set(id, v);
+  return id;
+};
+export const getAllStaffs = () => {
+  return staffMap.entries();
+};
+export const getLastStaffId = () => {
+  return staffMap.size - 1;
+};
+
+const stylesMap = new DefaultMap<number, PaintElementStyle<PaintElement>[]>(
+  () => []
+);
+export const getStyles = (id: number) => stylesMap.get(id);
+export const setStyles = (
+  id: number,
+  styles: PaintElementStyle<PaintElement>[]
+) => {
+  stylesMap.set(id, styles);
 };
 
 let elementBBoxes: { bbox: BBox; elIdx?: number }[] = [];
@@ -75,28 +105,29 @@ export const setPointing = (v?: Pointing) => {
   pointing = v;
 };
 
-let caretIndex = 0;
-export function getCaretIndex() {
-  return caretIndex;
+const caretsMap = new DefaultMap<number, CaretStyle[]>(() => []);
+export const clearCaretsMap = () => {
+  caretsMap.clear();
+};
+export const getCarets = (id: number) => caretsMap.get(id);
+export const setCarets = (id: number, v: CaretStyle[]) => {
+  caretsMap.set(id, v);
+};
+export function addCaret(id: number, v: CaretStyle) {
+  getCarets(id).push(v);
 }
-export function setCaretIndex(v: number) {
-  caretIndex = v;
-}
-export function addCaretIndex(v: number) {
-  caretIndex += v;
+const currentCaretIdxMap = new DefaultMap<number, number>(() => 0);
+export const getCurrentCaretIdx = (id: number) => currentCaretIdxMap.get(id);
+export const setCurrentCaretIdx = (id: number, idx: number) => {
+  currentCaretIdxMap.set(id, idx);
+};
+export const getCaretByIndex = (id: number, idx: number) => getCarets(id)[idx];
+export function getCurrentCaret(id: number) {
+  return getCarets(id)[getCurrentCaretIdx(id)];
 }
 
-let caretPositions: CaretStyle[] = [];
-export function initCaretPositions() {
-  caretPositions = [];
-}
-export function getCaretPositions() {
-  return caretPositions;
-}
-export function addCaret(v: CaretStyle) {
-  caretPositions.push(v);
-}
-export const getCaretByIndex = (i: number) => caretPositions[i];
-export function getCurrentCaret() {
-  return caretPositions[caretIndex];
-}
+let editingStaffId: number | undefined;
+export const getEditingStaffId = () => editingStaffId;
+export const setEditingStaffId = (v: number | undefined) => {
+  editingStaffId = v;
+};

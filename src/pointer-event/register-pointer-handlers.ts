@@ -52,11 +52,7 @@ export const registerCallbacks = () => {
     ["accidentals"],
     [new ChangeAccidentalHandler(new ChangeAccidentalCallback())]
   );
-  registerPointerHandlers([], [new GrayPointerHandler()]);
-  registerPointerHandlers(
-    ["mainCanvas"],
-    [new CanvasPointerHandler(new CanvasCallback())]
-  );
+  registerPointerHandlers([], [new CanvasPointerHandler(new CanvasCallback())]);
   registerPointerHandlers(
     ["changeTie"],
     [new TieHandler(new ChangeTieCallback())]
