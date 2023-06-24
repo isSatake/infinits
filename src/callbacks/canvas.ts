@@ -6,6 +6,7 @@ import {
   getMatrix,
   getPointing,
   setEditingStaffId,
+  setMatrix,
   setPointing,
 } from "../score-states";
 
@@ -47,7 +48,7 @@ export class CanvasCallback implements ICanvasCallback {
   onDoubleClick(htmlPoint: Point) {
     const id = addStaff({
       clef: { type: "g" },
-      position: scalePoint(htmlPoint, 1 / getMatrix().a),
+      position: getMatrix().inverse().transformPoint(htmlPoint),
     });
     console.log("onDoubleClick", id);
     setEditingStaffId(id);
@@ -55,13 +56,11 @@ export class CanvasCallback implements ICanvasCallback {
   }
 
   onDrag(htmlPoint: Point, downPoint: Point) {
-    const translated = scalePoint(
-      {
-        x: htmlPoint.x - downPoint.x,
-        y: htmlPoint.y - downPoint.y,
-      },
-      1 / getMatrix().a
-    );
-    console.log("onDrag", translated);
+    const _hp = getMatrix().inverse().transformPoint(htmlPoint);
+    const _dp = getMatrix().inverse().transformPoint(downPoint);
+    // const tx = _hp.x - _dp.x;
+    // const ty = _hp.y - _dp.y;
+    setMatrix(getMatrix().translate(_hp.x - _dp.x, _hp.y - _dp.y));
+    updateMain();
   }
 }

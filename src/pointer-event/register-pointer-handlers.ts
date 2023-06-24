@@ -21,7 +21,7 @@ import {
   TieHandler,
 } from "./pointer-handlers";
 
-export const registerCallbacks = () => {
+export const initPointerHandlers = () => {
   // for tablet
   registerPointerHandlers(
     ["keyboardBottom", "keyboardHandle"],

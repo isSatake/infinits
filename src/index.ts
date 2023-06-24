@@ -1,4 +1,4 @@
-import { registerCallbacks } from "./pointer-event/register-pointer-handlers";
+import { initPointerHandlers } from "./pointer-event/register-pointer-handlers";
 import { CanvasManager } from "./canvas";
 import { initCanvas } from "./paint";
 import { getPreviewHeight, getPreviewWidth } from "./score-preferences";
@@ -7,7 +7,7 @@ import {
   renderStaff,
   setUpdated,
   updateMain,
-} from "./score-renderer";  
+} from "./score-renderer";
 
 window.addEventListener("load", () => {
   console.log("start");
@@ -31,7 +31,7 @@ window.addEventListener("load", () => {
     height: getPreviewHeight(),
     _canvas: previewCanvas,
   });
-  registerCallbacks();
+  initPointerHandlers();
   updateMain();
   scheduleRenderScore(mainCtx);
 });

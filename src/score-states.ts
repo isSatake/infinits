@@ -133,7 +133,14 @@ export const setEditingStaffId = (v: number | undefined) => {
   editingStaffId = v;
 };
 
-let mtx = new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]);
+let mtx: DOMMatrixReadOnly = new DOMMatrix([
+  getInitScale(),
+  0,
+  0,
+  getInitScale(),
+  0,
+  0,
+]);
 export const getMatrix = () => mtx;
 export const setMatrix = (v: DOMMatrix) => {
   mtx = v;

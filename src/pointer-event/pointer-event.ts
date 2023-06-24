@@ -6,7 +6,7 @@ export interface PointerHandler {
   onUp: (ev: PointerEvent, downPoint: Point) => void;
   onClick: (ev: PointerEvent) => void;
   onLongDown: (ev: PointerEvent) => void;
-  onDrag: (ev: PointerEvent, downPoint: Point) => void;
+  onDrag: (ev: PointerEvent, down: PointerEvent) => void;
   onDoubleClick: (ev: PointerEvent) => void;
 }
 
@@ -16,7 +16,7 @@ export class PointerEventListener {
   private longDownTimer = 0;
   private doubleClickTimer = 0;
   private downClassName: string | undefined;
-  private downPoint: Point | undefined;
+  private down: PointerEvent | undefined;
   private isDragging = false;
 
   constructor(
@@ -36,7 +36,7 @@ export class PointerEventListener {
           return;
         }
         this.downClassName = className;
-        this.downPoint = pointerEvent;
+        this.down = pointerEvent;
         this.onDown(pointerEvent);
         this.longDownTimer = setTimeout(() => {
           this.onLongDown(pointerEvent);
@@ -44,10 +44,10 @@ export class PointerEventListener {
         }, this.kLongDownThresholdMs);
         return;
       case "pointerup":
-        if (!this.downPoint) {
+        if (!this.down) {
           return;
         }
-        this.onUp(pointerEvent, this.downPoint);
+        this.onUp(pointerEvent, this.down);
         if (this.longDownTimer > 0) {
           clearTimeout(this.longDownTimer);
           this.onClick(pointerEvent);
@@ -63,14 +63,13 @@ export class PointerEventListener {
         return;
       case "pointermove":
         this.onMove(pointerEvent);
-        if (!this.downPoint) {
+        if (!this.down) {
           return;
         }
         if (this.isDragging) {
-          this.onDrag(pointerEvent, this.downPoint);
+          this.onDrag(pointerEvent, this.down);
         } else if (
-          magnitude(pointerEvent, this.downPoint!) >
-          this.kDragThresholdMagnitude
+          magnitude(pointerEvent, this.down!) > this.kDragThresholdMagnitude
         ) {
           this.isDragging = true;
         }
@@ -82,7 +81,7 @@ export class PointerEventListener {
 
   private reset() {
     this.downClassName = undefined;
-    this.downPoint = undefined;
+    this.down = undefined;
     this.isDragging = false;
   }
 
@@ -128,7 +127,7 @@ export class PointerEventListener {
     }
   }
 
-  private onDrag(ev: PointerEvent, down: Point) {
+  private onDrag(ev: PointerEvent, down: PointerEvent) {
     console.log("pointer-event", "onDrag", ev);
     for (const h of this.handlers) {
       h.onDrag(ev, down);

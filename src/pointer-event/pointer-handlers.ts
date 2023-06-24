@@ -23,7 +23,7 @@ class EmptyPointerHandler implements PointerHandler {
 
   onLongDown(ev: PointerEvent) {}
 
-  onDrag(ev: PointerEvent, downPoint: Point) {}
+  onDrag(ev: PointerEvent, down: PointerEvent) {}
 
   onDoubleClick(ev: PointerEvent) {}
 }
@@ -44,7 +44,7 @@ export class KeyboardDragHandler extends EmptyPointerHandler {
     this.translated.y += ev.y - down.y;
   }
 
-  onDrag(ev: PointerEvent, down: Point) {
+  onDrag(ev: PointerEvent, down: PointerEvent) {
     const nextX = this.translated.x + ev.x - down.x;
     const nextY = this.translated.y + ev.y - down.y;
     this.keyboardEl.style.transform = `translate(${nextX}px, ${nextY}px)`;
@@ -73,7 +73,7 @@ export class GrayPointerHandler extends EmptyPointerHandler {
     this.pointerEl.style.opacity = "0";
   }
 
-  onDrag(ev: PointerEvent, down: Point) {
+  onDrag(ev: PointerEvent, down: PointerEvent) {
     this.pointerEl.style.top = `${ev.y - 50 / 2}px`;
     this.pointerEl.style.left = `${ev.x - 50 / 2}px`;
   }
@@ -236,8 +236,8 @@ export class NoteInputHandler extends EmptyPointerHandler {
     this.callback.startPreview(this.duration!, ev.x, ev.y);
   }
 
-  onDrag(ev: PointerEvent, downPoint: Point) {
-    this.dragDy = downPoint.y - ev.y;
+  onDrag(ev: PointerEvent, down: PointerEvent) {
+    this.dragDy = down.y - ev.y;
     this.callback.updatePreview(this.duration!, this.dragDy);
   }
 
@@ -285,8 +285,11 @@ export class CanvasPointerHandler extends EmptyPointerHandler {
     this.callback.onDoubleClick({ x: ev.offsetX, y: ev.offsetY });
   }
 
-  onDrag(ev: PointerEvent, downPoint: Point): void {
-    this.callback.onDrag({ x: ev.offsetX, y: ev.offsetY }, downPoint);
+  onDrag(ev: PointerEvent, down: PointerEvent): void {
+    this.callback.onDrag(
+      { x: ev.offsetX, y: ev.offsetY },
+      { x: down.offsetX, y: down.offsetY }
+    );
   }
 }
 
