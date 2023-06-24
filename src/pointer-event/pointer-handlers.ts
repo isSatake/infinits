@@ -284,6 +284,10 @@ export class CanvasPointerHandler extends EmptyPointerHandler {
   onDoubleClick(ev: PointerEvent): void {
     this.callback.onDoubleClick({ x: ev.offsetX, y: ev.offsetY });
   }
+
+  onDrag(ev: PointerEvent, downPoint: Point): void {
+    this.callback.onDrag({ x: ev.offsetX, y: ev.offsetY }, downPoint);
+  }
 }
 
 export class TieHandler extends EmptyPointerHandler {

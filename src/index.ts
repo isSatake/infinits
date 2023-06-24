@@ -7,7 +7,7 @@ import {
   renderStaff,
   setUpdated,
   updateMain,
-} from "./score-renderer";
+} from "./score-renderer";  
 
 window.addEventListener("load", () => {
   console.log("start");

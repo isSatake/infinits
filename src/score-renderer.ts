@@ -1,7 +1,6 @@
 import { UNIT } from "./font/bravura";
 import { offsetBBox, Point } from "./geometry";
 import { paintCaret, paintStaff, paintStyle, resetCanvas } from "./paint";
-import { getScale, getStaffOrigin } from "./score-preferences";
 import {
   addCaret,
   getCurrentCaret,
@@ -10,12 +9,10 @@ import {
   getPointing,
   initElementBBoxes,
   setStyles,
-  getEditingStaffId,
   getAllStaffs,
   getStyles,
-  getCarets,
-  getCurrentCaretIdx,
   clearCaretsMap,
+  getMatrix,
 } from "./score-states";
 import { determineCaretStyle, determinePaintElementStyle } from "./style/style";
 
@@ -66,7 +63,9 @@ export const renderStaff = (ctx: CanvasRenderingContext2D, position: Point) => {
     fillStyle: "#fff",
   });
   ctx.save();
-  ctx.scale(getScale(), getScale());
+  const { a, b, c, d, e, f } = getMatrix();
+  ctx.transform(a, b, c, d, e, f);
+  // ctx.scale(getInitScale(), getInitScale());
   for (const [id, staff] of getAllStaffs()) {
     ctx.save();
     ctx.translate(staff.position.x, staff.position.y);
@@ -86,7 +85,9 @@ export const renderStaff = (ctx: CanvasRenderingContext2D, position: Point) => {
 
 const renderCaret = (mainCtx: CanvasRenderingContext2D) => {
   mainCtx.save();
-  mainCtx.scale(getScale(), getScale());
+  const { a, b, c, d, e, f } = getMatrix();
+  mainCtx.transform(a, b, c, d, e, f);
+  // mainCtx.scale(getInitScale(), getInitScale());
   for (const [id, staff] of getAllStaffs()) {
     mainCtx.save();
     mainCtx.translate(staff.position.x, staff.position.y);

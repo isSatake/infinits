@@ -1,22 +1,18 @@
-import { UNIT } from "../font/bravura";
-import { isPointInBBox, offsetBBox, Point, scalePoint } from "../geometry";
-import { getScale, getStaffOrigin } from "../score-preferences";
-import { setUpdated, updateMain } from "../score-renderer";
+import { Point, scalePoint } from "../geometry";
+import { updateMain } from "../score-renderer";
 import {
   addStaff,
   getElementBBoxes,
+  getMatrix,
   getPointing,
-  getStyles,
   setEditingStaffId,
   setPointing,
-  setStaff,
-  setStyles,
 } from "../score-states";
-import { determinePaintElementStyle } from "../style/style";
 
 export interface ICanvasCallback {
   onMove(htmlPoint: Point): void;
   onDoubleClick(htmlPoint: Point): void;
+  onDrag(htmlPoint: Point, downPoint: Point): void;
 }
 
 // TODO 命名
@@ -51,10 +47,21 @@ export class CanvasCallback implements ICanvasCallback {
   onDoubleClick(htmlPoint: Point) {
     const id = addStaff({
       clef: { type: "g" },
-      position: scalePoint(htmlPoint, 1 / getScale()),
+      position: scalePoint(htmlPoint, 1 / getMatrix().a),
     });
     console.log("onDoubleClick", id);
     setEditingStaffId(id);
     updateMain();
+  }
+
+  onDrag(htmlPoint: Point, downPoint: Point) {
+    const translated = scalePoint(
+      {
+        x: htmlPoint.x - downPoint.x,
+        y: htmlPoint.y - downPoint.y,
+      },
+      1 / getMatrix().a
+    );
+    console.log("onDrag", translated);
   }
 }

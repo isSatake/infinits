@@ -8,6 +8,7 @@ import {
 } from "./style/types";
 import { BeamModes, kAccidentalModes, TieModes } from "./input-modes";
 import { DefaultMap } from "./lib/default-map";
+import { getInitScale } from "./score-preferences";
 
 const elements = new DefaultMap<number, MusicalElement[]>(() => [
   { type: "note", duration: 4, pitches: [{ pitch: 1 }], tie: "start" },
@@ -130,4 +131,10 @@ let editingStaffId: number | undefined;
 export const getEditingStaffId = () => editingStaffId;
 export const setEditingStaffId = (v: number | undefined) => {
   editingStaffId = v;
+};
+
+let mtx = new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]);
+export const getMatrix = () => mtx;
+export const setMatrix = (v: DOMMatrix) => {
+  mtx = v;
 };
