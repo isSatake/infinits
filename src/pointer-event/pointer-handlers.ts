@@ -291,6 +291,10 @@ export class CanvasPointerHandler extends EmptyPointerHandler {
       { x: down.offsetX, y: down.offsetY }
     );
   }
+
+  onUp() {
+    this.callback.onUp();
+  }
 }
 
 export class TieHandler extends EmptyPointerHandler {

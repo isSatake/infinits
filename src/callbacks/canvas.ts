@@ -18,6 +18,7 @@ export interface ICanvasCallback {
 
 // TODO 命名
 export class CanvasCallback implements ICanvasCallback {
+  private tmpMtx: DOMMatrixReadOnly | undefined;
   constructor() {}
 
   onMove(htmlPoint: Point) {
@@ -56,11 +57,18 @@ export class CanvasCallback implements ICanvasCallback {
   }
 
   onDrag(htmlPoint: Point, downPoint: Point) {
-    const _hp = getMatrix().inverse().transformPoint(htmlPoint);
-    const _dp = getMatrix().inverse().transformPoint(downPoint);
-    // const tx = _hp.x - _dp.x;
-    // const ty = _hp.y - _dp.y;
-    setMatrix(getMatrix().translate(_hp.x - _dp.x, _hp.y - _dp.y));
+    if (!this.tmpMtx) {
+      this.tmpMtx = getMatrix();
+    }
+    const currentPointOnScore = this.tmpMtx.inverse().transformPoint(htmlPoint);
+    const downPointOnScore = this.tmpMtx.inverse().transformPoint(downPoint);
+    const tx = currentPointOnScore.x - downPointOnScore.x;
+    const ty = currentPointOnScore.y - downPointOnScore.y;
+    setMatrix(this.tmpMtx.translate(tx, ty));
     updateMain();
+  }
+
+  onUp() {
+    this.tmpMtx = undefined;
   }
 }
