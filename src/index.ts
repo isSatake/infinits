@@ -8,6 +8,7 @@ import {
   setUpdated,
   updateMain,
 } from "./score-renderer";
+import { registerWheelHandler } from "./wheel-event";
 
 window.addEventListener("load", () => {
   console.log("start");
@@ -32,6 +33,7 @@ window.addEventListener("load", () => {
     _canvas: previewCanvas,
   });
   initPointerHandlers();
+  registerWheelHandler();
   updateMain();
   scheduleRenderScore(mainCtx);
 });
