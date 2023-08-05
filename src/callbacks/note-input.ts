@@ -18,18 +18,20 @@ import {
 } from "../score-preferences";
 import { updateMain } from "../score-renderer";
 import {
-  addCaretIndex,
   getAccidentalMode,
   getBeamMode,
   getCaretByIndex,
-  getCaretIndex,
   getCurrentCaret,
   getIsNoteInputMode,
-  getMainElements,
+  getElements,
   getTieMode,
-  setCaretIndex,
   setLastEditedIndex,
-  setMainElements,
+  setElements,
+  getEditingStaffId,
+  getAllStaffs,
+  getLastStaffId,
+  getCurrentCaretIdx,
+  setCurrentCaretIdx,
 } from "../score-states";
 import { BeamModes } from "../input-modes";
 
@@ -63,6 +65,10 @@ export class NoteInputCallback implements INoteInputCallback {
   // 「音を追加」「音を変更」をデータ化できるといいんだけど。reducerみたく
   // applyBeamももうちょいスマートに書けるんじゃないかな？
   startPreview(duration: Duration, downX: number, downY: number) {
+    const id = getEditingStaffId();
+    if (id === undefined) {
+      return;
+    }
     const left = downX - getPreviewWidth() / 2;
     const top = downY - getPreviewHeight() / 2;
     initCanvas({
@@ -72,14 +78,18 @@ export class NoteInputCallback implements INoteInputCallback {
       height: getPreviewHeight(),
       _canvas: this.previewCanvas,
     });
-    copiedElements = [...getMainElements()];
+    copiedElements = [...getElements(id)];
     const newPitch = {
       pitch: pitchByDistance(getPreviewScale(), 0, 6),
       accidental: getAccidentalMode(),
     };
     let tie: Tie | undefined;
-    if (getTieMode() && getCaretIndex() > 0 && getCaretIndex() % 2 === 0) {
-      const prevEl = copiedElements[getCaretIndex() / 2 - 1];
+    if (
+      getTieMode() &&
+      getCurrentCaretIdx(id) > 0 &&
+      getCurrentCaretIdx(id) % 2 === 0
+    ) {
+      const prevEl = copiedElements[getCurrentCaretIdx(id) / 2 - 1];
       if (
         prevEl?.type === "note" &&
         prevEl.pitches[0].pitch === newPitch.pitch &&
@@ -100,8 +110,9 @@ export class NoteInputCallback implements INoteInputCallback {
           type: "rest",
           duration,
         };
-    if (getCaretIndex() > 0 && getCaretIndex() % 2 !== 0) {
-      const oldIdx = getCaretIndex() === 1 ? 0 : (getCaretIndex() - 1) / 2;
+    if (getCurrentCaretIdx(id) > 0 && getCurrentCaretIdx(id) % 2 !== 0) {
+      const oldIdx =
+        getCurrentCaretIdx(id) === 1 ? 0 : (getCurrentCaretIdx(id) - 1) / 2;
       const oldEl = copiedElements[oldIdx];
       if (
         element.type === "note" &&
@@ -111,19 +122,27 @@ export class NoteInputCallback implements INoteInputCallback {
         element.pitches = sortPitches([...oldEl.pitches, ...element.pitches]);
       }
     }
-    updatePreview(this.previewCtx, copiedElements, getBeamMode(), element);
+    updatePreview(id, this.previewCtx, copiedElements, getBeamMode(), element);
     this.previewCanvas.style.visibility = "visible";
   }
 
   updatePreview(duration: Duration, dy: number) {
-    copiedElements = [...getMainElements()];
+    const id = getEditingStaffId();
+    if (id === undefined) {
+      return;
+    }
+    copiedElements = [...getElements(id)];
     const newPitch = {
       pitch: pitchByDistance(getPreviewScale(), dy, 6),
       accidental: getAccidentalMode(),
     };
     let tie: Tie | undefined;
-    if (getTieMode() && getCaretIndex() > 0 && getCaretIndex() % 2 === 0) {
-      const prevEl = copiedElements[getCaretIndex() / 2 - 1];
+    if (
+      getTieMode() &&
+      getCurrentCaretIdx(id) > 0 &&
+      getCurrentCaretIdx(id) % 2 === 0
+    ) {
+      const prevEl = copiedElements[getCurrentCaretIdx(id) / 2 - 1];
       if (
         prevEl?.type === "note" &&
         prevEl.pitches[0].pitch === newPitch.pitch &&
@@ -144,8 +163,9 @@ export class NoteInputCallback implements INoteInputCallback {
           type: "rest",
           duration,
         };
-    if (getCaretIndex() > 0 && getCaretIndex() % 2 !== 0) {
-      const oldIdx = getCaretIndex() === 1 ? 0 : (getCaretIndex() - 1) / 2;
+    if (getCurrentCaretIdx(id) > 0 && getCurrentCaretIdx(id) % 2 !== 0) {
+      const oldIdx =
+        getCurrentCaretIdx(id) === 1 ? 0 : (getCurrentCaretIdx(id) - 1) / 2;
       const oldEl = copiedElements[oldIdx];
       if (
         element.type === "note" &&
@@ -155,18 +175,26 @@ export class NoteInputCallback implements INoteInputCallback {
         element.pitches = sortPitches([...oldEl.pitches, ...element.pitches]);
       }
     }
-    updatePreview(this.previewCtx, copiedElements, getBeamMode(), element);
+    updatePreview(id, this.previewCtx, copiedElements, getBeamMode(), element);
   }
 
   commit(duration: Duration, dy?: number) {
+    const id = getEditingStaffId();
+    if (id === undefined) {
+      return;
+    }
     let newElement: MusicalElement;
     const newPitch = {
       pitch: pitchByDistance(getPreviewScale(), dy ?? 0, 6),
       accidental: getAccidentalMode(),
     };
     let tie: Tie | undefined;
-    if (getTieMode() && getCaretIndex() > 0 && getCaretIndex() % 2 === 0) {
-      const prevEl = getMainElements()[getCaretIndex() / 2 - 1];
+    if (
+      getTieMode() &&
+      getCurrentCaretIdx(id) > 0 &&
+      getCurrentCaretIdx(id) % 2 === 0
+    ) {
+      const prevEl = getElements(id)[getCurrentCaretIdx(id) / 2 - 1];
       if (
         prevEl?.type === "note" &&
         prevEl.pitches[0].pitch === newPitch.pitch &&
@@ -190,27 +218,31 @@ export class NoteInputCallback implements INoteInputCallback {
       };
     }
     const { elements, insertedIndex, caretAdvance } = inputMusicalElement({
-      caretIndex: getCaretIndex(),
-      elements: getMainElements(),
+      caretIndex: getCurrentCaretIdx(id),
+      elements: getElements(id),
       newElement,
       beamMode: getBeamMode(),
     });
-    setLastEditedIndex(insertedIndex);
-    addCaretIndex(caretAdvance);
-    setMainElements(elements);
+    setLastEditedIndex(id, insertedIndex);
+    setCurrentCaretIdx(id, getCurrentCaretIdx(id) + caretAdvance);
+    setElements(id, elements);
     updateMain();
     copiedElements = [];
   }
 
   backspace() {
-    const targetElIdx = getCurrentCaret().elIdx;
+    const id = getEditingStaffId();
+    if (id === undefined) {
+      return;
+    }
+    const targetElIdx = getCurrentCaret(id).elIdx;
     if (targetElIdx < 0) {
       return;
     }
-    const deleted = getMainElements().splice(targetElIdx, 1)[0];
+    const deleted = getElements(id).splice(targetElIdx, 1)[0];
     if (deleted.type === "note") {
-      const left = getMainElements()[targetElIdx - 1];
-      const right = getMainElements()[targetElIdx];
+      const left = getElements(id)[targetElIdx - 1];
+      const right = getElements(id)[targetElIdx];
       if (deleted.beam === "begin" && right?.type === "note") {
         right.beam = "begin";
       } else if (deleted.beam === "end" && left?.type === "note") {
@@ -219,13 +251,13 @@ export class NoteInputCallback implements INoteInputCallback {
     }
 
     // 削除後のcaret位置を計算
-    let t = getCaretIndex() - 1;
+    let t = getCurrentCaretIdx(id) - 1;
     while (t > -1) {
       if (t === 0) {
-        setCaretIndex(0);
+        setCurrentCaretIdx(id, 0);
         t = -1;
-      } else if (getCaretByIndex(t).elIdx !== targetElIdx) {
-        setCaretIndex(t);
+      } else if (getCaretByIndex(id, t).elIdx !== targetElIdx) {
+        setCurrentCaretIdx(id, t);
         t = -1;
       } else {
         t--;
@@ -257,6 +289,7 @@ const durationByDistance = (
 };
 
 const updatePreview = (
+  id: number,
   previewCtx: CanvasRenderingContext2D,
   baseElements: MusicalElement[],
   beamMode: BeamModes,
@@ -270,7 +303,7 @@ const updatePreview = (
     fillStyle: "#fff",
   });
   const { elements: preview, insertedIndex } = inputMusicalElement({
-    caretIndex: getCaretIndex(),
+    caretIndex: getCurrentCaretIdx(id),
     elements: baseElements,
     newElement,
     beamMode,

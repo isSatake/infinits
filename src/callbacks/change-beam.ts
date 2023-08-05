@@ -3,7 +3,7 @@ import { updateMain } from "../score-renderer";
 import {
   getBeamMode,
   setBeamMode,
-  getMainElements,
+  getElements,
   getLastEditedIndex,
 } from "../score-states";
 import { BeamModes } from "../input-modes";
@@ -28,10 +28,10 @@ export class ChangeBeamCallback implements IChangeBeamCallback {
       );
     });
     setBeamMode(mode);
-    const lastEl = getMainElements()[getLastEditedIndex()];
+    const lastEl = getElements()[getLastEditedIndex()];
     if (lastEl) {
-      const left = getMainElements()[getLastEditedIndex() - 1];
-      const right = getMainElements()[getLastEditedIndex() + 1];
+      const left = getElements()[getLastEditedIndex() - 1];
+      const right = getElements()[getLastEditedIndex() + 1];
       applyBeamForLastEdited(lastEl, left, right);
       updateMain();
     }

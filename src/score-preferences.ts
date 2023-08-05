@@ -1,7 +1,7 @@
 export const kDefaultCaretWidth = 50;
 
-const scale = 0.08;
-export const getScale = () => scale;
+const initScale = 0.08;
+export const getInitScale = () => initScale;
 
 const previewScale = 0.08;
 export const getPreviewScale = () => previewScale;

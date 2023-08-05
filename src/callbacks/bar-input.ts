@@ -1,12 +1,13 @@
 import { Bar } from "../notation/types";
 import { updateMain } from "../score-renderer";
 import {
-  getCaretIndex,
-  getMainElements,
+  getElements,
   getBeamMode,
-  addCaretIndex,
   setLastEditedIndex,
-  setMainElements,
+  setElements,
+  getEditingStaffId,
+  getCurrentCaretIdx,
+  setCurrentCaretIdx,
 } from "../score-states";
 import { inputMusicalElement } from "../score-updater";
 
@@ -18,15 +19,19 @@ export class BarInputCallback implements IBarInputCallback {
   constructor() {}
 
   commit(bar: Bar) {
+    const id = getEditingStaffId();
+    if (id === undefined) {
+      return;
+    }
     const { elements, insertedIndex, caretAdvance } = inputMusicalElement({
-      caretIndex: getCaretIndex(),
-      elements: getMainElements(),
+      caretIndex: getCurrentCaretIdx(id),
+      elements: getElements(id),
       newElement: bar,
       beamMode: getBeamMode(),
     });
-    setLastEditedIndex(insertedIndex);
-    addCaretIndex(caretAdvance);
-    setMainElements(elements);
+    setLastEditedIndex(id, insertedIndex);
+    setCurrentCaretIdx(id, getCurrentCaretIdx(id) + caretAdvance);
+    setElements(id, elements);
     updateMain();
   }
 }
