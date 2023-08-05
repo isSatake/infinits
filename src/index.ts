@@ -1,13 +1,14 @@
-import { registerCallbacks } from "./pointer-event/register-pointer-handlers";
+import { initPointerHandlers } from "./pointer-event/register-pointer-handlers";
 import { CanvasManager } from "./canvas";
 import { initCanvas } from "./paint";
 import { getPreviewHeight, getPreviewWidth } from "./score-preferences";
 import {
   getShouldRender,
-  renderScore,
+  renderStaff,
   setUpdated,
   updateMain,
 } from "./score-renderer";
+import { registerWheelHandler } from "./wheel-event";
 
 window.addEventListener("load", () => {
   console.log("start");
@@ -31,7 +32,8 @@ window.addEventListener("load", () => {
     height: getPreviewHeight(),
     _canvas: previewCanvas,
   });
-  registerCallbacks();
+  initPointerHandlers();
+  registerWheelHandler();
   updateMain();
   scheduleRenderScore(mainCtx);
 });
@@ -39,7 +41,7 @@ window.addEventListener("load", () => {
 const scheduleRenderScore = (ctx: CanvasRenderingContext2D) => {
   requestAnimationFrame(() => {
     if (getShouldRender()) {
-      renderScore(ctx);
+      renderStaff(ctx, { x: 10, y: 1000 });
       setUpdated(false);
     }
     scheduleRenderScore(ctx);
