@@ -11,21 +11,13 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children: mainCanvas,
-  keyboard,
-  previewCanvas,
+  children,
 }: {
   children: React.ReactNode;
-  keyboard: React.ReactNode;
-  previewCanvas: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {mainCanvas}
-        {keyboard}
-        {previewCanvas}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

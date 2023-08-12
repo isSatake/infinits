@@ -1,6 +1,4 @@
-"use client";
-
-export default function Keyboard() {
+export const Keyboard = () => {
   return (
     <Root>
       <Header />
@@ -11,7 +9,7 @@ export default function Keyboard() {
       </Footer>
     </Root>
   );
-}
+};
 
 const Root = ({ children }: { children: React.ReactNode }) => {
   return (
