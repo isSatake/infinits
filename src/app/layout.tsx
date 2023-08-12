@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Infinits",
   description: "Experiments in new ways of inputting music notation",
+  viewport: { viewportFit: "cover", initialScale: 1 },
 };
 
 export default function RootLayout({
