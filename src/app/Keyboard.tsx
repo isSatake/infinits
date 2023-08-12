@@ -2,7 +2,36 @@ export const Keyboard = () => {
   return (
     <Root>
       <Header />
-      <Container />
+      <Container>
+        <KeyRow>
+          <GrayKey />
+          <WhiteKey />
+          <WhiteKey />
+          <WhiteKey />
+          <GrayKey />
+        </KeyRow>
+        <KeyRow>
+          <GrayKey />
+          <WhiteKey />
+          <WhiteKey />
+          <WhiteKey />
+          <GrayKey />
+        </KeyRow>
+        <KeyRow>
+          <GrayKey />
+          <WhiteKey />
+          <WhiteKey />
+          <WhiteKey />
+          <GrayKey />
+        </KeyRow>
+        <KeyRow>
+          <GrayKey />
+          <WhiteKey />
+          <WhiteKey />
+          <WhiteKey />
+          <GrayKey />
+        </KeyRow>
+      </Container>
       <Footer>
         {/* desktop only */}
         {/* <Handle /> */}
@@ -23,9 +52,31 @@ const Header = () => {
   return <div className="h-[48px]"></div>;
 };
 
-const Container = () => {
+const Container = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="grid grid-cols-5 grid-rows-4 gap-x-[6px] gap-y-[6px] w-[98%] aspect-[1.85]"></div>
+    <div className="flex flex-col gap-y-[6px] w-[98%] aspect-[1.85]">
+      {children}
+    </div>
+  );
+};
+
+const KeyRow = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="grid grid-cols-5 grid-rows-1 gap-x-[6px] w-full h-full">
+      {children}
+    </div>
+  );
+};
+
+const WhiteKey = () => {
+  return (
+    <div className="bg-white  bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]"></div>
+  );
+};
+
+const GrayKey = () => {
+  return (
+    <div className="bg-[#acaebb] bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]"></div>
   );
 };
 
