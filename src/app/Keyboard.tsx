@@ -58,25 +58,167 @@ export const Keyboard = () => {
           </GrayKey>
         </KeyRow>
         <KeyRow>
-          <GrayKey />
-          <WhiteKey />
-          <WhiteKey />
-          <WhiteKey />
-          <GrayKey />
+          <GrayKey>
+            <div className="relative w-2/5 h-2/5">
+              <Image
+                src="/img/west_black_24dp.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </GrayKey>
+          <WhiteKey>
+            <div className="relative w-1/4 h-2/3">
+              <Image
+                src="/img/n8.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <WhiteKey>
+            <div className="relative w-1/4 h-2/3">
+              <Image
+                src="/img/n16.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <WhiteKey>
+            <div className="relative w-1/4 h-2/3">
+              <Image
+                src="/img/n32.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <GrayKey>
+            <div className="relative w-2/5 h-2/5">
+              <Image
+                src="/img/east_black_24dp.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </GrayKey>
         </KeyRow>
         <KeyRow>
-          <GrayKey />
+          <GrayKey>
+            <div className="relative w-2/5 h-2/5">
+              <Image
+                src="/img/nobeam.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </GrayKey>
           <WhiteKey />
-          <WhiteKey />
-          <WhiteKey />
-          <GrayKey />
+          <WhiteKey>
+            <div className="relative w-3/5 h-3/5">
+              <Image
+                src="/img/dynamics.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <WhiteKey>
+            <div className="relative w-1/2 h-1/2">
+              <Image
+                src="/img/bars.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <GrayKey>
+            <div className="relative w-2/5 h-2/5">
+              <Image
+                src="/img/keyboard_return_black_24dp.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </GrayKey>
         </KeyRow>
         <KeyRow>
-          <GrayKey />
-          <WhiteKey />
-          <WhiteKey />
-          <WhiteKey />
-          <GrayKey />
+          <GrayKey>
+            <div className="relative w-1/5 h-2/5">
+              <Image
+                src="/img/sharp.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+            <div className="relative w-1/5 h-2/5">
+              <Image
+                src="/img/natural.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+            <div className="relative w-1/5 h-2/5">
+              <Image
+                src="/img/flat.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </GrayKey>
+          <WhiteKey>
+            <div className="relative w-1/2 h-1/2">
+              <Image
+                src="/img/slur.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <WhiteKey>
+            <div className="relative w-2/5 h-2/5">
+              <Image
+                src="/img/accent.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <WhiteKey>
+            <div className="relative w-1/4 h-1/4">
+              <Image
+                src="/img/fermata.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <GrayKey>
+            <div className="relative w-1/2 h-1/2">
+              <Image
+                src="/img/tie.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </GrayKey>
         </KeyRow>
       </Container>
       <Footer>
