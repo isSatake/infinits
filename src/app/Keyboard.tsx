@@ -46,7 +46,16 @@ export const Keyboard = () => {
               />
             </div>
           </WhiteKey>
-          <GrayKey />
+          <GrayKey>
+            <div className="relative w-2/5 h-2/5">
+              <Image
+                src="/img/backspace_black_24dp.svg"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </GrayKey>
         </KeyRow>
         <KeyRow>
           <GrayKey />
