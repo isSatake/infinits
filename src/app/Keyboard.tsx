@@ -1,10 +1,19 @@
+import Image from "next/image";
+
 export const Keyboard = () => {
   return (
     <Root>
       <Header />
       <Container>
         <KeyRow>
-          <GrayKey />
+          <GrayKey>
+            <Image
+              src="/img/r4.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </GrayKey>
           <WhiteKey />
           <WhiteKey />
           <WhiteKey />
@@ -68,15 +77,19 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const WhiteKey = () => {
+const WhiteKey = ({ children }: { children?: React.ReactNode }) => {
   return (
-    <div className="bg-white  bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]"></div>
+    <div className="flex items-center justify-center bg-white  bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]">
+      <div className="relative w-4/5 h-4/5">{children}</div>
+    </div>
   );
 };
 
-const GrayKey = () => {
+const GrayKey = ({ children }: { children?: React.ReactNode }) => {
   return (
-    <div className="bg-[#acaebb] bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]"></div>
+    <div className="flex items-center justify-center bg-[#acaebb] rounded-[4px] shadow-[0_1px_#8d9095]">
+      <div className="relative w-4/5 h-4/5">{children}</div>
+    </div>
   );
 };
 
