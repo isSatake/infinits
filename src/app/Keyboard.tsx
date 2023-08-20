@@ -7,14 +7,25 @@ export const Keyboard = () => {
       <Container>
         <KeyRow>
           <GrayKey>
-            <Image
-              src="/img/r4.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
+            <div className="relative w-2/3 h-2/3">
+              <Image
+                src="/img/r4.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
           </GrayKey>
-          <WhiteKey />
+          <WhiteKey>
+            <div className="relative w-1/4 h-1/4 top-[15%]">
+              <Image
+                src="/img/n1.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
           <WhiteKey />
           <WhiteKey />
           <GrayKey />
@@ -80,7 +91,7 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
 const WhiteKey = ({ children }: { children?: React.ReactNode }) => {
   return (
     <div className="flex items-center justify-center bg-white  bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]">
-      <div className="relative w-4/5 h-4/5">{children}</div>
+      {children}
     </div>
   );
 };
@@ -88,7 +99,7 @@ const WhiteKey = ({ children }: { children?: React.ReactNode }) => {
 const GrayKey = ({ children }: { children?: React.ReactNode }) => {
   return (
     <div className="flex items-center justify-center bg-[#acaebb] rounded-[4px] shadow-[0_1px_#8d9095]">
-      <div className="relative w-4/5 h-4/5">{children}</div>
+      {children}
     </div>
   );
 };
