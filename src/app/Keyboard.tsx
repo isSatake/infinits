@@ -259,7 +259,7 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
 
 const WhiteKey = ({ children }: { children?: React.ReactNode }) => {
   return (
-    <div className="flex items-center justify-center bg-white  bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]">
+    <div className="flex items-center justify-center bg-white active:bg-[#b4b8c1]  bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]">
       {children}
     </div>
   );
@@ -267,7 +267,7 @@ const WhiteKey = ({ children }: { children?: React.ReactNode }) => {
 
 const GrayKey = ({ children }: { children?: React.ReactNode }) => {
   return (
-    <div className="flex items-center justify-center bg-[#acaebb] rounded-[4px] shadow-[0_1px_#8d9095]">
+    <div className="flex items-center justify-center bg-[#acaebb] active:bg-white rounded-[4px] shadow-[0_1px_#8d9095]">
       {children}
     </div>
   );
