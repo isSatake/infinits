@@ -26,8 +26,26 @@ export const Keyboard = () => {
               />
             </div>
           </WhiteKey>
-          <WhiteKey />
-          <WhiteKey />
+          <WhiteKey>
+            <div className="relative w-1/5 h-2/3">
+              <Image
+                src="/img/n2.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
+          <WhiteKey>
+            <div className="relative w-1/5 h-2/3">
+              <Image
+                src="/img/n4.png"
+                fill={true}
+                alt="rest mode"
+                className="object-contain"
+              />
+            </div>
+          </WhiteKey>
           <GrayKey />
         </KeyRow>
         <KeyRow>
