@@ -1,3 +1,5 @@
+import { BeamModes } from "@/org/input-modes";
+import { atom, useAtom, useAtomValue } from "jotai";
 import Image from "next/image";
 
 export const Keyboard = () => {
@@ -6,219 +8,32 @@ export const Keyboard = () => {
       <Header />
       <Container>
         <KeyRow>
-          <GrayKey>
-            <div className="relative w-2/3 h-2/3">
-              <Image
-                src="/img/r4.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
-          <WhiteKey>
-            <div className="relative w-1/4 h-1/4 top-[15%]">
-              <Image
-                src="/img/n1.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <WhiteKey>
-            <div className="relative w-1/5 h-2/3">
-              <Image
-                src="/img/n2.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <WhiteKey>
-            <div className="relative w-1/5 h-2/3">
-              <Image
-                src="/img/n4.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <GrayKey>
-            <div className="relative w-2/5 h-2/5">
-              <Image
-                src="/img/backspace_black_24dp.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
+          <NoteRestToggle />
+          <Whole />
+          <Half />
+          <Quarter />
+          <Backspace />
         </KeyRow>
         <KeyRow>
-          <GrayKey>
-            <div className="relative w-2/5 h-2/5">
-              <Image
-                src="/img/west_black_24dp.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
-          <WhiteKey>
-            <div className="relative w-1/4 h-2/3">
-              <Image
-                src="/img/n8.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <WhiteKey>
-            <div className="relative w-1/4 h-2/3">
-              <Image
-                src="/img/n16.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <WhiteKey>
-            <div className="relative w-1/4 h-2/3">
-              <Image
-                src="/img/n32.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <GrayKey>
-            <div className="relative w-2/5 h-2/5">
-              <Image
-                src="/img/east_black_24dp.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
+          <ArrowLeft />
+          <Eighth />
+          <Sixteenth />
+          <ThirtySecond />
+          <ArrowRight />
         </KeyRow>
         <KeyRow>
-          <GrayKey>
-            <div className="relative w-2/5 h-2/5">
-              <Image
-                src="/img/nobeam.png"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
+          <BeamToggle />
           <WhiteKey />
-          <WhiteKey>
-            <div className="relative w-3/5 h-3/5">
-              <Image
-                src="/img/dynamics.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <WhiteKey>
-            <div className="relative w-1/2 h-1/2">
-              <Image
-                src="/img/bars.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <GrayKey>
-            <div className="relative w-2/5 h-2/5">
-              <Image
-                src="/img/keyboard_return_black_24dp.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
+          <Dynamics />
+          <Bars />
+          <Return />
         </KeyRow>
         <KeyRow>
-          <GrayKey>
-            <div className="relative w-1/5 h-2/5">
-              <Image
-                src="/img/sharp.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-            <div className="relative w-1/5 h-2/5">
-              <Image
-                src="/img/natural.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-            <div className="relative w-1/5 h-2/5">
-              <Image
-                src="/img/flat.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
-          <WhiteKey>
-            <div className="relative w-1/2 h-1/2">
-              <Image
-                src="/img/slur.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <WhiteKey>
-            <div className="relative w-2/5 h-2/5">
-              <Image
-                src="/img/accent.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <WhiteKey>
-            <div className="relative w-1/4 h-1/4">
-              <Image
-                src="/img/fermata.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </WhiteKey>
-          <GrayKey>
-            <div className="relative w-1/2 h-1/2">
-              <Image
-                src="/img/tie.svg"
-                fill={true}
-                alt="rest mode"
-                className="object-contain"
-              />
-            </div>
-          </GrayKey>
+          <Accidentals />
+          <Slur />
+          <Accent />
+          <Fermata />
+          <Tie />
         </KeyRow>
       </Container>
       <Footer>
@@ -228,6 +43,419 @@ export const Keyboard = () => {
     </Root>
   );
 };
+
+const noteInputModeAtom = atom<"note" | "rest">("note");
+
+const NoteRestToggle = () => {
+  const [noteInputMode, setNoteInputMode] = useAtom(noteInputModeAtom);
+  return (
+    <>
+      {noteInputMode === "note" ? (
+        <GrayKey onClick={() => setNoteInputMode("rest")}>
+          <div className="relative w-2/3 h-2/3">
+            <Image
+              src="/img/r4.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </GrayKey>
+      ) : (
+        <GrayKey onClick={() => setNoteInputMode("note")}>
+          <div className="relative w-1/5 h-2/3">
+            <Image
+              src="/img/n4.png"
+              fill={true}
+              alt="note mode"
+              className="object-contain"
+            />
+          </div>
+        </GrayKey>
+      )}
+    </>
+  );
+};
+
+const Whole = () => {
+  const noteInputMode = useAtomValue(noteInputModeAtom);
+  return (
+    <>
+      {noteInputMode === "note" ? (
+        <WhiteKey>
+          <div className="relative w-1/4 h-1/4 top-[15%]">
+            <Image
+              src="/img/n1.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      ) : (
+        <WhiteKey>
+          <div className="relative w-2/5 h-2/5">
+            <Image
+              src="/img/r1.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      )}
+    </>
+  );
+};
+
+const Half = () => {
+  const noteInputMode = useAtomValue(noteInputModeAtom);
+  return (
+    <>
+      {noteInputMode === "note" ? (
+        <WhiteKey>
+          <div className="relative w-1/5 h-2/3">
+            <Image
+              src="/img/n2.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      ) : (
+        <WhiteKey>
+          <div className="relative w-2/5 h-2/5">
+            <Image
+              src="/img/r2.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      )}
+    </>
+  );
+};
+
+const Quarter = () => {
+  const noteInputMode = useAtomValue(noteInputModeAtom);
+  return (
+    <>
+      {noteInputMode === "note" ? (
+        <WhiteKey>
+          <div className="relative w-1/5 h-2/3">
+            <Image
+              src="/img/n4.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      ) : (
+        <WhiteKey>
+          <div className="relative w-2/3 h-2/3">
+            <Image
+              src="/img/r4.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      )}
+    </>
+  );
+};
+
+const Eighth = () => {
+  const noteInputMode = useAtomValue(noteInputModeAtom);
+  return (
+    <>
+      {noteInputMode === "note" ? (
+        <WhiteKey>
+          <div className="relative w-1/4 h-2/3">
+            <Image
+              src="/img/n8.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      ) : (
+        <WhiteKey>
+          <div className="relative w-1/5 h-full">
+            <Image
+              src="/img/r8.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      )}
+    </>
+  );
+};
+
+const Sixteenth = () => {
+  const noteInputMode = useAtomValue(noteInputModeAtom);
+  return (
+    <>
+      {noteInputMode === "note" ? (
+        <WhiteKey>
+          <div className="relative w-1/4 h-2/3">
+            <Image
+              src="/img/n16.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      ) : (
+        <WhiteKey>
+          <div className="relative w-1/5 h-full">
+            <Image
+              src="/img/r16.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      )}
+    </>
+  );
+};
+
+const ThirtySecond = () => {
+  const noteInputMode = useAtomValue(noteInputModeAtom);
+  return (
+    <>
+      {noteInputMode === "note" ? (
+        <WhiteKey>
+          <div className="relative w-1/4 h-2/3">
+            <Image
+              src="/img/n32.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      ) : (
+        <WhiteKey>
+          <div className="relative w-1/5 h-full">
+            <Image
+              src="/img/r32.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </WhiteKey>
+      )}
+    </>
+  );
+};
+
+const Backspace = () => (
+  <GrayKey>
+    <div className="relative w-2/5 h-2/5">
+      <Image
+        src="/img/backspace_black_24dp.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </GrayKey>
+);
+
+const ArrowLeft = () => (
+  <GrayKey>
+    <div className="relative w-2/5 h-2/5">
+      <Image
+        src="/img/west_black_24dp.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </GrayKey>
+);
+
+const ArrowRight = () => (
+  <GrayKey>
+    <div className="relative w-2/5 h-2/5">
+      <Image
+        src="/img/east_black_24dp.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </GrayKey>
+);
+
+const beamModeAtom = atom<BeamModes>("beam");
+
+const BeamToggle = () => {
+  const [beamMode, setBeamMode] = useAtom(beamModeAtom);
+  // TODO　ダブルクリック→"rock"
+  return (
+    <>
+      {beamMode === "nobeam" && (
+        <GrayKey onClick={() => setBeamMode("beam")}>
+          <div className="relative w-1/2 h-1/2">
+            <Image
+              src="/img/nobeam.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </GrayKey>
+      )}
+      {beamMode === "beam" && (
+        <GrayKey onClick={() => setBeamMode("nobeam")}>
+          <div className="relative w-1/2 h-1/2">
+            <Image
+              src="/img/beam.png"
+              fill={true}
+              alt="rest mode"
+              className="object-contain"
+            />
+          </div>
+        </GrayKey>
+      )}
+    </>
+  );
+};
+
+const Dynamics = () => (
+  <WhiteKey>
+    <div className="relative w-3/5 h-3/5">
+      <Image
+        src="/img/dynamics.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </WhiteKey>
+);
+
+const Bars = () => (
+  <WhiteKey>
+    <div className="relative w-1/2 h-1/2">
+      <Image
+        src="/img/bars.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </WhiteKey>
+);
+
+const Return = () => (
+  <GrayKey>
+    <div className="relative w-2/5 h-2/5">
+      <Image
+        src="/img/keyboard_return_black_24dp.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </GrayKey>
+);
+
+const Accidentals = () => (
+  <GrayKey>
+    <div className="relative w-1/5 h-2/5">
+      <Image
+        src="/img/sharp.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+    <div className="relative w-1/5 h-2/5">
+      <Image
+        src="/img/natural.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+    <div className="relative w-1/5 h-2/5">
+      <Image
+        src="/img/flat.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </GrayKey>
+);
+
+const Slur = () => (
+  <WhiteKey>
+    <div className="relative w-1/2 h-1/2">
+      <Image
+        src="/img/slur.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </WhiteKey>
+);
+
+const Accent = () => (
+  <WhiteKey>
+    <div className="relative w-2/5 h-2/5">
+      <Image
+        src="/img/accent.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </WhiteKey>
+);
+
+const Fermata = () => (
+  <WhiteKey>
+    <div className="relative w-1/4 h-1/4">
+      <Image
+        src="/img/fermata.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </WhiteKey>
+);
+
+const Tie = () => (
+  <GrayKey>
+    <div className="relative w-1/2 h-1/2">
+      <Image
+        src="/img/tie.svg"
+        fill={true}
+        alt="rest mode"
+        className="object-contain"
+      />
+    </div>
+  </GrayKey>
+);
 
 const Root = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -259,15 +487,24 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
 
 const WhiteKey = ({ children }: { children?: React.ReactNode }) => {
   return (
-    <div className="flex items-center justify-center bg-white active:bg-[#b4b8c1]  bg-no-repeat bg-center rounded-[4px] shadow-[0_1px_#8d9095]">
+    <div className="flex items-center justify-center bg-white active:bg-[#b4b8c1] rounded-[4px] shadow-[0_1px_#8d9095]">
       {children}
     </div>
   );
 };
 
-const GrayKey = ({ children }: { children?: React.ReactNode }) => {
+const GrayKey = ({
+  onClick,
+  children,
+}: {
+  onClick?: () => void;
+  children?: React.ReactNode;
+}) => {
   return (
-    <div className="flex items-center justify-center bg-[#acaebb] active:bg-white rounded-[4px] shadow-[0_1px_#8d9095]">
+    <div
+      className="flex items-center justify-center bg-[#acaebb] active:bg-white rounded-[4px] shadow-[0_1px_#8d9095]"
+      onClick={onClick}
+    >
       {children}
     </div>
   );
