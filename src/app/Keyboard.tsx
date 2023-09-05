@@ -172,13 +172,14 @@ const Quarter = () => {
 
 const Eighth = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
+  const beamMode = useAtomValue(beamModeAtom);
   return (
     <>
       {noteInputMode === "note" ? (
         <WhiteKey>
-          <div className="relative w-1/4 h-2/3">
+          <div className="relative w-full h-2/3">
             <Image
-              src="/img/n8.png"
+              src={beamMode === "nobeam" ? "/img/n8.png" : "/img/beam8.svg"}
               fill={true}
               alt="rest mode"
               className="object-contain"
@@ -203,13 +204,14 @@ const Eighth = () => {
 
 const Sixteenth = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
+  const beamMode = useAtomValue(beamModeAtom);
   return (
     <>
       {noteInputMode === "note" ? (
         <WhiteKey>
-          <div className="relative w-1/4 h-2/3">
+          <div className="relative w-full h-2/3">
             <Image
-              src="/img/n16.png"
+              src={beamMode === "nobeam" ? "/img/n16.png" : "/img/beam16.svg"}
               fill={true}
               alt="rest mode"
               className="object-contain"
@@ -234,13 +236,14 @@ const Sixteenth = () => {
 
 const ThirtySecond = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
+  const beamMode = useAtomValue(beamModeAtom);
   return (
     <>
       {noteInputMode === "note" ? (
         <WhiteKey>
-          <div className="relative w-1/4 h-2/3">
+          <div className="relative w-full h-2/3">
             <Image
-              src="/img/n32.png"
+              src={beamMode === "nobeam" ? "/img/n32.png" : "/img/beam32.svg"}
               fill={true}
               alt="rest mode"
               className="object-contain"
