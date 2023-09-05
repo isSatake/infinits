@@ -1,4 +1,7 @@
-import { BeamModes } from "@/org/input-modes";
+import {
+  BeamModes,
+  kAccidentalModes,
+} from "@/org/input-modes";
 import { atom, useAtom, useAtomValue } from "jotai";
 import Image from "next/image";
 
@@ -305,7 +308,7 @@ const ArrowRight = () => (
   </GrayKey>
 );
 
-const beamModeAtom = atom<BeamModes>("beam");
+const beamModeAtom = atom<BeamModes>("nobeam");
 
 const BeamToggle = () => {
   const [beamMode, setBeamMode] = useAtom(beamModeAtom);
@@ -379,34 +382,64 @@ const Return = () => (
   </GrayKey>
 );
 
-const Accidentals = () => (
-  <GrayKey>
-    <div className="relative w-1/5 h-2/5">
-      <Image
-        src="/img/sharp.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
-    <div className="relative w-1/5 h-2/5">
-      <Image
-        src="/img/natural.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
-    <div className="relative w-1/5 h-2/5">
-      <Image
-        src="/img/flat.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
-  </GrayKey>
-);
+const accidentalModeIdxAtom = atom<number>(0);
+const baseClassName = "relative w-1/5 h-2/5";
+const disabledClassName = "opacity-30";
+const useAccidentalMode = () => {
+  const [idx, setIdx] = useAtom(accidentalModeIdxAtom);
+  return {
+    accidentalMode: kAccidentalModes[idx],
+    changeAccidentalMode: () => {
+      const nextIdx = (idx + 1) % 4;
+      setIdx(nextIdx);
+    },
+  };
+};
+
+const Accidentals = () => {
+  const { accidentalMode, changeAccidentalMode } = useAccidentalMode();
+  return (
+    <GrayKey onClick={changeAccidentalMode}>
+      <div
+        className={`${baseClassName} ${
+          accidentalMode === "sharp" ? "" : disabledClassName
+        }`}
+      >
+        <Image
+          src="/img/sharp.svg"
+          fill={true}
+          alt="rest mode"
+          className="object-contain"
+        />
+      </div>
+      <div
+        className={`${baseClassName} ${
+          accidentalMode === "natural" ? "" : disabledClassName
+        }`}
+      >
+        <Image
+          src="/img/natural.svg"
+          fill={true}
+          alt="rest mode"
+          className="object-contain"
+        />
+      </div>
+      <div
+        className={`${baseClassName} ${
+          accidentalMode === "flat" ? "" : disabledClassName
+        }
+      }`}
+      >
+        <Image
+          src="/img/flat.svg"
+          fill={true}
+          alt="rest mode"
+          className="object-contain"
+        />
+      </div>
+    </GrayKey>
+  );
+};
 
 const Slur = () => (
   <WhiteKey>
