@@ -1,19 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { resizeCanvas } from "./util";
 
 export const MainCanvas = () => {
-  useResizeCanvas("mainCanvas");
-  return (
-    <canvas
-      id="mainCanvas"
-      width=""
-      className="absolute w-full h-full"
-    ></canvas>
-  );
-};
-
-const useResizeCanvas = (id: string) => {
+  const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const canvas = document.getElementById(id) as HTMLCanvasElement;
+    const canvas = ref.current;
+    if (!canvas) return;
     resizeCanvas(canvas, window.innerWidth, window.innerHeight);
     const resize = () =>
       resizeCanvas(canvas, window.innerWidth, window.innerHeight);
@@ -22,13 +14,12 @@ const useResizeCanvas = (id: string) => {
       window.removeEventListener("resize", resize);
     };
   }, []);
-};
-
-const resizeCanvas = (
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number
-) => {
-  canvas.width = width;
-  canvas.height = height;
+  return (
+    <canvas
+      id="mainCanvas"
+      width=""
+      className="absolute w-full h-full"
+      ref={ref}
+    ></canvas>
+  );
 };
