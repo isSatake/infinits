@@ -56,7 +56,7 @@ export const setLastEditedIndex = (id: number, idx: number) => {
   lastEditedIdxMap.set(id, idx);
 };
 
-type StaffStyle = {
+export type StaffStyle = {
   clef: Clef;
   position: Point;
 };
