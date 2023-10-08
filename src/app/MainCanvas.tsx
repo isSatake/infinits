@@ -1,4 +1,4 @@
-// import { UNIT } from "@/org/font/bravura";
+import { UNIT } from "@/org/font/bravura";
 import { Point } from "@/org/geometry";
 import { MusicalElement } from "@/org/notation/types";
 import { paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
@@ -15,9 +15,6 @@ import {
   useResizeHandler,
 } from "./hooks";
 
-// bravuraをimportするとサーバー上でPath2Dを使うことになりエラーになる
-// とりあえずこちらに定義しておく
-const UNIT = 250;
 let staffId = 0;
 
 const staffMapAtom = atom<Map<number, StaffStyle>>(
@@ -29,9 +26,7 @@ const elementsAtom = atom<Map<number, MusicalElement[]>>(
   new Map([[0, kSampleElements]])
 );
 const pointingAtom = atom<Pointing | undefined>(undefined);
-const mtxAtom = atom<DOMMatrix>(
-  new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
-);
+const mtxAtom = atom<DOMMatrix | undefined>(undefined);
 export const MainCanvas = () => {
   const ref = useRef<HTMLCanvasElement>(null);
   useResizeHandler(ref);
@@ -40,7 +35,13 @@ export const MainCanvas = () => {
   const pointing = useAtomValue(pointingAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
   useEffect(() => {
+    setMtx(new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]));
+  }, []);
+  useEffect(() => {
     console.log("render", "start");
+    if (!mtx) {
+      return;
+    }
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
     for (const [id, staff] of staffMap.entries()) {
       const style = determinePaintElementStyle(

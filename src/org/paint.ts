@@ -78,7 +78,7 @@ const paintGClef = (
   topOfStaff: number
 ) => {
   const g = pitchToY(topOfStaff, 4, 1);
-  paintBravuraPath(ctx, left, g, 1, bClefG, element.color);
+  paintBravuraPath(ctx, left, g, 1, bClefG(), element.color);
 };
 
 export const paintStaff = (
@@ -164,7 +164,7 @@ const paintNote = ({
       ctx.restore();
     } else if (noteEl.type === "accidental") {
       const { position, accidental } = noteEl;
-      const path = accidentalPathMap.get(accidental)!;
+      const path = accidentalPathMap().get(accidental)!;
       ctx.save();
       ctx.translate(position.x, position.y);
       paintBravuraPath(ctx, 0, 0, 1, path, color);
@@ -173,8 +173,8 @@ const paintNote = ({
       const { duration, direction, position } = noteEl;
       const path =
         direction === "up"
-          ? upFlagMap.get(duration)
-          : downFlagMap.get(duration);
+          ? upFlagMap().get(duration)
+          : downFlagMap().get(duration);
       if (path) {
         paintBravuraPath(ctx, position.x, position.y, 1, path, color);
       }
@@ -201,7 +201,7 @@ const paintRest = ({
   element: RestStyle;
 }) => {
   const { rest, position, color } = element;
-  const path = restPathMap.get(rest.duration)!;
+  const path = restPathMap().get(rest.duration)!;
   ctx.save();
   ctx.translate(position.x, position.y);
   paintBravuraPath(ctx, 0, 0, 1, path, color);
