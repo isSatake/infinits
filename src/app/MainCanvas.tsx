@@ -7,7 +7,7 @@ import { StaffStyle } from "@/org/score-states";
 import { determinePaintElementStyle } from "@/org/style/style";
 import { PaintElement, PaintElementStyle, Pointing } from "@/org/style/types";
 import { atom, useAtom, useAtomValue } from "jotai";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { kSampleElements } from "./constants";
 import {
   kDoubleClickThresholdMs,
@@ -83,8 +83,11 @@ export const MainCanvas = () => {
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
 
-  const pointerHandler = usePointerHandler({
-    onDown: (ev) => {
+  const onDown = useCallback(
+    (ev: React.PointerEvent) => {
+      if (!mtx) {
+        return;
+      }
       setTmpMtx(mtx);
       if (doubleZoomTimer === -1) {
         setDoubleZoomTimer(
@@ -100,7 +103,11 @@ export const MainCanvas = () => {
         );
       }
     },
-    onDrag: (ev, down) => {
+    [mtx, doubleZoomTimer]
+  );
+
+  const onDrag = useCallback(
+    (ev: React.PointerEvent, down: React.PointerEvent) => {
       if (!tmpMtx) {
         return;
       }
@@ -118,11 +125,19 @@ export const MainCanvas = () => {
       const dy = (ev.clientY - down.clientY) / tmpMtx.a;
       setMtx(tmpMtx.translate(dx, dy));
     },
-    onUp: () => {
-      setTmpMtx(undefined);
-      setDoubleZoomPoint(undefined);
-    },
-    onDoubleClick: (ev) => {
+    [tmpMtx, doubleZoomPoint]
+  );
+
+  const onUp = useCallback(() => {
+    setTmpMtx(undefined);
+    setDoubleZoomPoint(undefined);
+  }, []);
+
+  const onDoubleClick = useCallback(
+    (ev: React.PointerEvent) => {
+      if (!mtx) {
+        return;
+      }
       staffMap.set(staffId++, {
         clef: { type: "g" as const },
         position: mtx
@@ -131,14 +146,20 @@ export const MainCanvas = () => {
       });
       setStaffMap(new Map(staffMap));
     },
-  });
+    [staffMap, mtx]
+  );
 
   return (
     <canvas
       id="mainCanvas"
       className="absolute"
       ref={ref}
-      {...pointerHandler}
+      {...usePointerHandler({
+        onDown,
+        onDrag,
+        onUp,
+        onDoubleClick,
+      })}
     ></canvas>
   );
 };

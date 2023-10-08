@@ -88,7 +88,7 @@ const determineNoteStyle = ({
     }
     const { pitch, accidental } = p;
     const y = pitchToY(0, pitch, 1);
-    accBBoxes.push(getPathBBox(accidentalPathMap.get(accidental)!, UNIT));
+    accBBoxes.push(getPathBBox(accidentalPathMap().get(accidental)!, UNIT));
     elements.push({
       type: "accidental",
       position: { x: 0, y },
