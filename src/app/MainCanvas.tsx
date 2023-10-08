@@ -1,31 +1,32 @@
 // import { UNIT } from "@/org/font/bravura";
+import { Point } from "@/org/geometry";
 import { MusicalElement } from "@/org/notation/types";
 import { paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
+import { getInitScale } from "@/org/score-preferences";
 import { StaffStyle } from "@/org/score-states";
 import { determinePaintElementStyle } from "@/org/style/style";
 import { PaintElement, PaintElementStyle, Pointing } from "@/org/style/types";
 import { atom, useAtom, useAtomValue } from "jotai";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { kSampleElements } from "./constants";
-import { resizeCanvas } from "./util";
-import { getInitScale } from "@/org/score-preferences";
-import { Point, magnitude } from "@/org/geometry";
+import {
+  kDoubleClickThresholdMs,
+  usePointerHandler,
+  useResizeHandler,
+} from "./hooks";
 
 // bravuraをimportするとサーバー上でPath2Dを使うことになりエラーになる
 // とりあえずこちらに定義しておく
 const UNIT = 250;
+let staffId = 0;
 
 const staffMapAtom = atom<Map<number, StaffStyle>>(
   new Map([
-    [0, { clef: { type: "g" as const }, position: { x: 0, y: 0 } }],
-    // [0, { clef: { type: "g" as const }, position: { x: 50, y: 50 } }],
+    [staffId++, { clef: { type: "g" as const }, position: { x: 0, y: 0 } }],
   ])
 );
 const elementsAtom = atom<Map<number, MusicalElement[]>>(
-  new Map([
-    [0, kSampleElements],
-    [1, kSampleElements],
-  ])
+  new Map([[0, kSampleElements]])
 );
 const pointingAtom = atom<Pointing | undefined>(undefined);
 const mtxAtom = atom<DOMMatrix>(
@@ -55,7 +56,6 @@ export const MainCanvas = () => {
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
     const { a, b, c, d, e, f } = mtx;
-    console.log("mtx", `(${e}, ${f})`);
     // pointer handlerでdpr考慮しなくて済むように
     ctx.scale(devicePixelRatio, devicePixelRatio);
     ctx.transform(a, b, c, d, e, f);
@@ -122,27 +122,13 @@ export const MainCanvas = () => {
       setDoubleZoomPoint(undefined);
     },
     onDoubleClick: (ev) => {
-      console.log("double click", ev);
-      setStaffMap(
-        new Map([
-          [
-            0,
-            {
-              clef: { type: "g" as const },
-              position: { x: 0, y: 0 },
-            },
-          ],
-          [
-            1,
-            {
-              clef: { type: "g" as const },
-              position: mtx
-                .inverse()
-                .transformPoint({ x: ev.clientX, y: ev.clientY }),
-            },
-          ],
-        ])
-      );
+      staffMap.set(staffId++, {
+        clef: { type: "g" as const },
+        position: mtx
+          .inverse()
+          .transformPoint({ x: ev.clientX, y: ev.clientY }),
+      });
+      setStaffMap(new Map(staffMap));
     },
   });
 
@@ -154,100 +140,4 @@ export const MainCanvas = () => {
       {...pointerHandler}
     ></canvas>
   );
-};
-
-const kLongDownThresholdMs = 300;
-const kDoubleClickThresholdMs = 300;
-const kDragThresholdMagnitude = 10;
-const usePointerHandler = ({
-  onUp,
-  onDown,
-  onClick,
-  onDoubleClick,
-  onLongDown,
-  onMove,
-  onDrag,
-}: {
-  onUp?: (ev: React.PointerEvent, down: React.PointerEvent) => void;
-  onDown?: (ev: React.PointerEvent) => void;
-  onClick?: (ev: React.PointerEvent) => void;
-  onDoubleClick?: (ev: React.PointerEvent) => void;
-  onLongDown?: (ev: React.PointerEvent) => void;
-  onMove?: (ev: React.PointerEvent) => void;
-  onDrag?: (ev: React.PointerEvent, down: React.PointerEvent) => void;
-}): {
-  onPointerDown: React.PointerEventHandler;
-  onPointerUp: React.PointerEventHandler;
-  onPointerMove: React.PointerEventHandler;
-} => {
-  const [down, setDown] = useState<React.PointerEvent>();
-  const [longDownTimer, setLongDownTimer] = useState<number>(-1);
-  const [doubleClickTimer, setDoubleClickTimer] = useState<number>(-1);
-  const [dragging, setDragging] = useState<boolean>(false);
-  const onPointerDown = (ev: React.PointerEvent) => {
-    setDown(ev);
-    onDown?.(ev);
-    setLongDownTimer(
-      window.setTimeout(() => {
-        onLongDown?.(ev);
-        setLongDownTimer(-1);
-      }, kLongDownThresholdMs)
-    );
-  };
-  const onPointerUp = (ev: React.PointerEvent) => {
-    if (!down) return;
-    onUp?.(ev, down);
-    if (longDownTimer !== -1) {
-      window.clearTimeout(longDownTimer);
-      setLongDownTimer(-1);
-      onClick?.(ev);
-      if (doubleClickTimer !== -1) {
-        window.clearTimeout(doubleClickTimer);
-        setDoubleClickTimer(-1);
-        onDoubleClick?.(ev);
-      }
-      setDoubleClickTimer(
-        window.setTimeout(() => {
-          setDoubleClickTimer(-1);
-        }, kDoubleClickThresholdMs)
-      );
-    }
-    setDown(undefined);
-    setDragging(false);
-  };
-  const onPointerMove = (ev: React.PointerEvent) => {
-    onMove?.(ev);
-    if (!down) return;
-    if (dragging) {
-      onDrag?.(ev, down);
-    } else if (
-      magnitude(
-        {
-          x: ev.clientX,
-          y: ev.clientY,
-        },
-        {
-          x: down.clientX,
-          y: down.clientY,
-        }
-      ) > kDragThresholdMagnitude
-    ) {
-      setDragging(true);
-    }
-  };
-  return { onPointerDown, onPointerUp, onPointerMove };
-};
-
-const useResizeHandler = (ref: RefObject<HTMLCanvasElement>) => {
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const resize = () =>
-      resizeCanvas(canvas, window.innerWidth, window.innerHeight);
-    window.addEventListener("resize", resize);
-    resize();
-    return () => {
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
 };
