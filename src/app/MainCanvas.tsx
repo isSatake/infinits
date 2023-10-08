@@ -9,7 +9,7 @@ import { RefObject, useEffect, useRef, useState } from "react";
 import { kSampleElements } from "./constants";
 import { resizeCanvas } from "./util";
 import { getInitScale } from "@/org/score-preferences";
-import { magnitude } from "@/org/geometry";
+import { Point, magnitude } from "@/org/geometry";
 
 // bravuraをimportするとサーバー上でPath2Dを使うことになりエラーになる
 // とりあえずこちらに定義しておく
@@ -79,13 +79,38 @@ export const MainCanvas = () => {
   }, [staffMap, elements, pointing, mtx]);
 
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
+  const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
+  const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
 
   const pointerHandler = usePointerHandler({
-    onDown: () => {
+    onDown: (ev) => {
       setTmpMtx(mtx);
+      if (doubleZoomTimer === -1) {
+        setDoubleZoomTimer(
+          window.setTimeout(() => {
+            setDoubleZoomTimer(-1);
+          }, kDoubleClickThresholdMs)
+        );
+      } else {
+        window.clearTimeout(doubleZoomTimer);
+        setDoubleZoomTimer(-1);
+        setDoubleZoomPoint(
+          mtx.inverse().transformPoint({ x: ev.clientX, y: ev.clientY })
+        );
+      }
     },
     onDrag: (ev, down) => {
       if (!tmpMtx) {
+        return;
+      }
+      if (doubleZoomPoint) {
+        const scale = Math.exp((ev.clientY - down.clientY) / 100);
+        setMtx(
+          tmpMtx
+            .translate(doubleZoomPoint.x, doubleZoomPoint.y)
+            .scale(scale, scale)
+            .translate(-doubleZoomPoint.x, -doubleZoomPoint.y)
+        );
         return;
       }
       const dx = (ev.clientX - down.clientX) / tmpMtx.a;
@@ -94,6 +119,7 @@ export const MainCanvas = () => {
     },
     onUp: () => {
       setTmpMtx(undefined);
+      setDoubleZoomPoint(undefined);
     },
     onDoubleClick: (ev) => {
       console.log("double click", ev);
