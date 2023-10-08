@@ -1,23 +1,14 @@
 // import { UNIT } from "@/org/font/bravura";
 import { MusicalElement } from "@/org/notation/types";
-import { paintStaff, paintStyle, resetCanvas } from "@/org/paint";
+import { paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
 import { StaffStyle } from "@/org/score-states";
 import { determinePaintElementStyle } from "@/org/style/style";
 import { PaintElement, PaintElementStyle, Pointing } from "@/org/style/types";
 import { atom, useAtom, useAtomValue } from "jotai";
-import {
-  PointerEventHandler,
-  RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import { kSampleElements } from "./constants";
 import { resizeCanvas } from "./util";
 import { getInitScale } from "@/org/score-preferences";
-import { on } from "events";
 import { magnitude } from "@/org/geometry";
 
 // bravuraをimportするとサーバー上でPath2Dを使うことになりエラーになる
@@ -37,17 +28,16 @@ const elementsAtom = atom<Map<number, MusicalElement[]>>(
   ])
 );
 const pointingAtom = atom<Pointing | undefined>(undefined);
-// const mtxAtom = atom<DOMMatrix>(new DOMMatrix());
+const mtxAtom = atom<DOMMatrix>(
+  new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
+);
 export const MainCanvas = () => {
   const ref = useRef<HTMLCanvasElement>(null);
   useResizeHandler(ref);
   const [staffMap, setStaffMap] = useAtom(staffMapAtom);
   const elements = useAtomValue(elementsAtom);
   const pointing = useAtomValue(pointingAtom);
-  const mtx = useMemo(
-    () => new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]),
-    []
-  );
+  const [mtx, setMtx] = useAtom(mtxAtom);
   useEffect(() => {
     console.log("render", "start");
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
@@ -63,15 +53,12 @@ export const MainCanvas = () => {
     // renderStaff
     const ctx = ref.current?.getContext("2d")!;
     ctx.save();
+    resetCanvas2({ ctx, fillStyle: "white" });
     const { a, b, c, d, e, f } = mtx;
+    console.log("mtx", `(${e}, ${f})`);
     // pointer handlerでdpr考慮しなくて済むように
-    ctx.transform(a * devicePixelRatio, b, c, d * devicePixelRatio, e, f);
-    resetCanvas({
-      ctx,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      fillStyle: "white",
-    });
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.transform(a, b, c, d, e, f);
     for (const [id, staff] of staffMap.entries()) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
@@ -91,7 +78,23 @@ export const MainCanvas = () => {
     // renderCaret
   }, [staffMap, elements, pointing, mtx]);
 
-  const pointerHandlers = useHoge({
+  const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
+
+  const pointerHandler = usePointerHandler({
+    onDown: () => {
+      setTmpMtx(mtx);
+    },
+    onDrag: (ev, down) => {
+      if (!tmpMtx) {
+        return;
+      }
+      const dx = (ev.clientX - down.clientX) / tmpMtx.a;
+      const dy = (ev.clientY - down.clientY) / tmpMtx.a;
+      setMtx(tmpMtx.translate(dx, dy));
+    },
+    onUp: () => {
+      setTmpMtx(undefined);
+    },
     onDoubleClick: (ev) => {
       console.log("double click", ev);
       setStaffMap(
@@ -122,7 +125,7 @@ export const MainCanvas = () => {
       id="mainCanvas"
       className="absolute"
       ref={ref}
-      {...pointerHandlers}
+      {...pointerHandler}
     ></canvas>
   );
 };
@@ -130,7 +133,7 @@ export const MainCanvas = () => {
 const kLongDownThresholdMs = 300;
 const kDoubleClickThresholdMs = 300;
 const kDragThresholdMagnitude = 10;
-const useHoge = ({
+const usePointerHandler = ({
   onUp,
   onDown,
   onClick,

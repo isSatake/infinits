@@ -301,3 +301,16 @@ export const resetCanvas = ({
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 };
+
+export const resetCanvas2 = ({
+  ctx,
+  fillStyle,
+}: {
+  ctx: CanvasRenderingContext2D;
+  fillStyle: string;
+}) => {
+  ctx.save();
+  ctx.fillStyle = fillStyle;
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.restore();
+};
