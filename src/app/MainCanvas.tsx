@@ -1,24 +1,45 @@
-import { RefObject, useCallback, useEffect, useMemo, useRef } from "react";
-import { resizeCanvas } from "./util";
-import { atom, useAtom, useAtomValue } from "jotai";
-import { elementsAtom, staffMapAtom } from "./page";
-import { PaintElementStyle, PaintElement, Pointing } from "@/org/style/types";
-import { determinePaintElementStyle } from "@/org/style/style";
-import { UNIT } from "@/org/font/bravura";
-import { renderStaff } from "@/org/score-renderer";
+// import { UNIT } from "@/org/font/bravura";
+import { MusicalElement } from "@/org/notation/types";
 import { paintStaff, paintStyle, resetCanvas } from "@/org/paint";
+import { StaffStyle } from "@/org/score-states";
+import { determinePaintElementStyle } from "@/org/style/style";
+import { PaintElement, PaintElementStyle, Pointing } from "@/org/style/types";
+import { atom, useAtomValue } from "jotai";
+import { RefObject, useCallback, useEffect, useMemo, useRef } from "react";
+import { kSampleElements } from "./constants";
+import { resizeCanvas } from "./util";
+import { getInitScale } from "@/org/score-preferences";
 
+// bravuraをimportするとサーバー上でPath2Dを使うことになりエラーになる
+// とりあえずこちらに定義しておく
+const UNIT = 250;
+
+const staffMapAtom = atom<Map<number, StaffStyle>>(
+  new Map([
+    [0, { clef: { type: "g" as const }, position: { x: 0, y: 0 } }],
+    // [0, { clef: { type: "g" as const }, position: { x: 50, y: 50 } }],
+  ])
+);
+const elementsAtom = atom<Map<number, MusicalElement[]>>(
+  new Map([
+    [0, kSampleElements],
+    [1, kSampleElements],
+  ])
+);
 const pointingAtom = atom<Pointing | undefined>(undefined);
-const mtxAtom = atom<DOMMatrix>(new DOMMatrix());
+// const mtxAtom = atom<DOMMatrix>(new DOMMatrix());
 export const MainCanvas = () => {
   const ref = useRef<HTMLCanvasElement>(null);
   useResizeHandler(ref);
   const staffMap = useAtomValue(staffMapAtom);
   const elements = useAtomValue(elementsAtom);
   const pointing = useAtomValue(pointingAtom);
-  const mtx = useAtomValue(mtxAtom);
-  useCallback(() => {
-    const map = new Map();
+  const mtx = useMemo(
+    () => new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]),
+    []
+  );
+  useEffect(() => {
+    const map = new Map<number, PaintElementStyle<PaintElement>[]>();
     for (const [id, staff] of staffMap.entries()) {
       const style = determinePaintElementStyle(
         elements.get(id) ?? [],
@@ -55,16 +76,9 @@ export const MainCanvas = () => {
     }
     ctx.restore();
     // renderCaret
-  }, [staffMap, elements, pointing]);
+  }, [staffMap, elements, pointing, mtx]);
 
-  return (
-    <canvas
-      id="mainCanvas"
-      width=""
-      className="absolute w-full h-full"
-      ref={ref}
-    ></canvas>
-  );
+  return <canvas id="mainCanvas" className="absolute" ref={ref}></canvas>;
 };
 
 const useResizeHandler = (ref: RefObject<HTMLCanvasElement>) => {
@@ -74,6 +88,7 @@ const useResizeHandler = (ref: RefObject<HTMLCanvasElement>) => {
     const resize = () =>
       resizeCanvas(canvas, window.innerWidth, window.innerHeight);
     window.addEventListener("resize", resize);
+    resize();
     return () => {
       window.removeEventListener("resize", resize);
     };
