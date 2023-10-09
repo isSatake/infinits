@@ -8,7 +8,7 @@ import { Duration, MusicalElement, PitchAcc } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
-import { previewHogeAtom } from "./atom";
+import { previewSetterAtom } from "./atom";
 import { usePointerHandler } from "./hooks";
 
 export const Keyboard = () => {
@@ -110,19 +110,19 @@ const getPreviewElement = (p: {
       };
 };
 
-const Whole = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const preview = useSetAtom(previewHogeAtom);
+const usePreview = (duration: Duration) => {
+  const mode = useAtomValue(noteInputModeAtom);
+  const preview = useSetAtom(previewSetterAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
-  const pointerHandlers = usePointerHandler({
+  return usePointerHandler({
     onLongDown: (ev) => {
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         elements: [
           getPreviewElement({
-            mode: noteInputMode,
+            mode,
             accidental,
-            duration: 1,
+            duration,
             dy: 0,
           }),
         ],
@@ -135,17 +135,22 @@ const Whole = () => {
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         elements: [
           getPreviewElement({
-            mode: noteInputMode,
+            mode,
             accidental,
-            duration: 1,
+            duration,
             dy,
           }),
         ],
       });
     },
   });
+};
+
+const Whole = () => {
+  const noteInputMode = useAtomValue(noteInputModeAtom);
+  const previewHandlers = usePreview(1);
   return (
-    <WhiteKey {...pointerHandlers}>
+    <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
         <div className="relative w-1/4 h-1/4 top-[15%]">
           <Image
@@ -171,159 +176,144 @@ const Whole = () => {
 
 const Half = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
+  const previewHandlers = usePreview(2);
   return (
-    <>
+    <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
-        <WhiteKey>
-          <div className="relative w-1/5 h-2/3">
-            <Image
-              src="/img/n2.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-1/5 h-2/3">
+          <Image
+            src="/img/n2.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       ) : (
-        <WhiteKey>
-          <div className="relative w-2/5 h-2/5">
-            <Image
-              src="/img/r2.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-2/5 h-2/5">
+          <Image
+            src="/img/r2.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       )}
-    </>
+    </WhiteKey>
   );
 };
 
 const Quarter = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
+  const previewHandlers = usePreview(4);
   return (
-    <>
+    <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
-        <WhiteKey>
-          <div className="relative w-1/5 h-2/3">
-            <Image
-              src="/img/n4.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-1/5 h-2/3">
+          <Image
+            src="/img/n4.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       ) : (
-        <WhiteKey>
-          <div className="relative w-2/3 h-2/3">
-            <Image
-              src="/img/r4.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-2/3 h-2/3">
+          <Image
+            src="/img/r4.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       )}
-    </>
+    </WhiteKey>
   );
 };
 
 const Eighth = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
+  const previewHandlers = usePreview(8);
   return (
-    <>
+    <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
-        <WhiteKey>
-          <div className="relative w-full h-2/3">
-            <Image
-              src={beamMode === "nobeam" ? "/img/n8.png" : "/img/beam8.svg"}
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-full h-2/3">
+          <Image
+            src={beamMode === "nobeam" ? "/img/n8.png" : "/img/beam8.svg"}
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       ) : (
-        <WhiteKey>
-          <div className="relative w-1/5 h-full">
-            <Image
-              src="/img/r8.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-1/5 h-full">
+          <Image
+            src="/img/r8.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       )}
-    </>
+    </WhiteKey>
   );
 };
 
 const Sixteenth = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
+  const previewHandlers = usePreview(16);
   return (
-    <>
+    <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
-        <WhiteKey>
-          <div className="relative w-full h-2/3">
-            <Image
-              src={beamMode === "nobeam" ? "/img/n16.png" : "/img/beam16.svg"}
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-full h-2/3">
+          <Image
+            src={beamMode === "nobeam" ? "/img/n16.png" : "/img/beam16.svg"}
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       ) : (
-        <WhiteKey>
-          <div className="relative w-1/5 h-full">
-            <Image
-              src="/img/r16.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-1/5 h-full">
+          <Image
+            src="/img/r16.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       )}
-    </>
+    </WhiteKey>
   );
 };
 
 const ThirtySecond = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
+  const previewHandlers = usePreview(32);
   return (
-    <>
+    <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
-        <WhiteKey>
-          <div className="relative w-full h-2/3">
-            <Image
-              src={beamMode === "nobeam" ? "/img/n32.png" : "/img/beam32.svg"}
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-full h-2/3">
+          <Image
+            src={beamMode === "nobeam" ? "/img/n32.png" : "/img/beam32.svg"}
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       ) : (
-        <WhiteKey>
-          <div className="relative w-1/5 h-full">
-            <Image
-              src="/img/r32.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-1/5 h-full">
+          <Image
+            src="/img/r32.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       )}
-    </>
+    </WhiteKey>
   );
 };
 

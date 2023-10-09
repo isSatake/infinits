@@ -10,7 +10,8 @@ export type PreviewState = {
   elements: MusicalElement[];
 };
 export const previewAtom = atom<PreviewState | undefined>(undefined);
-export const previewHogeAtom = atom(
+// canvasCenter以外の値をPATCHできるatom
+export const previewSetterAtom = atom(
   (get) => get(previewAtom),
   (
     get,
