@@ -1,7 +1,14 @@
-import { BeamModes, kAccidentalModes } from "@/org/input-modes";
+import { pitchByDistance } from "@/org/callbacks/note-input";
+import {
+  AccidentalModes,
+  BeamModes,
+  kAccidentalModes,
+} from "@/org/input-modes";
+import { Duration, MusicalElement, PitchAcc } from "@/org/notation/types";
+import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
-import { previewAtom } from "./atom";
+import { previewHogeAtom } from "./atom";
 import { usePointerHandler } from "./hooks";
 
 export const Keyboard = () => {
@@ -79,18 +86,62 @@ const NoteRestToggle = () => {
   );
 };
 
+const getPreviewElement = (p: {
+  mode: "note" | "rest";
+  accidental: AccidentalModes;
+  duration: Duration;
+  dy: number;
+}): MusicalElement => {
+  const { mode, accidental, duration, dy } = p;
+  return mode === "note"
+    ? {
+        type: "note",
+        pitches: [
+          {
+            pitch: pitchByDistance(getPreviewScale(), dy, 6),
+            accidental,
+          },
+        ],
+        duration,
+      }
+    : {
+        type: "rest",
+        duration,
+      };
+};
+
 const Whole = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
-  const preview = useSetAtom(previewAtom);
+  const preview = useSetAtom(previewHogeAtom);
+  const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const pointerHandlers = usePointerHandler({
     onLongDown: (ev) => {
-      console.log("whole", "onLongDown");
       preview({
-        center: { x: ev.clientX, y: ev.clientY },
+        canvasCenter: { x: ev.clientX, y: ev.clientY },
+        elements: [
+          getPreviewElement({
+            mode: noteInputMode,
+            accidental,
+            duration: 1,
+            dy: 0,
+          }),
+        ],
       });
     },
-    onUp: () => {
-      preview(undefined);
+    onUp: () => preview(undefined),
+    onDrag: (ev, down) => {
+      const dy = down.clientY - ev.clientY;
+      preview({
+        canvasCenter: { x: ev.clientX, y: ev.clientY },
+        elements: [
+          getPreviewElement({
+            mode: noteInputMode,
+            accidental,
+            duration: 1,
+            dy,
+          }),
+        ],
+      });
     },
   });
   return (

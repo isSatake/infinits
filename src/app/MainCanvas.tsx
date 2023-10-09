@@ -56,9 +56,9 @@ export const MainCanvas = () => {
     const ctx = ref.current?.getContext("2d")!;
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
-    const { a, b, c, d, e, f } = mtx;
     // pointer handlerでdpr考慮しなくて済むように
     ctx.scale(devicePixelRatio, devicePixelRatio);
+    const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
     for (const [id, staff] of staffMap.entries()) {
       ctx.save();

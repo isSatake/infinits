@@ -3,7 +3,7 @@ export const kDefaultCaretWidth = 50;
 const initScale = 0.04;
 export const getInitScale = () => initScale;
 
-const previewScale = 0.08;
+const previewScale = 0.04;
 export const getPreviewScale = () => previewScale;
 
 const staffOrigin = { x: 250, y: 2000 };
