@@ -1,9 +1,8 @@
-import {
-  BeamModes,
-  kAccidentalModes,
-} from "@/org/input-modes";
-import { atom, useAtom, useAtomValue } from "jotai";
+import { BeamModes, kAccidentalModes } from "@/org/input-modes";
+import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
+import { previewAtom } from "./atom";
+import { usePointerHandler } from "./hooks";
 
 export const Keyboard = () => {
   return (
@@ -82,32 +81,40 @@ const NoteRestToggle = () => {
 
 const Whole = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
+  const preview = useSetAtom(previewAtom);
+  const pointerHandlers = usePointerHandler({
+    onLongDown: (ev) => {
+      console.log("whole", "onLongDown");
+      preview({
+        center: { x: ev.clientX, y: ev.clientY },
+      });
+    },
+    onUp: () => {
+      preview(undefined);
+    },
+  });
   return (
-    <>
+    <WhiteKey {...pointerHandlers}>
       {noteInputMode === "note" ? (
-        <WhiteKey>
-          <div className="relative w-1/4 h-1/4 top-[15%]">
-            <Image
-              src="/img/n1.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-1/4 h-1/4 top-[15%]">
+          <Image
+            src="/img/n1.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       ) : (
-        <WhiteKey>
-          <div className="relative w-2/5 h-2/5">
-            <Image
-              src="/img/r1.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </WhiteKey>
+        <div className="relative w-2/5 h-2/5">
+          <Image
+            src="/img/r1.png"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
       )}
-    </>
+    </WhiteKey>
   );
 };
 
@@ -521,9 +528,12 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const WhiteKey = ({ children }: { children?: React.ReactNode }) => {
+const WhiteKey = ({ children, ...rest }: React.ComponentProps<"div">) => {
   return (
-    <div className="flex items-center justify-center bg-white active:bg-[#b4b8c1] rounded-[4px] shadow-[0_1px_#8d9095]">
+    <div
+      className="flex items-center justify-center bg-white active:bg-[#b4b8c1] rounded-[4px] shadow-[0_1px_#8d9095]"
+      {...rest}
+    >
       {children}
     </div>
   );
