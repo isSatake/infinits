@@ -1,10 +1,13 @@
 import { UNIT } from "@/org/font/bravura";
 import { Point } from "@/org/geometry";
 import { MusicalElement } from "@/org/notation/types";
-import { paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
+import { paintCaret, paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
 import { StaffStyle } from "@/org/score-states";
-import { determinePaintElementStyle } from "@/org/style/style";
+import {
+  determineCaretStyle,
+  determinePaintElementStyle,
+} from "@/org/style/style";
 import { PaintElement, PaintElementStyle, Pointing } from "@/org/style/types";
 import { atom, useAtom, useAtomValue } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,6 +17,7 @@ import {
   usePointerHandler,
   useResizeHandler,
 } from "./hooks";
+import { focusAtom } from "./atom";
 
 let staffId = 0;
 
@@ -34,6 +38,7 @@ export const MainCanvas = () => {
   const elements = useAtomValue(elementsAtom);
   const pointing = useAtomValue(pointingAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
+  const focus = useAtomValue(focusAtom);
   useEffect(() => {
     setMtx(new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]));
   }, []);
@@ -75,9 +80,19 @@ export const MainCanvas = () => {
       ctx.restore();
     }
     ctx.restore();
+    // caret
+    ctx.save();
+    const style = map.get(focus.staffId)?.[focus.idx];
+    const caret = determineCaretStyle(style?.caretOption, style?.width, )
+    paintCaret({
+      ctx,
+      scale: 1,
+      caret: getCurrentCaret(id),
+    });
+    ctx.restore();
     console.log("render", "end");
     // renderCaret
-  }, [staffMap, elements, pointing, mtx]);
+  }, [staffMap, elements, pointing, focus, mtx]);
 
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);

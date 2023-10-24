@@ -39,7 +39,6 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
       preview.staff
     );
     const ctx = ref.current?.getContext("2d")!;
-    // 描画
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
     // pointer handlerでdpr考慮しなくて済むように

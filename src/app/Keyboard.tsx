@@ -8,7 +8,7 @@ import { Duration, MusicalElement, PitchAcc } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
-import { previewSetterAtom } from "./atom";
+import { focusAtom, previewSetterAtom } from "./atom";
 import { usePointerHandler } from "./hooks";
 
 export const Keyboard = () => {
@@ -330,31 +330,37 @@ const Backspace = () => (
   </GrayKey>
 );
 
-const ArrowLeft = () => (
-  <GrayKey>
-    <div className="relative w-2/5 h-2/5">
-      <Image
-        src="/img/west_black_24dp.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
-  </GrayKey>
-);
+const ArrowLeft = () => {
+  const [focus, setFocus] = useAtom(focusAtom);
+  return (
+    <GrayKey onClick={() => setFocus({ ...focus, idx: focus.idx - 1 })}>
+      <div className="relative w-2/5 h-2/5">
+        <Image
+          src="/img/west_black_24dp.svg"
+          fill={true}
+          alt="rest mode"
+          className="object-contain"
+        />
+      </div>
+    </GrayKey>
+  );
+};
 
-const ArrowRight = () => (
-  <GrayKey>
-    <div className="relative w-2/5 h-2/5">
-      <Image
-        src="/img/east_black_24dp.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
-  </GrayKey>
-);
+const ArrowRight = () => {
+  const [focus, setFocus] = useAtom(focusAtom);
+  return (
+    <GrayKey onClick={() => setFocus({ ...focus, idx: focus.idx + 1 })}>
+      <div className="relative w-2/5 h-2/5">
+        <Image
+          src="/img/east_black_24dp.svg"
+          fill={true}
+          alt="rest mode"
+          className="object-contain"
+        />
+      </div>
+    </GrayKey>
+  );
+};
 
 const beamModeAtom = atom<BeamModes>("nobeam");
 

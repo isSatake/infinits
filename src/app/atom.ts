@@ -34,3 +34,8 @@ export const previewSetterAtom = atom(
     });
   }
 );
+
+export const focusAtom = atom<{ staffId: number; idx: number }>({
+  staffId: 0,
+  idx: 0,
+});
