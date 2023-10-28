@@ -1,5 +1,5 @@
 import { UNIT } from "@/org/font/bravura";
-import { Point } from "@/org/geometry";
+import { BBox, Point, offsetBBox } from "@/org/geometry";
 import { MusicalElement } from "@/org/notation/types";
 import { paintCaret, paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
@@ -8,7 +8,12 @@ import {
   determineCaretStyle,
   determinePaintElementStyle,
 } from "@/org/style/style";
-import { PaintElement, PaintElementStyle, Pointing } from "@/org/style/types";
+import {
+  CaretStyle,
+  PaintElement,
+  PaintElementStyle,
+  Pointing,
+} from "@/org/style/types";
 import { atom, useAtom, useAtomValue } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { kSampleElements } from "./constants";
@@ -20,22 +25,30 @@ import {
 import { focusAtom } from "./atom";
 
 let staffId = 0;
-
+// staff id -> staff style
 const staffMapAtom = atom<Map<number, StaffStyle>>(
   new Map([
     [staffId++, { clef: { type: "g" as const }, position: { x: 0, y: 0 } }],
   ])
 );
+// staff id -> elements
 const elementsAtom = atom<Map<number, MusicalElement[]>>(
   new Map([[0, kSampleElements]])
 );
+// staff id -> caret styles
+const caretMapAtom = atom<Map<number, CaretStyle[]>>(new Map());
+// staff id -> element bboxes
+const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
 const pointingAtom = atom<Pointing | undefined>(undefined);
 const mtxAtom = atom<DOMMatrix | undefined>(undefined);
+
 export const MainCanvas = () => {
   const ref = useRef<HTMLCanvasElement>(null);
   useResizeHandler(ref);
   const [staffMap, setStaffMap] = useAtom(staffMapAtom);
   const elements = useAtomValue(elementsAtom);
+  const [caretMap, setCaretMap] = useAtom(caretMapAtom);
+  const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
   const focus = useAtomValue(focusAtom);
@@ -47,17 +60,38 @@ export const MainCanvas = () => {
     if (!mtx) {
       return;
     }
+    // staff id -> style
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
     for (const [id, staff] of staffMap.entries()) {
-      const style = determinePaintElementStyle(
+      const styles = determinePaintElementStyle(
         elements.get(id) ?? [],
         UNIT,
         staff,
         pointing
       );
-      map.set(id, style);
+      map.set(id, styles);
+      let cursor = 0;
+      for (const style of styles) {
+        const {
+          width,
+          element,
+          caretOption,
+          bbox: _bbox,
+          index: elIdx,
+        } = style;
+        const b = { bbox: offsetBBox(_bbox, { x: cursor }), elIdx };
+        bboxMap.get(id)?.push(b) ?? bboxMap.set(id, [b]);
+        setBBoxMap(new Map(bboxMap));
+        if (caretOption) {
+          const caret = determineCaretStyle(caretOption, width, cursor);
+          caretMap.get(id)?.push(caret) ?? caretMap.set(id, [caret]);
+          setCaretMap(new Map(caretMap));
+        }
+        if (element.type !== "beam" && element.type !== "tie") {
+          cursor += width;
+        }
+      }
     }
-    // renderStaff
     const ctx = ref.current?.getContext("2d")!;
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
@@ -65,6 +99,7 @@ export const MainCanvas = () => {
     ctx.scale(devicePixelRatio, devicePixelRatio);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
+    // renderStaff
     for (const [id, staff] of staffMap.entries()) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
@@ -79,19 +114,16 @@ export const MainCanvas = () => {
       }
       ctx.restore();
     }
-    ctx.restore();
-    // caret
-    ctx.save();
-    const style = map.get(focus.staffId)?.[focus.idx];
-    const caret = determineCaretStyle(style?.caretOption, style?.width, )
-    paintCaret({
-      ctx,
-      scale: 1,
-      caret: getCurrentCaret(id),
-    });
+    const currentStaff = staffMap.get(focus.staffId);
+    const caret = caretMap.get(focus.staffId)?.at(focus.idx);
+    if (currentStaff && caret) {
+      ctx.save();
+      ctx.translate(currentStaff.position.x, currentStaff.position.y);
+      paintCaret({ ctx, scale: 1, caret });
+      ctx.restore();
+    }
     ctx.restore();
     console.log("render", "end");
-    // renderCaret
   }, [staffMap, elements, pointing, focus, mtx]);
 
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
