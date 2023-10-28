@@ -2,14 +2,23 @@ import { pitchByDistance } from "@/org/callbacks/note-input";
 import {
   AccidentalModes,
   BeamModes,
+  TieModes,
   kAccidentalModes,
 } from "@/org/input-modes";
 import { Duration, MusicalElement, PitchAcc } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
-import { focusAtom, previewSetterAtom } from "./atom";
+import {
+  caretAtom,
+  caretStyleAtom,
+  elementsAtom,
+  previewSetterAtom,
+} from "./atom";
 import { usePointerHandler } from "./hooks";
+import { useMemo } from "react";
+import { sortPitches } from "@/org/pitch";
+import { inputMusicalElement } from "@/org/score-updater";
 
 export const Keyboard = () => {
   return (
@@ -86,22 +95,16 @@ const NoteRestToggle = () => {
   );
 };
 
-const getPreviewElement = (p: {
+const getNewElement = (p: {
   mode: "note" | "rest";
-  accidental: AccidentalModes;
   duration: Duration;
-  dy: number;
+  pitch: PitchAcc;
 }): MusicalElement => {
-  const { mode, accidental, duration, dy } = p;
+  const { mode, pitch, duration } = p;
   return mode === "note"
     ? {
         type: "note",
-        pitches: [
-          {
-            pitch: pitchByDistance(getPreviewScale(), dy, 6),
-            accidental,
-          },
-        ],
+        pitches: [pitch],
         duration,
       }
     : {
@@ -110,37 +113,96 @@ const getPreviewElement = (p: {
       };
 };
 
+const tieAtom = atom<TieModes>(undefined);
+
 const usePreview = (duration: Duration) => {
-  const mode = useAtomValue(noteInputModeAtom);
+  // main elements
+  const elements = useAtomValue(elementsAtom);
+  // tie mode
+  const tieMode = useAtomValue(tieAtom);
+  // caret index
+  const caret = useAtomValue(caretAtom);
+  console.log("caret", caret);
+  const inputMode = useAtomValue(noteInputModeAtom);
+  const beamMode = useAtomValue(beamModeAtom);
   const preview = useSetAtom(previewSetterAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
+
+  const baseElements = useMemo(
+    () => [...(elements.get(caret.staffId) ?? [])],
+    [elements, caret.staffId]
+  );
+
   return usePointerHandler({
     onLongDown: (ev) => {
+      const newPitch = {
+        pitch: pitchByDistance(getPreviewScale(), 0, 6),
+        accidental,
+      };
+      const newElement = getNewElement({
+        mode: inputMode,
+        pitch: newPitch,
+        duration,
+      });
+      // タイの整合を取る
+      if (
+        newElement.type === "note" &&
+        !!tieMode &&
+        caret.idx > 0 &&
+        caret.idx % 2 === 0
+      ) {
+        const prevEl = baseElements[caret.idx / 2 - 1];
+        if (
+          prevEl.type === "note" &&
+          prevEl.pitches[0].pitch === newPitch.pitch &&
+          prevEl.pitches[0].accidental === newPitch.accidental
+        ) {
+          prevEl.tie = "start";
+          newElement.tie = "stop";
+        }
+      }
+      // 和音をソート
+      if (caret.idx > 0 && caret.idx % 2 !== 0) {
+        const idx = caret.idx === 1 ? 0 : (caret.idx - 1) / 2;
+        const currentEl = baseElements[idx];
+        if (
+          newElement.type === "note" &&
+          currentEl.type === "note" &&
+          newElement.duration === currentEl.duration
+        ) {
+          newElement.pitches = sortPitches([
+            ...currentEl.pitches,
+            ...newElement.pitches,
+          ]);
+        }
+      }
+      const { elements, insertedIndex } = inputMusicalElement({
+        caretIndex: caret.idx,
+        elements: baseElements,
+        newElement,
+        beamMode,
+      });
+      //🔥
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
-        elements: [
-          getPreviewElement({
-            mode,
-            accidental,
-            duration,
-            dy: 0,
-          }),
-        ],
+        elements,
       });
     },
     onUp: () => preview(undefined),
     onDrag: (ev, down) => {
       const dy = down.clientY - ev.clientY;
+      const newPitch = {
+        pitch: pitchByDistance(getPreviewScale(), dy, 6),
+        accidental,
+      };
+      const newElement = getNewElement({
+        mode: inputMode,
+        pitch: newPitch,
+        duration,
+      });
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
-        elements: [
-          getPreviewElement({
-            mode,
-            accidental,
-            duration,
-            dy,
-          }),
-        ],
+        elements: [newElement],
       });
     },
   });
@@ -331,9 +393,15 @@ const Backspace = () => (
 );
 
 const ArrowLeft = () => {
-  const [focus, setFocus] = useAtom(focusAtom);
+  const [caret, setCaret] = useAtom(caretAtom);
   return (
-    <GrayKey onClick={() => setFocus({ ...focus, idx: focus.idx - 1 })}>
+    <GrayKey
+      onClick={() => {
+        // TODO applyBeamForLastEdited
+        const idx = Math.max(caret.idx - 1, 0);
+        setCaret({ ...caret, idx });
+      }}
+    >
       <div className="relative w-2/5 h-2/5">
         <Image
           src="/img/west_black_24dp.svg"
@@ -347,9 +415,16 @@ const ArrowLeft = () => {
 };
 
 const ArrowRight = () => {
-  const [focus, setFocus] = useAtom(focusAtom);
+  const [caret, setCaret] = useAtom(caretAtom);
+  const carets = useAtomValue(caretStyleAtom);
   return (
-    <GrayKey onClick={() => setFocus({ ...focus, idx: focus.idx + 1 })}>
+    <GrayKey
+      onClick={() => {
+        // TODO applyBeamForLastEdited
+        const idx = Math.min(caret.idx + 1, carets.length - 1);
+        setCaret({ ...caret, idx });
+      }}
+    >
       <div className="relative w-2/5 h-2/5">
         <Image
           src="/img/east_black_24dp.svg"

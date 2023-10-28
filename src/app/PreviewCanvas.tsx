@@ -31,7 +31,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     setMtx(new DOMMatrix([1, 0, 0, 1, 0, topOfStaff]).scale(getPreviewScale()));
   }, []);
   useEffect(() => {
-    console.log("preview", "start")
+    console.log("preview", "start");
     if (!preview.staff || !preview.elements || !mtx) return;
     const styles = determinePaintElementStyle(
       preview.elements,
@@ -54,8 +54,8 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
       }
     }
     ctx.restore();
-    console.log("preview", "end")
-  }, [preview.staff, preview.elements, mtx]);
+    console.log("preview", "end");
+  }, [preview, mtx]);
   return (
     <canvas
       id="previewCanvas"

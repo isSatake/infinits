@@ -1,6 +1,5 @@
 import { UNIT } from "@/org/font/bravura";
 import { BBox, Point, offsetBBox } from "@/org/geometry";
-import { MusicalElement } from "@/org/notation/types";
 import { paintCaret, paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
 import { StaffStyle } from "@/org/score-states";
@@ -16,51 +15,53 @@ import {
 } from "@/org/style/types";
 import { atom, useAtom, useAtomValue } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { kSampleElements } from "./constants";
+import { caretAtom, caretStyleAtom, elementsAtom } from "./atom";
 import {
   kDoubleClickThresholdMs,
   usePointerHandler,
   useResizeHandler,
 } from "./hooks";
-import { focusAtom } from "./atom";
 
-let staffId = 0;
 // staff id -> staff style
+let staffId = 0;
 const staffMapAtom = atom<Map<number, StaffStyle>>(
   new Map([
     [staffId++, { clef: { type: "g" as const }, position: { x: 0, y: 0 } }],
   ])
 );
-// staff id -> elements
-const elementsAtom = atom<Map<number, MusicalElement[]>>(
-  new Map([[0, kSampleElements]])
+
+// staff id -> element style
+const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
+  new Map()
 );
-// staff id -> caret styles
-const caretMapAtom = atom<Map<number, CaretStyle[]>>(new Map());
+
 // staff id -> element bboxes
 const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
+
 const pointingAtom = atom<Pointing | undefined>(undefined);
+
 const mtxAtom = atom<DOMMatrix | undefined>(undefined);
 
 export const MainCanvas = () => {
   const ref = useRef<HTMLCanvasElement>(null);
   useResizeHandler(ref);
-  const [staffMap, setStaffMap] = useAtom(staffMapAtom);
+  const staffMap = useAtomValue(staffMapAtom);
   const elements = useAtomValue(elementsAtom);
-  const [caretMap, setCaretMap] = useAtom(caretMapAtom);
+  const [styleMap, setStyleMap] = useAtom(elementMapAtom);
+  const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
-  const focus = useAtomValue(focusAtom);
+  const focus = useAtomValue(caretAtom);
+
   useEffect(() => {
+    // useEffectの外でDOMMatrixを解決できない
     setMtx(new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]));
   }, []);
+
+  // element style
   useEffect(() => {
     console.log("render", "start");
-    if (!mtx) {
-      return;
-    }
-    // staff id -> style
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
     for (const [id, staff] of staffMap.entries()) {
       const styles = determinePaintElementStyle(
@@ -70,27 +71,43 @@ export const MainCanvas = () => {
         pointing
       );
       map.set(id, styles);
-      let cursor = 0;
-      for (const style of styles) {
-        const {
-          width,
-          element,
-          caretOption,
-          bbox: _bbox,
-          index: elIdx,
-        } = style;
-        const b = { bbox: offsetBBox(_bbox, { x: cursor }), elIdx };
-        bboxMap.get(id)?.push(b) ?? bboxMap.set(id, [b]);
-        setBBoxMap(new Map(bboxMap));
-        if (caretOption) {
-          const caret = determineCaretStyle(caretOption, width, cursor);
-          caretMap.get(id)?.push(caret) ?? caretMap.set(id, [caret]);
-          setCaretMap(new Map(caretMap));
-        }
-        if (element.type !== "beam" && element.type !== "tie") {
-          cursor += width;
-        }
+    }
+    setStyleMap(map);
+  }, [staffMap, elements, pointing]);
+
+  // caret style
+  useEffect(() => {
+    const id = focus.staffId;
+    const styles = styleMap.get(id);
+    if (!styles) {
+      return;
+    }
+    const caretStyles: CaretStyle[] = [];
+    let cursor = 0;
+    for (const style of styles) {
+      const { width, element, caretOption, bbox: _bbox, index: elIdx } = style;
+      const b = { bbox: offsetBBox(_bbox, { x: cursor }), elIdx };
+      bboxMap.get(id)?.push(b) ?? bboxMap.set(id, [b]);
+      setBBoxMap(new Map(bboxMap));
+      if (caretOption) {
+        const caret = determineCaretStyle(caretOption, width, cursor);
+        caretStyles.push(caret);
       }
+      if (element.type !== "beam" && element.type !== "tie") {
+        cursor += width;
+      }
+    }
+    setCaretStyle(caretStyles);
+  }, [styleMap, focus]);
+
+  // paint
+  useEffect(() => {
+    if (!mtx) {
+      return;
+    }
+    const styles = styleMap.get(focus.staffId);
+    if (!styles) {
+      return;
     }
     const ctx = ref.current?.getContext("2d")!;
     ctx.save();
@@ -99,13 +116,11 @@ export const MainCanvas = () => {
     ctx.scale(devicePixelRatio, devicePixelRatio);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    // renderStaff
-    for (const [id, staff] of staffMap.entries()) {
+    for (const [_, staff] of staffMap.entries()) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
       paintStaff(ctx, 0, 0, UNIT * 100, 1);
-      // paintStyle
-      for (const style of map.get(id) ?? []) {
+      for (const style of styles) {
         paintStyle(ctx, style);
         // paintBBox(ctx, style.bbox); // debug
         if (style.element.type !== "beam" && style.element.type !== "tie") {
@@ -115,7 +130,7 @@ export const MainCanvas = () => {
       ctx.restore();
     }
     const currentStaff = staffMap.get(focus.staffId);
-    const caret = caretMap.get(focus.staffId)?.at(focus.idx);
+    const caret = caretStyle.at(focus.idx);
     if (currentStaff && caret) {
       ctx.save();
       ctx.translate(currentStaff.position.x, currentStaff.position.y);
@@ -124,8 +139,21 @@ export const MainCanvas = () => {
     }
     ctx.restore();
     console.log("render", "end");
-  }, [staffMap, elements, pointing, focus, mtx]);
+  }, [mtx, staffMap, styleMap, caretStyle, focus]);
 
+  return (
+    <canvas
+      id="mainCanvas"
+      className="absolute"
+      ref={ref}
+      {...useMainPointerHandler()}
+    ></canvas>
+  );
+};
+
+const useMainPointerHandler = () => {
+  const [mtx, setMtx] = useAtom(mtxAtom);
+  const [staffMap, setStaffMap] = useAtom(staffMapAtom);
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
@@ -196,17 +224,10 @@ export const MainCanvas = () => {
     [staffMap, mtx]
   );
 
-  return (
-    <canvas
-      id="mainCanvas"
-      className="absolute"
-      ref={ref}
-      {...usePointerHandler({
-        onDown,
-        onDrag,
-        onUp,
-        onDoubleClick,
-      })}
-    ></canvas>
-  );
+  return usePointerHandler({
+    onDown,
+    onDrag,
+    onUp,
+    onDoubleClick,
+  });
 };
