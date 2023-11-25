@@ -16,7 +16,7 @@ import {
   previewSetterAtom,
 } from "./atom";
 import { usePointerHandler } from "./hooks";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
 
@@ -115,38 +115,16 @@ const getNewElement = (p: {
 
 const tieAtom = atom<TieModes>(undefined);
 
-const usePreview = (duration: Duration) => {
-  // main elements
-  const elements = useAtomValue(elementsAtom);
-  // tie mode
+// タイの整合を取る
+const useTie: () => (newEl: MusicalElement) => MusicalElement = () => {
   const tieMode = useAtomValue(tieAtom);
-  // caret index
   const caret = useAtomValue(caretAtom);
-  console.log("caret", caret);
-  const inputMode = useAtomValue(noteInputModeAtom);
-  const beamMode = useAtomValue(beamModeAtom);
-  const preview = useSetAtom(previewSetterAtom);
-  const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
-
-  const baseElements = useMemo(
-    () => [...(elements.get(caret.staffId) ?? [])],
-    [elements, caret.staffId]
-  );
-
-  return usePointerHandler({
-    onLongDown: (ev) => {
-      const newPitch = {
-        pitch: pitchByDistance(getPreviewScale(), 0, 6),
-        accidental,
-      };
-      const newElement = getNewElement({
-        mode: inputMode,
-        pitch: newPitch,
-        duration,
-      });
-      // タイの整合を取る
+  const baseElements = useBaseElements();
+  return useCallback(
+    (newEl: MusicalElement) => {
+      const ret = { ...newEl };
       if (
-        newElement.type === "note" &&
+        ret.type === "note" &&
         !!tieMode &&
         caret.idx > 0 &&
         caret.idx % 2 === 0
@@ -154,35 +132,99 @@ const usePreview = (duration: Duration) => {
         const prevEl = baseElements[caret.idx / 2 - 1];
         if (
           prevEl.type === "note" &&
-          prevEl.pitches[0].pitch === newPitch.pitch &&
-          prevEl.pitches[0].accidental === newPitch.accidental
+          prevEl.pitches[0].pitch === ret.pitches[0].pitch &&
+          prevEl.pitches[0].accidental === ret.pitches[0].accidental
         ) {
           prevEl.tie = "start";
-          newElement.tie = "stop";
+          ret.tie = "stop";
         }
       }
-      // 和音をソート
+      return ret;
+    },
+    [tieMode, caret.idx, baseElements]
+  );
+};
+
+// 和音をソート
+const useSortChord: () => (newEl: MusicalElement) => MusicalElement = () => {
+  const caret = useAtomValue(caretAtom);
+  const baseElements = useBaseElements();
+  return useCallback(
+    (newEl: MusicalElement) => {
+      const ret = { ...newEl };
       if (caret.idx > 0 && caret.idx % 2 !== 0) {
         const idx = caret.idx === 1 ? 0 : (caret.idx - 1) / 2;
         const currentEl = baseElements[idx];
         if (
-          newElement.type === "note" &&
+          ret.type === "note" &&
           currentEl.type === "note" &&
-          newElement.duration === currentEl.duration
+          ret.duration === currentEl.duration
         ) {
-          newElement.pitches = sortPitches([
-            ...currentEl.pitches,
-            ...newElement.pitches,
-          ]);
+          ret.pitches = sortPitches([...currentEl.pitches, ...ret.pitches]);
         }
       }
-      const { elements, insertedIndex } = inputMusicalElement({
+      return ret;
+    },
+    [caret.idx, baseElements]
+  );
+};
+
+const useBaseElements = () => {
+  const elements = useAtomValue(elementsAtom);
+  const caret = useAtomValue(caretAtom);
+  return useMemo(
+    () => [...(elements.get(caret.staffId) ?? [])],
+    [elements, caret.staffId]
+  );
+};
+
+const usePreviewElements: (
+  duration: Duration
+) => (newPitch: PitchAcc) => MusicalElement[] | undefined = (
+  duration: Duration
+) => {
+  const caret = useAtomValue(caretAtom);
+  const baseElements = useBaseElements();
+  const inputMode = useAtomValue(noteInputModeAtom);
+  const beamMode = useAtomValue(beamModeAtom);
+  const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
+  const tietie = useTie();
+  const sortChord = useSortChord();
+  return useCallback(
+    (newPitch: PitchAcc) => {
+      const _ne = getNewElement({
+        mode: inputMode,
+        pitch: newPitch,
+        duration,
+      });
+      const ne = tietie(_ne);
+      const newElement = sortChord(ne);
+      const { elements } = inputMusicalElement({
         caretIndex: caret.idx,
         elements: baseElements,
         newElement,
         beamMode,
       });
-      //🔥
+      return elements;
+    },
+    [caret.idx, baseElements, inputMode, beamMode, duration, accidental]
+  );
+};
+
+const usePreviewHandlers = (duration: Duration) => {
+  const caret = useAtomValue(caretAtom);
+  console.log("caret", caret);
+  const preview = useSetAtom(previewSetterAtom);
+  const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
+  const genPreviewElements = usePreviewElements(duration);
+
+  return usePointerHandler({
+    onLongDown: (ev) => {
+      const newPitch = {
+        pitch: pitchByDistance(getPreviewScale(), 0, 6),
+        accidental,
+      };
+      const elements = genPreviewElements(newPitch);
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         elements,
@@ -195,14 +237,10 @@ const usePreview = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const newElement = getNewElement({
-        mode: inputMode,
-        pitch: newPitch,
-        duration,
-      });
+      const elements = genPreviewElements(newPitch);
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
-        elements: [newElement],
+        elements,
       });
     },
   });
@@ -210,7 +248,7 @@ const usePreview = (duration: Duration) => {
 
 const Whole = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreview(1);
+  const previewHandlers = usePreviewHandlers(1);
   return (
     <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
@@ -238,7 +276,7 @@ const Whole = () => {
 
 const Half = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreview(2);
+  const previewHandlers = usePreviewHandlers(2);
   return (
     <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
@@ -266,7 +304,7 @@ const Half = () => {
 
 const Quarter = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreview(4);
+  const previewHandlers = usePreviewHandlers(4);
   return (
     <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
@@ -295,7 +333,7 @@ const Quarter = () => {
 const Eighth = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreview(8);
+  const previewHandlers = usePreviewHandlers(8);
   return (
     <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
@@ -324,7 +362,7 @@ const Eighth = () => {
 const Sixteenth = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreview(16);
+  const previewHandlers = usePreviewHandlers(16);
   return (
     <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
@@ -353,7 +391,7 @@ const Sixteenth = () => {
 const ThirtySecond = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreview(32);
+  const previewHandlers = usePreviewHandlers(32);
   return (
     <WhiteKey {...previewHandlers}>
       {noteInputMode === "note" ? (
@@ -682,6 +720,7 @@ const Footer = ({ children }: { children: React.ReactNode }) => {
   return <div className="flex w-full h-[15px] bottom-0">{children}</div>;
 };
 
+// タブレット用
 const Handle = () => {
   return (
     <div className="mt-[18px] mr-auto mb-0 ml-auto bg-[#aaa] w-[40px] h-[5px] rounded-[2px]"></div>
