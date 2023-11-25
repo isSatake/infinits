@@ -13,6 +13,7 @@ import {
   caretAtom,
   caretStyleAtom,
   elementsAtom,
+  lastEditedAtom,
   previewSetterAtom,
 } from "./atom";
 import { usePointerHandler } from "./hooks";
@@ -178,11 +179,11 @@ const useBaseElements = () => {
   );
 };
 
-const usePreviewElements: (
-  duration: Duration
-) => (newPitch: PitchAcc) => MusicalElement[] | undefined = (
-  duration: Duration
-) => {
+const useInputElements: (duration: Duration) => (newPitch: PitchAcc) => {
+  elements: MusicalElement[];
+  insertedIndex: number;
+  caretAdvance: number;
+} = (duration: Duration) => {
   const caret = useAtomValue(caretAtom);
   const baseElements = useBaseElements();
   const inputMode = useAtomValue(noteInputModeAtom);
@@ -199,24 +200,24 @@ const usePreviewElements: (
       });
       const ne = tietie(_ne);
       const newElement = sortChord(ne);
-      const { elements } = inputMusicalElement({
+      return inputMusicalElement({
         caretIndex: caret.idx,
         elements: baseElements,
         newElement,
         beamMode,
       });
-      return elements;
     },
     [caret.idx, baseElements, inputMode, beamMode, duration, accidental]
   );
 };
 
 const usePreviewHandlers = (duration: Duration) => {
-  const caret = useAtomValue(caretAtom);
-  console.log("caret", caret);
   const preview = useSetAtom(previewSetterAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
-  const genPreviewElements = usePreviewElements(duration);
+  const genPreviewElements = useInputElements(duration);
+  const [caret, setCaret] = useAtom(caretAtom);
+  const [lastEdited, setLastEdited] = useAtom(lastEditedAtom);
+  const [elMap, setElements] = useAtom(elementsAtom);
 
   return usePointerHandler({
     onLongDown: (ev) => {
@@ -224,20 +225,32 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), 0, 6),
         accidental,
       };
-      const elements = genPreviewElements(newPitch);
+      const { elements } = genPreviewElements(newPitch);
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         elements,
       });
     },
-    onUp: () => preview(undefined),
+    onUp: (ev, down) => {
+      preview(undefined);
+      const dy = down.clientY - ev.clientY;
+      const newPitch = {
+        pitch: pitchByDistance(getPreviewScale(), dy, 6),
+        accidental,
+      };
+      const { elements, insertedIndex, caretAdvance } =
+        genPreviewElements(newPitch);
+      setLastEdited(new Map(lastEdited).set(caret.staffId, insertedIndex));
+      setCaret({ ...caret, idx: caret.idx + caretAdvance });
+      setElements(new Map(elMap).set(caret.staffId, elements));
+    },
     onDrag: (ev, down) => {
       const dy = down.clientY - ev.clientY;
       const newPitch = {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const elements = genPreviewElements(newPitch);
+      const { elements } = genPreviewElements(newPitch);
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         elements,
