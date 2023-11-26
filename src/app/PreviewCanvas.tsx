@@ -38,6 +38,18 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
       UNIT,
       preview.staff
     );
+    const elIdxToX = new Map<number, number>();
+    let cursor = 0;
+    for (const style of styles) {
+      const { width, element, index } = style;
+      console.log("style", style);
+      if (index !== undefined) {
+        elIdxToX.set(index, cursor + width / 2);
+      }
+      if (element.type !== "beam" && element.type !== "tie") {
+        cursor += width;
+      }
+    }
     const ctx = ref.current?.getContext("2d")!;
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
@@ -46,6 +58,9 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
     paintStaff(ctx, 0, 0, UNIT * 100, 1);
+    // 入力中Elementをセンタリング
+    const centerX = elIdxToX.get(preview.insertedIndex)!;
+    ctx.translate(cssWidth / 2 / a - centerX, 0);
     for (const style of styles) {
       paintStyle(ctx, style);
       // paintBBox(ctx, style.bbox); // debug

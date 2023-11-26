@@ -10,6 +10,7 @@ export type PreviewState = {
   canvasCenter: Point;
   staff: StaffStyle;
   elements: MusicalElement[];
+  insertedIndex: number;
 };
 export const previewAtom = atom<PreviewState | undefined>(undefined);
 // canvasCenter以外の値をPATCHできるatom
@@ -33,6 +34,8 @@ export const previewSetterAtom = atom(
           position: { x: 0, y: 0 },
         },
       elements: update.elements ?? get(previewAtom)?.elements ?? [],
+      insertedIndex:
+        update.insertedIndex ?? get(previewAtom)?.insertedIndex ?? 0,
     });
   }
 );

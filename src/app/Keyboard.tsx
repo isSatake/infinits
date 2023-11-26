@@ -225,10 +225,9 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), 0, 6),
         accidental,
       };
-      const { elements } = genPreviewElements(newPitch);
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
-        elements,
+        ...genPreviewElements(newPitch),
       });
     },
     onUp: (ev, down) => {
@@ -250,10 +249,9 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const { elements } = genPreviewElements(newPitch);
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
-        elements,
+        ...genPreviewElements(newPitch),
       });
     },
   });
