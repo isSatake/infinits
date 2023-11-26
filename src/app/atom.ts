@@ -46,9 +46,6 @@ export const caretAtom = atom<{ staffId: number; idx: number }>({
 });
 export const caretStyleAtom = atom<CaretStyle[]>([]);
 
-// staff id -> last edited index
-export const lastEditedAtom = atom<Map<number, number>>(new Map([[0, 0]]));
-
 // staff id -> elements
 export const elementsAtom = atom<Map<number, MusicalElement[]>>(
   new Map([[0, kSampleElements]])

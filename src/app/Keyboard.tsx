@@ -1,10 +1,5 @@
 import { pitchByDistance } from "@/org/callbacks/note-input";
-import {
-  AccidentalModes,
-  BeamModes,
-  TieModes,
-  kAccidentalModes,
-} from "@/org/input-modes";
+import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
 import { Duration, MusicalElement, PitchAcc } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
@@ -13,7 +8,6 @@ import {
   caretAtom,
   caretStyleAtom,
   elementsAtom,
-  lastEditedAtom,
   previewSetterAtom,
 } from "./atom";
 import { usePointerHandler } from "./hooks";
@@ -216,7 +210,6 @@ const usePreviewHandlers = (duration: Duration) => {
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const genPreviewElements = useInputElements(duration);
   const [caret, setCaret] = useAtom(caretAtom);
-  const [lastEdited, setLastEdited] = useAtom(lastEditedAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
 
   return usePointerHandler({
@@ -239,7 +232,6 @@ const usePreviewHandlers = (duration: Duration) => {
       };
       const { elements, insertedIndex, caretAdvance } =
         genPreviewElements(newPitch);
-      setLastEdited(new Map(lastEdited).set(caret.staffId, insertedIndex));
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
     },
@@ -428,18 +420,57 @@ const ThirtySecond = () => {
   );
 };
 
-const Backspace = () => (
-  <GrayKey>
-    <div className="relative w-2/5 h-2/5">
-      <Image
-        src="/img/backspace_black_24dp.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
-  </GrayKey>
-);
+const Backspace = () => {
+  const [caret, setCaret] = useAtom(caretAtom);
+  const caretStyle = useAtomValue(caretStyleAtom);
+  const [elMap, setElements] = useAtom(elementsAtom);
+  return (
+    <GrayKey
+      onClick={() => {
+        const targetElIdx = caretStyle[caret.idx].elIdx;
+        const elements = elMap.get(caret.staffId);
+        if (!elements || elements.length === 0) {
+          return;
+        }
+        const deleted = elements.splice(targetElIdx, 1)[0];
+        if (deleted.type === "note") {
+          // beamの整合を取る
+          const left = elements[targetElIdx - 1];
+          const right = elements[targetElIdx];
+          if (deleted.beam === "begin" && right?.type === "note") {
+            right.beam = "begin";
+          } else if (deleted.beam === "end" && left?.type === "note") {
+            left.beam = "end";
+          }
+        }
+        setElements(new Map(elMap));
+
+        // 削除後のcaret位置を計算
+        let idx = caret.idx - 1;
+        while (idx > -1) {
+          if (idx === 0) {
+            setCaret({ ...caret, idx: 0 });
+            idx = -1;
+          } else if (caretStyle[idx].elIdx !== targetElIdx) {
+            setCaret({ ...caret, idx });
+            idx = -1;
+          } else {
+            idx--;
+          }
+        }
+      }}
+    >
+      <div className="relative w-2/5 h-2/5">
+        <Image
+          src="/img/backspace_black_24dp.svg"
+          fill={true}
+          alt="rest mode"
+          className="object-contain"
+        />
+      </div>
+    </GrayKey>
+  );
+};
 
 const ArrowLeft = () => {
   const [caret, setCaret] = useAtom(caretAtom);
