@@ -1,6 +1,11 @@
 import { pitchByDistance } from "@/org/callbacks/note-input";
 import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
-import { Duration, MusicalElement, PitchAcc } from "@/org/notation/types";
+import {
+  BarTypes,
+  Duration,
+  MusicalElement,
+  PitchAcc,
+} from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
@@ -565,16 +570,41 @@ const Dynamics = () => (
   </WhiteKey>
 );
 
+const useInputBar: () => (subtype: BarTypes) => void = () => {
+  const [caret, setCaret] = useAtom(caretAtom);
+  const baseElements = useBaseElements();
+  const beamMode = useAtomValue(beamModeAtom);
+  const [elMap, setElements] = useAtom(elementsAtom);
+  return useCallback(
+    (subtype: BarTypes) => {
+      const { elements, caretAdvance } = inputMusicalElement({
+        caretIndex: caret.idx,
+        elements: baseElements,
+        newElement: {
+          type: "bar",
+          subtype,
+        },
+        beamMode,
+      });
+      setCaret({ ...caret, idx: caret.idx + caretAdvance });
+      setElements(new Map(elMap).set(caret.staffId, elements));
+    },
+    [caret, setCaret, baseElements, beamMode, elMap, setElements]
+  );
+};
+
 // tailwindを変数に切り出すと補完が効かなくてつらい
 const candidateStyleBase =
   "relative w-full h-full bg-white hover:bg-[#027bff] box-border border-gray-200";
 const Bars = () => {
   const [preview, setPreview] = useState<boolean>(false);
+  const inputBar = useInputBar();
   return (
     <WhiteKey
       {...usePointerHandler({
         onLongDown: () => setPreview(true),
         onUp: () => setPreview(false),
+        onClick: () => inputBar("single"),
       })}
     >
       {!preview && (
