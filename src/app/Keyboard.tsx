@@ -11,7 +11,7 @@ import {
   previewSetterAtom,
 } from "./atom";
 import { usePointerHandler } from "./hooks";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
 
@@ -565,18 +565,83 @@ const Dynamics = () => (
   </WhiteKey>
 );
 
-const Bars = () => (
-  <WhiteKey>
-    <div className="relative w-1/2 h-1/2">
-      <Image
-        src="/img/bars.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
-  </WhiteKey>
-);
+// tailwindを変数に切り出すと補完が効かなくてつらい
+const candidateStyleBase =
+  "relative w-full h-full bg-white hover:bg-[#027bff] box-border border-gray-200";
+const Bars = () => {
+  const [preview, setPreview] = useState<boolean>(false);
+  return (
+    <WhiteKey
+      {...usePointerHandler({
+        onLongDown: () => setPreview(true),
+        onUp: () => setPreview(false),
+      })}
+    >
+      {!preview && (
+        <div className="relative w-1/2 h-1/2">
+          <Image
+            src="/img/bars.svg"
+            fill={true}
+            alt="rest mode"
+            className="object-contain"
+          />
+        </div>
+      )}
+      {preview && (
+        <div className="relative grid grid-cols-3 grid-rows-3 w-[330%] h-[330%] top-[-115%] left-[-115%] drop-shadow-sm">
+          <div
+            className={`${candidateStyleBase} col-start-2 border-b rounded-t-[4px]`}
+          >
+            <Image
+              src="/img/barline_final.svg"
+              fill={true}
+              alt="barline final"
+              className="w-full h-full"
+            />
+          </div>
+          <div
+            className={`${candidateStyleBase} row-start-2 border-r rounded-l-[4px]`}
+          >
+            <Image
+              src="/img/barline_double.svg"
+              fill={true}
+              alt="barline double"
+              className="w-full h-full"
+            />
+          </div>
+          <div className={`${candidateStyleBase} row-start-2 border`}>
+            <Image
+              src="/img/barline_single.svg"
+              fill={true}
+              alt="barline single"
+              className="w-full h-full"
+            />
+          </div>
+          <div
+            className={`${candidateStyleBase} row-start-2 border-l rounded-r-[4px]`}
+          >
+            <Image
+              src="/img/barline_repeat.svg"
+              fill={true}
+              alt="barline repeat"
+              className="w-full h-full"
+            />
+          </div>
+          <div
+            className={`${candidateStyleBase} col-start-2 row-start-3 border-t rounded-b-[4px]`}
+          >
+            <Image
+              src="/img/barline_single.svg"
+              fill={true}
+              alt="barline single"
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      )}
+    </WhiteKey>
+  );
+};
 
 const Return = () => (
   <GrayKey>
@@ -733,7 +798,7 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
 const WhiteKey = ({ children, ...rest }: React.ComponentProps<"div">) => {
   return (
     <div
-      className="flex items-center justify-center bg-white active:bg-[#b4b8c1] rounded-[4px] shadow-[0_1px_#8d9095]"
+      className="bg-white active:bg-[#b4b8c1] rounded-[4px] shadow-[0_1px_#8d9095]"
       {...rest}
     >
       {children}
@@ -750,7 +815,7 @@ const GrayKey = ({
 }) => {
   return (
     <div
-      className="flex items-center justify-center bg-[#acaebb] active:bg-white rounded-[4px] shadow-[0_1px_#8d9095]"
+      className="bg-[#acaebb] active:bg-white rounded-[4px] shadow-[0_1px_#8d9095]"
       onClick={onClick}
     >
       {children}
