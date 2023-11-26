@@ -603,7 +603,17 @@ const Bars = () => {
     <WhiteKey
       {...usePointerHandler({
         onLongDown: () => setPreview(true),
-        onUp: () => setPreview(false),
+        onUp: (ev) => {
+          const div = (ev.target as HTMLDivElement).closest(
+            "[data-bartype]"
+          ) as HTMLDivElement;
+          console.log("target div", div)
+          const subtype = div?.dataset.bartype as BarTypes;
+          console.log(ev);
+          console.log(subtype);
+          inputBar(subtype);
+          setPreview(false);
+        },
         onClick: () => inputBar("single"),
       })}
     >
@@ -621,6 +631,7 @@ const Bars = () => {
         <div className="relative grid grid-cols-3 grid-rows-3 w-[330%] h-[330%] top-[-115%] left-[-115%] drop-shadow-sm">
           <div
             className={`${candidateStyleBase} col-start-2 border-b rounded-t-[4px]`}
+            data-bartype="final"
           >
             <Image
               src="/img/barline_final.svg"
@@ -631,6 +642,7 @@ const Bars = () => {
           </div>
           <div
             className={`${candidateStyleBase} row-start-2 border-r rounded-l-[4px]`}
+            data-bartype="double"
           >
             <Image
               src="/img/barline_double.svg"
@@ -639,7 +651,10 @@ const Bars = () => {
               className="w-full h-full"
             />
           </div>
-          <div className={`${candidateStyleBase} row-start-2 border`}>
+          <div
+            className={`${candidateStyleBase} row-start-2 border`}
+            data-bartype="single"
+          >
             <Image
               src="/img/barline_single.svg"
               fill={true}
@@ -649,6 +664,7 @@ const Bars = () => {
           </div>
           <div
             className={`${candidateStyleBase} row-start-2 border-l rounded-r-[4px]`}
+            data-bartype="repeat"
           >
             <Image
               src="/img/barline_repeat.svg"
@@ -659,6 +675,7 @@ const Bars = () => {
           </div>
           <div
             className={`${candidateStyleBase} col-start-2 row-start-3 border-t rounded-b-[4px]`}
+            data-bartype="single"
           >
             <Image
               src="/img/barline_single.svg"
