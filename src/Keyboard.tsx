@@ -540,7 +540,7 @@ const Tie = () => (
 );
 
 const Root = ({ children }: { children: React.ReactNode }) => {
-  return <div className="keyboard mobile">{children}</div>;
+  return <div className="keyboard">{children}</div>;
 };
 
 const Header = () => {
@@ -548,7 +548,7 @@ const Header = () => {
 };
 
 const Container = ({ children }: { children: React.ReactNode }) => {
-  return <div className="keyContainer mobile">{children}</div>;
+  return <div className="keyContainer">{children}</div>;
 };
 
 const KeyRow = ({ children }: { children: React.ReactNode }) => {
