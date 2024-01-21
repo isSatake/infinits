@@ -1,17 +1,22 @@
+import React from "react";
 import { useEffect, useRef } from "react";
 import { resizeCanvas } from "./util";
 import { paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
 import { PreviewState } from "./atom";
 import { atom, useAtom } from "jotai";
-import { getPreviewScale } from "@/org/score-preferences";
+import {
+  getPreviewHeight,
+  getPreviewScale,
+  getPreviewWidth,
+} from "@/org/score-preferences";
 import { UNIT, bStaffHeight } from "@/org/font/bravura";
 import { determinePaintElementStyle } from "@/org/style/style";
 
-const cssWidth = 150;
-const cssHeight = cssWidth * (4 / 3);
+const width = getPreviewWidth();
+const height = getPreviewHeight();
 
 // B4がcanvasのvertical centerにくるように
-const topOfStaff = cssHeight / 2 - (bStaffHeight * getPreviewScale()) / 2;
+const topOfStaff = height / 2 - (bStaffHeight * getPreviewScale()) / 2;
 
 const mtxAtom = atom<DOMMatrix | undefined>(undefined);
 
@@ -21,9 +26,9 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    resizeCanvas(canvas, cssWidth, cssHeight);
-    canvas.style.left = `${preview.canvasCenter.x - cssWidth / 2}px`;
-    canvas.style.top = `${preview.canvasCenter.y - cssHeight / 2}px`;
+    resizeCanvas(canvas, width, height);
+    canvas.style.left = `${preview.canvasCenter.x - width / 2}px`;
+    canvas.style.top = `${preview.canvasCenter.y - height / 2}px`;
     resetCanvas2({ ctx: canvas.getContext("2d")!, fillStyle: "white" });
   }, []);
   useEffect(() => {
@@ -60,7 +65,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     paintStaff(ctx, 0, 0, UNIT * 100, 1);
     // 入力中Elementをセンタリング
     const centerX = elIdxToX.get(preview.insertedIndex)!;
-    ctx.translate(cssWidth / 2 / a - centerX, 0);
+    ctx.translate(width / 2 / a - centerX, 0);
     for (const style of styles) {
       paintStyle(ctx, style);
       // paintBBox(ctx, style.bbox); // debug
@@ -71,11 +76,5 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     ctx.restore();
     console.log("preview", "end");
   }, [preview, mtx]);
-  return (
-    <canvas
-      id="previewCanvas"
-      className={`absolute w-[${cssWidth}px] aspect-[4/3] rounded shadow-md`}
-      ref={ref}
-    ></canvas>
-  );
+  return <canvas id="previewCanvas" ref={ref}></canvas>;
 };

@@ -1,3 +1,4 @@
+import React from "react";
 import { pitchByDistance } from "@/org/callbacks/note-input";
 import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
 import {
@@ -8,7 +9,6 @@ import {
 } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import Image from "next/image";
 import {
   caretAtom,
   caretStyleAtom,
@@ -16,7 +16,7 @@ import {
   previewSetterAtom,
 } from "./atom";
 import { usePointerHandler } from "./hooks";
-import { useCallback, useMemo, useState } from "react";
+import { FC, useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
 
@@ -54,10 +54,10 @@ export const Keyboard = () => {
           <Tie />
         </KeyRow>
       </Container>
-      <Footer>
-        {/* desktop only */}
-        {/* <Handle /> */}
-      </Footer>
+      {/* <Footer> */}
+      {/* desktop only */}
+      {/* <Handle /> */}
+      {/* </Footer> */}
     </Root>
   );
 };
@@ -68,29 +68,17 @@ const NoteRestToggle = () => {
   const [noteInputMode, setNoteInputMode] = useAtom(noteInputModeAtom);
   return (
     <>
-      {noteInputMode === "note" ? (
-        <GrayKey onClick={() => setNoteInputMode("rest")}>
-          <div className="relative w-2/3 h-2/3">
-            <Image
-              src="/img/r4.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </GrayKey>
-      ) : (
-        <GrayKey onClick={() => setNoteInputMode("note")}>
-          <div className="relative w-1/5 h-2/3">
-            <Image
-              src="/img/n4.png"
-              fill={true}
-              alt="note mode"
-              className="object-contain"
-            />
-          </div>
-        </GrayKey>
-      )}
+      <GrayKey
+        onClick={() =>
+          setNoteInputMode(noteInputMode === "note" ? "rest" : "note")
+        }
+      >
+        <div
+          className={`grayKey k11 changeNoteRest ${
+            noteInputMode === "note" ? "note" : "rest"
+          }`}
+        />
+      </GrayKey>
     </>
   );
 };
@@ -254,30 +242,12 @@ const usePreviewHandlers = (duration: Duration) => {
   });
 };
 
-const Whole = () => {
+const Whole: FC = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const previewHandlers = usePreviewHandlers(1);
   return (
     <WhiteKey {...previewHandlers}>
-      {noteInputMode === "note" ? (
-        <div className="relative w-1/4 h-1/4 top-[15%]">
-          <Image
-            src="/img/n1.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      ) : (
-        <div className="relative w-2/5 h-2/5">
-          <Image
-            src="/img/r1.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      )}
+      <div className={`whiteKey k12 ${noteInputMode}`} />
     </WhiteKey>
   );
 };
@@ -287,25 +257,7 @@ const Half = () => {
   const previewHandlers = usePreviewHandlers(2);
   return (
     <WhiteKey {...previewHandlers}>
-      {noteInputMode === "note" ? (
-        <div className="relative w-1/5 h-2/3">
-          <Image
-            src="/img/n2.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      ) : (
-        <div className="relative w-2/5 h-2/5">
-          <Image
-            src="/img/r2.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      )}
+      <div className={`whiteKey k13 ${noteInputMode}`} />
     </WhiteKey>
   );
 };
@@ -315,25 +267,7 @@ const Quarter = () => {
   const previewHandlers = usePreviewHandlers(4);
   return (
     <WhiteKey {...previewHandlers}>
-      {noteInputMode === "note" ? (
-        <div className="relative w-1/5 h-2/3">
-          <Image
-            src="/img/n4.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      ) : (
-        <div className="relative w-2/3 h-2/3">
-          <Image
-            src="/img/r4.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      )}
+      <div className={`whiteKey k14 ${noteInputMode}`} />
     </WhiteKey>
   );
 };
@@ -344,25 +278,7 @@ const Eighth = () => {
   const previewHandlers = usePreviewHandlers(8);
   return (
     <WhiteKey {...previewHandlers}>
-      {noteInputMode === "note" ? (
-        <div className="relative w-full h-2/3">
-          <Image
-            src={beamMode === "nobeam" ? "/img/n8.png" : "/img/beam8.svg"}
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      ) : (
-        <div className="relative w-1/5 h-full">
-          <Image
-            src="/img/r8.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      )}
+      <div className={`whiteKey k22 ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
@@ -373,25 +289,7 @@ const Sixteenth = () => {
   const previewHandlers = usePreviewHandlers(16);
   return (
     <WhiteKey {...previewHandlers}>
-      {noteInputMode === "note" ? (
-        <div className="relative w-full h-2/3">
-          <Image
-            src={beamMode === "nobeam" ? "/img/n16.png" : "/img/beam16.svg"}
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      ) : (
-        <div className="relative w-1/5 h-full">
-          <Image
-            src="/img/r16.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      )}
+      <div className={`whiteKey k23 ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
@@ -402,25 +300,7 @@ const ThirtySecond = () => {
   const previewHandlers = usePreviewHandlers(32);
   return (
     <WhiteKey {...previewHandlers}>
-      {noteInputMode === "note" ? (
-        <div className="relative w-full h-2/3">
-          <Image
-            src={beamMode === "nobeam" ? "/img/n32.png" : "/img/beam32.svg"}
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      ) : (
-        <div className="relative w-1/5 h-full">
-          <Image
-            src="/img/r32.png"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      )}
+      <div className={`whiteKey k24 ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
@@ -465,14 +345,7 @@ const Backspace = () => {
         }
       }}
     >
-      <div className="relative w-2/5 h-2/5">
-        <Image
-          src="/img/backspace_black_24dp.svg"
-          fill={true}
-          alt="rest mode"
-          className="object-contain"
-        />
-      </div>
+      <div className="grayKey k15 backspace" />
     </GrayKey>
   );
 };
@@ -487,14 +360,7 @@ const ArrowLeft = () => {
         setCaret({ ...caret, idx });
       }}
     >
-      <div className="relative w-2/5 h-2/5">
-        <Image
-          src="/img/west_black_24dp.svg"
-          fill={true}
-          alt="rest mode"
-          className="object-contain"
-        />
-      </div>
+      <div className="grayKey k21 toLeft" />
     </GrayKey>
   );
 };
@@ -510,14 +376,7 @@ const ArrowRight = () => {
         setCaret({ ...caret, idx });
       }}
     >
-      <div className="relative w-2/5 h-2/5">
-        <Image
-          src="/img/east_black_24dp.svg"
-          fill={true}
-          alt="rest mode"
-          className="object-contain"
-        />
-      </div>
+      <div className="grayKey k25 toRight" />
     </GrayKey>
   );
 };
@@ -528,45 +387,17 @@ const BeamToggle = () => {
   const [beamMode, setBeamMode] = useAtom(beamModeAtom);
   // TODO　ダブルクリック→"rock"
   return (
-    <>
-      {beamMode === "nobeam" && (
-        <GrayKey onClick={() => setBeamMode("beam")}>
-          <div className="relative w-1/2 h-1/2">
-            <Image
-              src="/img/nobeam.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </GrayKey>
-      )}
-      {beamMode === "beam" && (
-        <GrayKey onClick={() => setBeamMode("nobeam")}>
-          <div className="relative w-1/2 h-1/2">
-            <Image
-              src="/img/beam.png"
-              fill={true}
-              alt="rest mode"
-              className="object-contain"
-            />
-          </div>
-        </GrayKey>
-      )}
-    </>
+    <GrayKey
+      onClick={() => setBeamMode(beamMode === "nobeam" ? "beam" : "nobeam")}
+    >
+      <div className={`grayKey k31 changeBeam ${beamMode}`} />
+    </GrayKey>
   );
 };
 
 const Dynamics = () => (
   <WhiteKey>
-    <div className="relative w-3/5 h-3/5">
-      <Image
-        src="/img/dynamics.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
+    <div className="whiteKey k33 dynamics" />
   </WhiteKey>
 );
 
@@ -607,7 +438,7 @@ const Bars = () => {
           const div = (ev.target as HTMLDivElement).closest(
             "[data-bartype]"
           ) as HTMLDivElement;
-          console.log("target div", div)
+          console.log("target div", div);
           const subtype = div?.dataset.bartype as BarTypes;
           console.log(ev);
           console.log(subtype);
@@ -617,89 +448,34 @@ const Bars = () => {
         onClick: () => inputBar("single"),
       })}
     >
-      {!preview && (
-        <div className="relative w-1/2 h-1/2">
-          <Image
-            src="/img/bars.svg"
-            fill={true}
-            alt="rest mode"
-            className="object-contain"
-          />
-        </div>
-      )}
-      {preview && (
-        <div className="relative grid grid-cols-3 grid-rows-3 w-[330%] h-[330%] top-[-115%] left-[-115%] drop-shadow-sm">
-          <div
-            className={`${candidateStyleBase} col-start-2 border-b rounded-t-[4px]`}
-            data-bartype="final"
-          >
-            <Image
-              src="/img/barline_final.svg"
-              fill={true}
-              alt="barline final"
-              className="w-full h-full"
-            />
+      <div className="whiteKey k34 bars">
+        {preview && (
+          <div className="candidateContainer">
+            <div className="candidate top final" data-bartype="final">
+              <div className="buttonImage" />
+            </div>
+            <div className="candidate left double" data-bartype="double">
+              <div className="buttonImage" />
+            </div>
+            <div className="candidate center single" data-bartype="single">
+              <div className="buttonImage" />
+            </div>
+            <div className="candidate right repeat" data-bartype="repeat">
+              <div className="buttonImage" />
+            </div>
+            <div className="candidate bottom single" data-bartype="single">
+              <div className="buttonImage" />
+            </div>
           </div>
-          <div
-            className={`${candidateStyleBase} row-start-2 border-r rounded-l-[4px]`}
-            data-bartype="double"
-          >
-            <Image
-              src="/img/barline_double.svg"
-              fill={true}
-              alt="barline double"
-              className="w-full h-full"
-            />
-          </div>
-          <div
-            className={`${candidateStyleBase} row-start-2 border`}
-            data-bartype="single"
-          >
-            <Image
-              src="/img/barline_single.svg"
-              fill={true}
-              alt="barline single"
-              className="w-full h-full"
-            />
-          </div>
-          <div
-            className={`${candidateStyleBase} row-start-2 border-l rounded-r-[4px]`}
-            data-bartype="repeat"
-          >
-            <Image
-              src="/img/barline_repeat.svg"
-              fill={true}
-              alt="barline repeat"
-              className="w-full h-full"
-            />
-          </div>
-          <div
-            className={`${candidateStyleBase} col-start-2 row-start-3 border-t rounded-b-[4px]`}
-            data-bartype="single"
-          >
-            <Image
-              src="/img/barline_single.svg"
-              fill={true}
-              alt="barline single"
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </WhiteKey>
   );
 };
 
 const Return = () => (
   <GrayKey>
-    <div className="relative w-2/5 h-2/5">
-      <Image
-        src="/img/keyboard_return_black_24dp.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
+    <div className="grayKey k35 returnKey" />
   </GrayKey>
 );
 
@@ -721,42 +497,20 @@ const Accidentals = () => {
   const { accidentalMode, changeAccidentalMode } = useAccidentalMode();
   return (
     <GrayKey onClick={changeAccidentalMode}>
-      <div
-        className={`${baseClassName} ${
-          accidentalMode === "sharp" ? "" : disabledClassName
-        }`}
-      >
-        <Image
-          src="/img/sharp.svg"
-          fill={true}
-          alt="rest mode"
-          className="object-contain"
-        />
-      </div>
-      <div
-        className={`${baseClassName} ${
-          accidentalMode === "natural" ? "" : disabledClassName
-        }`}
-      >
-        <Image
-          src="/img/natural.svg"
-          fill={true}
-          alt="rest mode"
-          className="object-contain"
-        />
-      </div>
-      <div
-        className={`${baseClassName} ${
-          accidentalMode === "flat" ? "" : disabledClassName
-        }
-      }`}
-      >
-        <Image
-          src="/img/flat.svg"
-          fill={true}
-          alt="rest mode"
-          className="object-contain"
-        />
+      <div className="grayKey k41 accidentals">
+        <div className="accidentalsContainer">
+          <div
+            className={`sharp ${accidentalMode === "sharp" ? "selected" : ""}`}
+          ></div>
+          <div
+            className={`natural ${
+              accidentalMode === "natural" ? "selected" : ""
+            }`}
+          ></div>
+          <div
+            className={`flat ${accidentalMode === "flat" ? "selected" : ""}`}
+          ></div>
+        </div>
       </div>
     </GrayKey>
   );
@@ -764,90 +518,49 @@ const Accidentals = () => {
 
 const Slur = () => (
   <WhiteKey>
-    <div className="relative w-1/2 h-1/2">
-      <Image
-        src="/img/slur.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
+    <div className="whiteKey k42 slur" />
   </WhiteKey>
 );
 
 const Accent = () => (
   <WhiteKey>
-    <div className="relative w-2/5 h-2/5">
-      <Image
-        src="/img/accent.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
+    <div className="whiteKey k43 accent" />
   </WhiteKey>
 );
 
 const Fermata = () => (
   <WhiteKey>
-    <div className="relative w-1/4 h-1/4">
-      <Image
-        src="/img/fermata.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
-    </div>
+    <div className="whiteKey k44 fermata" />
   </WhiteKey>
 );
 
 const Tie = () => (
   <GrayKey>
-    <div className="relative w-1/2 h-1/2">
-      <Image
-        src="/img/tie.svg"
-        fill={true}
-        alt="rest mode"
-        className="object-contain"
-      />
+    <div className="grayKey k45 changeTie notie">
+      <div className="buttonImage"></div>
     </div>
   </GrayKey>
 );
 
 const Root = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="flex flex-col items-center absolute bg-keyboard w-full left-0 bottom-0 keyboardSafeArea">
-      {children}
-    </div>
-  );
+  return <div className="keyboard mobile">{children}</div>;
 };
 
 const Header = () => {
-  return <div className="h-[48px]"></div>;
+  return <div className="keyHeader"></div>;
 };
 
 const Container = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="flex flex-col gap-y-[6px] w-[98%] aspect-[1.85]">
-      {children}
-    </div>
-  );
+  return <div className="keyContainer mobile">{children}</div>;
 };
 
 const KeyRow = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="grid grid-cols-5 grid-rows-1 gap-x-[6px] w-full h-full">
-      {children}
-    </div>
-  );
+  return <div className="keyRow">{children}</div>;
 };
 
 const WhiteKey = ({ children, ...rest }: React.ComponentProps<"div">) => {
   return (
-    <div
-      className="bg-white active:bg-[#b4b8c1] rounded-[4px] shadow-[0_1px_#8d9095]"
-      {...rest}
-    >
+    <div className="whiteKey" {...rest}>
       {children}
     </div>
   );
@@ -861,22 +574,19 @@ const GrayKey = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <div
-      className="bg-[#acaebb] active:bg-white rounded-[4px] shadow-[0_1px_#8d9095]"
-      onClick={onClick}
-    >
+    <div className="grayKey" onClick={onClick}>
       {children}
     </div>
   );
 };
 
-const Footer = ({ children }: { children: React.ReactNode }) => {
-  return <div className="flex w-full h-[15px] bottom-0">{children}</div>;
-};
+// const Footer = ({ children }: { children: React.ReactNode }) => {
+//   return <div className="flex w-full h-[15px] bottom-0">{children}</div>;
+// };
 
 // タブレット用
-const Handle = () => {
-  return (
-    <div className="mt-[18px] mr-auto mb-0 ml-auto bg-[#aaa] w-[40px] h-[5px] rounded-[2px]"></div>
-  );
-};
+// const Handle = () => {
+//   return (
+//     <div className="mt-[18px] mr-auto mb-0 ml-auto bg-[#aaa] w-[40px] h-[5px] rounded-[2px]"></div>
+//   );
+// };

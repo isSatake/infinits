@@ -1,0 +1,31 @@
+name: gh-pages
+on:
+  push:
+    branches:
+      - main
+jobs:
+  compile-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - name: merge main
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git fetch
+          git checkout -b gh-pages origin/gh-pages
+          git merge main --allow-unrelated-histories -Xtheirs
+      - name: compile
+        run: |
+          npm i
+          npm run prd
+      - name: commit
+        run: |
+          git add -f ./public/*
+          git commit -m "commit compiled codes"
+      - name: push
+        uses: ad-m/github-push-action@v0.8.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages

@@ -1,3 +1,4 @@
+import React from "react";
 import { UNIT } from "@/org/font/bravura";
 import { BBox, Point, offsetBBox } from "@/org/geometry";
 import { paintCaret, paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
