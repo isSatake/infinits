@@ -74,7 +74,7 @@ const NoteRestToggle = () => {
         }
       >
         <div
-          className={`grayKey k11 changeNoteRest ${
+          className={`keyImg changeNoteRest ${
             noteInputMode === "note" ? "note" : "rest"
           }`}
         />
@@ -247,7 +247,7 @@ const Whole: FC = () => {
   const previewHandlers = usePreviewHandlers(1);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`whiteKey k12 ${noteInputMode}`} />
+      <div className={`keyImg whole ${noteInputMode}`} />
     </WhiteKey>
   );
 };
@@ -257,7 +257,7 @@ const Half = () => {
   const previewHandlers = usePreviewHandlers(2);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`whiteKey k13 ${noteInputMode}`} />
+      <div className={`keyImg half ${noteInputMode}`} />
     </WhiteKey>
   );
 };
@@ -267,7 +267,7 @@ const Quarter = () => {
   const previewHandlers = usePreviewHandlers(4);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`whiteKey k14 ${noteInputMode}`} />
+      <div className={`keyImg quater ${noteInputMode}`} />
     </WhiteKey>
   );
 };
@@ -278,7 +278,7 @@ const Eighth = () => {
   const previewHandlers = usePreviewHandlers(8);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`whiteKey k22 ${noteInputMode} ${beamMode}`} />
+      <div className={`keyImg eighth ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
@@ -289,7 +289,7 @@ const Sixteenth = () => {
   const previewHandlers = usePreviewHandlers(16);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`whiteKey k23 ${noteInputMode} ${beamMode}`} />
+      <div className={`keyImg sixteenth ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
@@ -300,7 +300,7 @@ const ThirtySecond = () => {
   const previewHandlers = usePreviewHandlers(32);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`whiteKey k24 ${noteInputMode} ${beamMode}`} />
+      <div className={`keyImg thirtySecond ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
@@ -345,7 +345,7 @@ const Backspace = () => {
         }
       }}
     >
-      <div className="grayKey k15 backspace" />
+      <div className="keyImg backspace" />
     </GrayKey>
   );
 };
@@ -360,7 +360,7 @@ const ArrowLeft = () => {
         setCaret({ ...caret, idx });
       }}
     >
-      <div className="grayKey k21 toLeft" />
+      <div className="keyImg toLeft" />
     </GrayKey>
   );
 };
@@ -376,7 +376,7 @@ const ArrowRight = () => {
         setCaret({ ...caret, idx });
       }}
     >
-      <div className="grayKey k25 toRight" />
+      <div className="keyImg toRight" />
     </GrayKey>
   );
 };
@@ -390,14 +390,14 @@ const BeamToggle = () => {
     <GrayKey
       onClick={() => setBeamMode(beamMode === "nobeam" ? "beam" : "nobeam")}
     >
-      <div className={`grayKey k31 changeBeam ${beamMode}`} />
+      <div className={`keyImg changeBeam ${beamMode}`} />
     </GrayKey>
   );
 };
 
 const Dynamics = () => (
   <WhiteKey>
-    <div className="whiteKey k33 dynamics" />
+    <div className="keyImg dynamics" />
   </WhiteKey>
 );
 
@@ -424,9 +424,6 @@ const useInputBar: () => (subtype: BarTypes) => void = () => {
   );
 };
 
-// tailwindを変数に切り出すと補完が効かなくてつらい
-const candidateStyleBase =
-  "relative w-full h-full bg-white hover:bg-[#027bff] box-border border-gray-200";
 const Bars = () => {
   const [preview, setPreview] = useState<boolean>(false);
   const inputBar = useInputBar();
@@ -448,7 +445,7 @@ const Bars = () => {
         onClick: () => inputBar("single"),
       })}
     >
-      <div className="whiteKey k34 bars">
+      <div className="keyImg bars">
         {preview && (
           <div className="candidateContainer">
             <div className="candidate top final" data-bartype="final">
@@ -475,7 +472,7 @@ const Bars = () => {
 
 const Return = () => (
   <GrayKey>
-    <div className="grayKey k35 returnKey" />
+    <div className="keyImag returnKey" />
   </GrayKey>
 );
 
@@ -497,7 +494,7 @@ const Accidentals = () => {
   const { accidentalMode, changeAccidentalMode } = useAccidentalMode();
   return (
     <GrayKey onClick={changeAccidentalMode}>
-      <div className="grayKey k41 accidentals">
+      <div className="keyImg accidentals">
         <div className="accidentalsContainer">
           <div
             className={`sharp ${accidentalMode === "sharp" ? "selected" : ""}`}
@@ -518,25 +515,25 @@ const Accidentals = () => {
 
 const Slur = () => (
   <WhiteKey>
-    <div className="whiteKey k42 slur" />
+    <div className="keyImg slur" />
   </WhiteKey>
 );
 
 const Accent = () => (
   <WhiteKey>
-    <div className="whiteKey k43 accent" />
+    <div className="keyImg accent" />
   </WhiteKey>
 );
 
 const Fermata = () => (
   <WhiteKey>
-    <div className="whiteKey k44 fermata" />
+    <div className="keyImg fermata" />
   </WhiteKey>
 );
 
 const Tie = () => (
   <GrayKey>
-    <div className="grayKey k45 changeTie notie">
+    <div className="keyImg changeTie notie">
       <div className="buttonImage"></div>
     </div>
   </GrayKey>
@@ -560,7 +557,7 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
 
 const WhiteKey = ({ children, ...rest }: React.ComponentProps<"div">) => {
   return (
-    <div className="whiteKey" {...rest}>
+    <div className="key white" {...rest}>
       {children}
     </div>
   );
@@ -574,7 +571,7 @@ const GrayKey = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <div className="grayKey" onClick={onClick}>
+    <div className="key gray" onClick={onClick}>
       {children}
     </div>
   );
