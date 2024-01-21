@@ -88,7 +88,7 @@ const determineNoteStyle = ({
     }
     const { pitch, accidental } = p;
     const y = pitchToY(0, pitch, 1);
-    accBBoxes.push(getPathBBox(accidentalPathMap.get(accidental)!, UNIT));
+    accBBoxes.push(getPathBBox(accidentalPathMap().get(accidental)!, UNIT));
     elements.push({
       type: "accidental",
       position: { x: 0, y },
@@ -402,7 +402,7 @@ const determineStemFlagStyle = ({
     if (beamed) {
       top = beamed.top!;
     } else {
-      const path = upFlagMap.get(duration);
+      const path = upFlagMap().get(duration);
       const left = stemCenter - bStemWidth / 2;
       if (path) {
         const position = {
@@ -423,7 +423,7 @@ const determineStemFlagStyle = ({
     if (beamed) {
       bottom = beamed.bottom!;
     } else {
-      const path = downFlagMap.get(duration);
+      const path = downFlagMap().get(duration);
       if (path) {
         const position = {
           x: stemCenter - bStemWidth / 2 + UNIT * path.stemDownSW.x,
@@ -459,7 +459,7 @@ const determineRestStyle = (
   rest: Rest,
   pointing?: Pointing
 ): { element: RestStyle; bbox: BBox; width: number } => {
-  const path = restPathMap.get(rest.duration)!;
+  const path = restPathMap().get(rest.duration)!;
   const y = UNIT * path.originUnits;
   const pathOrigin = { x: 0, y };
   const bbox = offsetBBox(getPathBBox(path, UNIT), { y });
@@ -1006,7 +1006,7 @@ const determineClefStyle = (
   index: number,
   pointing?: Pointing
 ): PaintElementStyle<ClefStyle> => {
-  const path = getPathBBox(bClefG, UNIT);
+  const path = getPathBBox(bClefG(), UNIT);
   const g = pitchToY(0, 4, 1);
   return {
     element: {

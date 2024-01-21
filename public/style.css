@@ -15,7 +15,6 @@ body {
 
 #previewCanvas {
   position: absolute;
-  visibility: hidden;
   border-radius: 30px;
   box-shadow: #ccc 0 20px 70px -10px;
 }
@@ -55,7 +54,7 @@ body {
   height: 126px;
 }
 
-.desktop > .keyContainer {
+/* .desktop > .keyContainer {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(4, 1fr);
@@ -73,18 +72,40 @@ body {
   row-gap: 16px;
   width: 98%;
   aspect-ratio: 1.85;
+} */
+
+.mobile .keyContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 98%;
+  aspect-ratio: 1.85;
 }
 
-.keyContainer > div {
+.keyRow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: 1fr;
+  column-gap: 6px;
+  width: 100%;
+  height: 100%;
+}
+
+.mobile .keyRow {
+  gap: 16px;
+}
+
+.keyRow > div {
   border-radius: 5px;
   box-shadow: #8d9095 0 3px;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
-.mobile > .keyContainer > div {
+.mobile > .keyRow > div {
   border-radius: 12px;
 }
 
@@ -193,24 +214,28 @@ body {
 }
 
 .whiteKey {
+  width: 100%;
+  height: 100%;
   background-color: #fff;
   background-repeat: no-repeat;
   background-position: center;
   font-size: 1.3rem;
 }
 
-.whiteKey.pressed {
+.whiteKey:active {
   background-color: #b4b8c1;
 }
 
 .grayKey {
+  width: 100%;
+  height: 100%;
   background-color: #acaebb;
   background-repeat: no-repeat;
   background-position: center;
   font-size: 1.3rem;
 }
 
-.grayKey.pressed {
+.grayKey:active {
   background-color: #fff;
 }
 

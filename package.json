@@ -1,19 +1,25 @@
 {
   "name": "infinits",
-  "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "watch": "node tools/bundle.js -w",
-    "prd": "node tools/bundle.js"
+    "watch": "node tools/bundle.mjs -w",
+    "prd": "node tools/bundle.mjs"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@tsconfig/recommended": "^1.0.1",
-    "esbuild": "^0.11.11"
+    "jotai": "^2.4.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
-    "prettier": "^2.3.1"
+    "@swc-jotai/react-refresh": "^0.1.0",
+    "@types/node": "20.4.7",
+    "@types/react": "18.2.18",
+    "@types/react-dom": "18.2.7",
+    "esbuild": "^0.19.11",
+    "typescript": "5.1.6",
+    "autoprefixer": "10.4.14",
+    "postcss": "8.4.27",
+    "tailwindcss": "3.3.3"
   }
 }

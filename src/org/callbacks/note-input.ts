@@ -272,7 +272,7 @@ export class NoteInputCallback implements INoteInputCallback {
   }
 }
 
-const pitchByDistance = (scale: number, dy: number, origin: Pitch): Pitch => {
+export const pitchByDistance = (scale: number, dy: number, origin: Pitch): Pitch => {
   const unitY = (UNIT / 2) * scale;
   return Math.round(dy / unitY + origin);
 };
