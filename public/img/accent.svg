@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="100" height="100" viewBox="0 0 640 640" xml:space="preserve">
+<desc>Created with Fabric.js 4.6.0</desc>
+<defs>
+</defs>
+<g transform="matrix(1.01 0 0 1.01 171.83 458.34)" id="gP-yEj3NgoYjGq7ifDeqY"  >
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-168.5, -24)" d="M 314 0 L 23 0 C -1 0 -1 11 -1 24 C -1 37 -1 48 23 48 L 314 48 C 338 48 338 37 338 24 C 338 11 337 0 314 0 z" stroke-linecap="round" />
+</g>
+<g transform="matrix(1.01 0 0 1.01 597.05 320)" id="rrCyWOig4BzarcjDggX3e"  >
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-42, -42)" d="M 84 42 C 84 19 65 0 42 0 C 19 0 0 19 0 42 C 0 65 19 84 42 84 C 65 84 84 65 84 42 z" stroke-linecap="round" />
+</g>
+<g transform="matrix(1.01 0 0 1.01 171.83 240.72)" id="Dm76fFvZGKvPQ5mRGBPON"  >
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-169.5, -123)" d="M 326 105 L 20 2 C 19 1 17 1 16 1 C 9 1 5 9 2 16 C 1 19 0 22 0 25 C 0 30 3 35 14 40 C 14 40 228 113 239 116 C 245 118 247 120 247 123 C 247 126 245 129 240 130 C 230 134 14 207 14 207 C 3 211 0 216 0 221 C 0 224 1 227 2 231 C 5 239 8 245 17 245 C 18 245 22 244 26 243 L 326 141 C 339 137 339 131 339 123 C 339 115 339 108 326 105 z" stroke-linecap="round" />
+</g>
+</svg>

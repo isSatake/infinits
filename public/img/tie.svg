@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="" height="" viewBox="537 620 150 150" version="1.2" baseProfile="tiny">
+<path class="TieSegment" stroke="#000000" stroke-width="1.74" stroke-linecap="round" stroke-linejoin="round" fill-rule="evenodd" d="M557.74,739.598 C579.151,752.399 643.384,752.399 664.795,739.598 C643.384,759.343 579.151,759.343 557.74,739.598"/>
+
+<polyline class="Stem" stroke="#000000" stroke-width="2.73" stroke-linejoin="bevel" points="567.657,717.824 567.657,634.198"/>
+<polyline class="Stem" stroke="#000000" stroke-width="2.73" stroke-linejoin="bevel" points="684.382,717.824 684.382,634.198"/>
+
+<path class="Note" transform="matrix(0.992,0,0,0.992,536.789,720.998)" d="M31.5,-8.1 C29.7,-11.4 25.9,-13.2 21.3,-13.2 C17.9,-13.2 14.2,-12.2 10.6,-10.3 C4,-6.8 0,-0.9 0,4.2 C0,5.6 0.3,7 1,8.3 C2.8,11.6 6.6,13.3 11.2,13.3 C14.6,13.3 18.3,12.4 21.9,10.5 C28.5,7 32.5,1.1 32.5,-4 C32.5,-5.4 32.2,-6.8 31.5,-8.1"/>
+<path class="Note" transform="matrix(0.992,0,0,0.992,653.514,720.998)" d="M31.5,-8.1 C29.7,-11.4 25.9,-13.2 21.3,-13.2 C17.9,-13.2 14.2,-12.2 10.6,-10.3 C4,-6.8 0,-0.9 0,4.2 C0,5.6 0.3,7 1,8.3 C2.8,11.6 6.6,13.3 11.2,13.3 C14.6,13.3 18.3,12.4 21.9,10.5 C28.5,7 32.5,1.1 32.5,-4 C32.5,-5.4 32.2,-6.8 31.5,-8.1"/>
+</svg>
