@@ -238,10 +238,16 @@ const useMainPointerHandler = () => {
     [staffMap, mtx]
   );
 
-  return usePointerHandler({
-    onDown,
-    onDrag,
-    onUp,
-    onDoubleClick,
-  });
+  return {
+    onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {
+      // iOS Safariでダブルタップ長押し時に拡大鏡が出るのを防ぐ
+      ev.preventDefault();
+    },
+    ...usePointerHandler({
+      onDown,
+      onDrag,
+      onUp,
+      onDoubleClick,
+    }),
+  };
 };
