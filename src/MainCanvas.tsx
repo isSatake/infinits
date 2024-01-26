@@ -63,7 +63,8 @@ export const MainCanvas = () => {
     height: window.innerHeight,
   });
 
-  useResizeHandler((size) => setWindowSize(size));
+  const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
+  useResizeHandler(resizeHandler);
 
   useEffect(() => {
     resizeCanvas(ref.current!, canvasScale, windowSize);
@@ -71,6 +72,7 @@ export const MainCanvas = () => {
   }, [canvasScale, windowSize]);
 
   useEffect(() => {
+    // TODO 他のcanvasでも使いたいので上の階層でやる
     determineCanvasScale(devicePixelRatio, windowSize).then((scale) => {
       console.log("dpr", devicePixelRatio, "canvas scale", scale);
       setCanvasScale(scale);
