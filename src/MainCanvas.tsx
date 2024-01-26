@@ -1,6 +1,6 @@
 import React from "react";
 import { UNIT } from "@/org/font/bravura";
-import { BBox, Point, offsetBBox } from "@/org/geometry";
+import { BBox, Point, Size, offsetBBox, scaleSize } from "@/org/geometry";
 import { paintCaret, paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
 import { StaffStyle } from "@/org/score-states";
@@ -22,6 +22,7 @@ import {
   usePointerHandler,
   useResizeHandler,
 } from "./hooks";
+import { determineCanvasScale, resizeCanvas } from "./util";
 
 // staff id -> staff style
 let staffId = 0;
@@ -41,24 +42,42 @@ const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
 
 const pointingAtom = atom<Pointing | undefined>(undefined);
 
-const mtxAtom = atom<DOMMatrix | undefined>(undefined);
+const mtxAtom = atom<DOMMatrix>(
+  new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
+);
 
 export const MainCanvas = () => {
   const ref = useRef<HTMLCanvasElement>(null);
-  useResizeHandler(ref);
   const staffMap = useAtomValue(staffMapAtom);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
-  const [mtx, setMtx] = useAtom(mtxAtom);
   const focus = useAtomValue(caretAtom);
+  const [mtx, setMtx] = useAtom(mtxAtom);
+  const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
+  const [canvasSize, setCanvasSize] = useState<Size>(ref.current!);
+  const [windowSize, setWindowSize] = useState<Size>({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
+  useResizeHandler(resizeHandler);
 
   useEffect(() => {
-    // useEffectの外でDOMMatrixを解決できない
-    setMtx(new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0]));
-  }, []);
+    resizeCanvas(ref.current!, canvasScale, windowSize);
+    setCanvasSize(scaleSize(windowSize, canvasScale));
+  }, [canvasScale, windowSize]);
+
+  useEffect(() => {
+    // TODO 他のcanvasでも使いたいので上の階層でやる
+    determineCanvasScale(devicePixelRatio, windowSize).then((scale) => {
+      console.log("dpr", devicePixelRatio, "canvas scale", scale);
+      setCanvasScale(scale);
+    });
+  }, [windowSize]);
 
   // element style
   useEffect(() => {
@@ -103,9 +122,6 @@ export const MainCanvas = () => {
 
   // paint
   useEffect(() => {
-    if (!mtx) {
-      return;
-    }
     const styles = styleMap.get(focus.staffId);
     if (!styles) {
       return;
@@ -114,7 +130,7 @@ export const MainCanvas = () => {
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
     // pointer handlerでdpr考慮しなくて済むように
-    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
     for (const [_, staff] of staffMap.entries()) {
@@ -140,7 +156,7 @@ export const MainCanvas = () => {
     }
     ctx.restore();
     console.log("render", "end");
-  }, [mtx, staffMap, styleMap, caretStyle, focus]);
+  }, [mtx, staffMap, styleMap, caretStyle, focus, canvasSize]);
 
   return (
     <canvas
@@ -161,9 +177,6 @@ const useMainPointerHandler = () => {
 
   const onDown = useCallback(
     (ev: React.PointerEvent) => {
-      if (!mtx) {
-        return;
-      }
       setTmpMtx(mtx);
       if (doubleZoomTimer === -1) {
         setDoubleZoomTimer(

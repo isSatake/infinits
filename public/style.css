@@ -1,8 +1,3 @@
-root {
-  --keyWidth: 63px;
-  --keyHeight: 49px;
-}
-
 html,
 body {
   width: 100%;
@@ -13,13 +8,21 @@ body {
   -webkit-user-select: none;
 }
 
+#mainCanvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
 #previewCanvas {
   position: absolute;
   border-radius: 30px;
   box-shadow: #ccc 0 20px 70px -10px;
 }
 
-.keyboard.mobile {
+.keyboard {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -31,7 +34,7 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom) + 124px);
 }
 
-.keyboard.desktop {
+/* .keyboard.desktop {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -44,13 +47,13 @@ body {
   border-radius: 9px;
   border: solid 1px #c9cace;
   box-shadow: #ccc 0 20px 70px -10px;
-}
+} */
+
+/* .keyHeader {
+  height: 54px;
+} */
 
 .keyHeader {
-  height: 54px;
-}
-
-.mobile .keyHeader {
   height: 126px;
 }
 
@@ -74,39 +77,35 @@ body {
   aspect-ratio: 1.85;
 } */
 
-.mobile .keyContainer {
+.keyContainer {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: 98%;
-  aspect-ratio: 1.85;
+  width: 98vw;
+  height: 53vw;
+  /* width: 98%;
+  height: 53%; */
+  /* aspect-ratio: 1.85; */
 }
 
 .keyRow {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: 1fr;
-  column-gap: 6px;
+  gap: 16px;
   width: 100%;
   height: 100%;
 }
 
-.mobile .keyRow {
-  gap: 16px;
-}
-
-.keyRow > div {
-  border-radius: 5px;
+/* .keyRow > div { */
+.key {
+  border-radius: 12px;
   box-shadow: #8d9095 0 3px;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
   overflow: hidden;
-}
-
-.mobile > .keyRow > div {
-  border-radius: 12px;
 }
 
 .candidateContainer {
@@ -213,110 +212,114 @@ body {
   -webkit-mask: url("img/barline_repeat.svg") no-repeat center center / 50% 50%;
 }
 
-.whiteKey {
-  width: 100%;
-  height: 100%;
+/* .whiteKey { */
+.key.white {
   background-color: #fff;
   background-repeat: no-repeat;
   background-position: center;
   font-size: 1.3rem;
 }
 
-.whiteKey:active {
+.key.white:active {
   background-color: #b4b8c1;
 }
 
-.grayKey {
-  width: 100%;
-  height: 100%;
+.key.gray {
   background-color: #acaebb;
   background-repeat: no-repeat;
   background-position: center;
   font-size: 1.3rem;
 }
 
-.grayKey:active {
+.key.gray:active {
   background-color: #fff;
 }
 
+.keyImg {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 /* whole */
-.k12.note {
+.keyImg.whole.note {
   background-position-y: 65%;
   background-size: 25% auto;
   background-image: url(img/n1.png);
 }
 
-.k12.rest {
+.keyImg.whole.rest {
   background-size: 40% auto;
   background-image: url(img/r1.png);
 }
 
 /* 1/2 */
-.k13.note {
+.keyImg.half.note {
   background-size: 18% auto;
   background-image: url(img/n2.png);
 }
 
-.k13.rest {
+.keyImg.half.rest {
   background-size: 40% auto;
   background-image: url(img/r2.png);
 }
 
 /* 1/4 */
-.k14.note {
+.keyImg.quater.note {
   background-size: 18% auto;
   background-image: url(img/n4.png);
 }
 
-.k14.rest {
+.keyImg.quater.rest {
   background-image: url(./img/r4.png);
   background-size: auto 60%;
 }
 
 /* 1/8 */
-.k22.note.nobeam {
+.keyImg.eighth.note.nobeam {
   background-size: auto 70%;
   background-image: url(img/n8.png);
 }
 
-.k22.note.beamed {
+.keyImg.eighth.note.beam {
   background-size: auto 70%;
   background-image: url(img/beam8.svg);
 }
 
-.k22.rest {
+.keyImg.eighth.rest {
   background-size: 20% auto;
   background-image: url(img/r8.png);
 }
 
 /* 1/16 */
-.k23.note.nobeam {
+.keyImg.sixteenth.note.nobeam {
   background-size: auto 70%;
   background-image: url(img/n16.png);
 }
 
-.k23.note.beamed {
+.keyImg.sixteenth.note.beam {
   background-size: auto 70%;
   background-image: url(img/beam16.svg);
 }
 
-.k23.rest {
+.keyImg.sixteenth.rest {
   background-size: 20% auto;
   background-image: url(img/r16.png);
 }
 
 /* 1/32 */
-.k24.note.nobeam {
+.keyImg.thirtySecond.note.nobeam {
   background-size: auto 70%;
   background-image: url(img/n32.png);
 }
 
-.k24.note.beamed {
+.keyImg.thirtySecond.note.beam {
   background-size: auto 70%;
   background-image: url(img/beam32.svg);
 }
 
-.k24.rest {
+.keyImg.thirtySecond.rest {
   background-size: 20% auto;
   background-image: url(img/r32.png);
 }
@@ -486,9 +489,9 @@ body {
   border-radius: 2px;
 }
 
-.mobile .keyboardHandle {
+/* .mobile .keyboardHandle {
   visibility: hidden;
-}
+} */
 
 #pointer {
   display: none;
