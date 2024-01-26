@@ -12,11 +12,11 @@ import {
 import { UNIT, bStaffHeight } from "@/org/font/bravura";
 import { determinePaintElementStyle } from "@/org/style/style";
 
-const width = getPreviewWidth();
-const height = getPreviewHeight();
+const htmlWidth = getPreviewWidth();
+const htmlHeight = getPreviewHeight();
 
 // B4がcanvasのvertical centerにくるように
-const topOfStaff = height / 2 - (bStaffHeight * getPreviewScale()) / 2;
+const topOfStaff = htmlHeight / 2 - (bStaffHeight * getPreviewScale()) / 2;
 
 const mtxAtom = atom<DOMMatrix | undefined>(undefined);
 
@@ -24,11 +24,14 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
   const ref = useRef<HTMLCanvasElement>(null);
   const [mtx, setMtx] = useAtom(mtxAtom);
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    resizeCanvas(canvas, width, height);
-    canvas.style.left = `${preview.canvasCenter.x - width / 2}px`;
-    canvas.style.top = `${preview.canvasCenter.y - height / 2}px`;
+    const canvas = ref.current!;
+    // TODO MainCanvasと同様に最大scaleを決める
+    resizeCanvas(canvas, devicePixelRatio, {
+      width: htmlWidth,
+      height: htmlHeight,
+    });
+    canvas.style.left = `${preview.canvasCenter.x - htmlWidth / 2}px`;
+    canvas.style.top = `${preview.canvasCenter.y - htmlHeight / 2}px`;
     resetCanvas2({ ctx: canvas.getContext("2d")!, fillStyle: "white" });
   }, []);
   useEffect(() => {
@@ -65,7 +68,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     paintStaff(ctx, 0, 0, UNIT * 100, 1);
     // 入力中Elementをセンタリング
     const centerX = elIdxToX.get(preview.insertedIndex)!;
-    ctx.translate(width / 2 / a - centerX, 0);
+    ctx.translate(htmlWidth / 2 / a - centerX, 0);
     for (const style of styles) {
       paintStyle(ctx, style);
       // paintBBox(ctx, style.bbox); // debug

@@ -7,19 +7,21 @@
     "prd": "node tools/bundle.mjs"
   },
   "dependencies": {
+    "canvas-size": "^1.2.6",
     "jotai": "^2.4.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@swc-jotai/react-refresh": "^0.1.0",
+    "@types/canvas-size": "^1.2.2",
     "@types/node": "20.4.7",
     "@types/react": "18.2.18",
     "@types/react-dom": "18.2.7",
-    "esbuild": "^0.19.11",
-    "typescript": "5.1.6",
     "autoprefixer": "10.4.14",
+    "esbuild": "^0.19.11",
     "postcss": "8.4.27",
-    "tailwindcss": "3.3.3"
+    "tailwindcss": "3.3.3",
+    "typescript": "5.1.6"
   }
 }

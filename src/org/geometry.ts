@@ -7,6 +7,8 @@ export type BBox = {
   right: number;
   bottom: number;
 };
+export type Size = { width: number; height: number };
+
 export const magnitude = (p1: Point, p2: Point): number => {
   return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 };
@@ -45,4 +47,8 @@ export const isPointInBBox = (
   { left, top, right, bottom }: BBox
 ): boolean => {
   return left <= x && x <= right && top <= y && y <= bottom;
+};
+
+export const scaleSize = (size: Size, scale: number): Size => {
+  return { width: size.width * scale, height: size.height * scale };
 };

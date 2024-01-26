@@ -1,6 +1,6 @@
-import { magnitude } from "@/org/geometry";
+import { Size, magnitude, scaleSize } from "@/org/geometry";
 import { RefObject, useEffect, useState } from "react";
-import { resizeCanvas } from "./util";
+import { determineCanvasScale, resizeCanvas } from "./util";
 
 const kLongDownThresholdMs = 300;
 export const kDoubleClickThresholdMs = 300;
@@ -85,16 +85,16 @@ export const usePointerHandler = ({
   return { onPointerDown, onPointerUp, onPointerMove };
 };
 
-export const useResizeHandler = (ref: RefObject<HTMLCanvasElement>) => {
+export const useResizeHandler = (callback: (size: Size) => void) => {
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const resize = () =>
-      resizeCanvas(canvas, window.innerWidth, window.innerHeight);
-    window.addEventListener("resize", resize);
-    resize();
+    const fn = () =>
+      callback({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    window.addEventListener("resize", fn);
     return () => {
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", fn);
     };
-  }, []);
+  }, [callback]);
 };
