@@ -224,9 +224,6 @@ const useMainPointerHandler = () => {
 
   const onDoubleClick = useCallback(
     (ev: React.PointerEvent) => {
-      if (!mtx) {
-        return;
-      }
       staffMap.set(staffId++, {
         clef: { type: "g" as const },
         position: mtx
