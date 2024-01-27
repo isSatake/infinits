@@ -1,6 +1,5 @@
-import { Size, magnitude, scaleSize } from "@/org/geometry";
-import { RefObject, useEffect, useState } from "react";
-import { determineCanvasScale, resizeCanvas } from "./util";
+import { Size, magnitude } from "@/org/geometry";
+import { useEffect, useState } from "react";
 
 const kLongDownThresholdMs = 300;
 export const kDoubleClickThresholdMs = 300;
@@ -31,6 +30,7 @@ export const usePointerHandler = ({
   const [longDownTimer, setLongDownTimer] = useState<number>(-1);
   const [doubleClickTimer, setDoubleClickTimer] = useState<number>(-1);
   const [dragging, setDragging] = useState<boolean>(false);
+
   const onPointerDown = (ev: React.PointerEvent) => {
     setDown(ev);
     onDown?.(ev);
@@ -47,17 +47,18 @@ export const usePointerHandler = ({
     if (longDownTimer !== -1) {
       window.clearTimeout(longDownTimer);
       setLongDownTimer(-1);
-      onClick?.(ev);
       if (doubleClickTimer !== -1) {
         window.clearTimeout(doubleClickTimer);
         setDoubleClickTimer(-1);
         onDoubleClick?.(ev);
+      } else {
+        setDoubleClickTimer(
+          window.setTimeout(() => {
+            setDoubleClickTimer(-1);
+            onClick?.(ev);
+          }, kDoubleClickThresholdMs)
+        );
       }
-      setDoubleClickTimer(
-        window.setTimeout(() => {
-          setDoubleClickTimer(-1);
-        }, kDoubleClickThresholdMs)
-      );
     }
     setDown(undefined);
     setDragging(false);
@@ -80,6 +81,14 @@ export const usePointerHandler = ({
       ) > kDragThresholdMagnitude
     ) {
       setDragging(true);
+      if (longDownTimer !== -1) {
+        window.clearTimeout(longDownTimer);
+        setLongDownTimer(-1);
+      }
+      if (doubleClickTimer !== -1) {
+        window.clearTimeout(doubleClickTimer);
+        setDoubleClickTimer(-1);
+      }
     }
   };
   return { onPointerDown, onPointerUp, onPointerMove };
