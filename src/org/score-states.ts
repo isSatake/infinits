@@ -9,6 +9,9 @@ import {
 import { BeamModes, kAccidentalModes, TieModes } from "./input-modes";
 import { DefaultMap } from "./lib/default-map";
 import { getInitScale } from "./score-preferences";
+import { kDefaultStaffWidth } from "@/constants";
+import { UNIT, bStaffLineWidth } from "./font/bravura";
+import { genStaffStyle } from "./style/style";
 
 const elements = new DefaultMap<number, MusicalElement[]>(() => [
   { type: "note", duration: 4, pitches: [{ pitch: 1 }], tie: "start" },
@@ -59,26 +62,26 @@ export const setLastEditedIndex = (id: number, idx: number) => {
 export type StaffStyle = {
   clef: Clef;
   position: Point;
+  width: number;
+  lines: { y: number; width: number }[];
+  bbox: BBox;
 };
-const staffMap = new DefaultMap<number, StaffStyle>(() => ({
-  clef: { type: "g" },
-  position: { x: 0, y: 0 },
-}));
-export const getStaff = (id: number) => staffMap.get(id);
-export const setStaff = (id: number, v: StaffStyle) => {
-  staffMap.set(id, v);
-};
-export const addStaff = (v: StaffStyle): number => {
-  const id = staffMap.size;
-  staffMap.set(id, v);
-  return id;
-};
-export const getAllStaffs = () => {
-  return staffMap.entries();
-};
-export const getLastStaffId = () => {
-  return staffMap.size - 1;
-};
+// const staffMap = new DefaultMap<number, StaffStyle>(genStaffStyle);
+// export const getStaff = (id: number) => staffMap.get(id);
+// export const setStaff = (id: number, v: StaffStyle) => {
+//   staffMap.set(id, v);
+// };
+// export const addStaff = (v: StaffStyle): number => {
+//   const id = staffMap.size;
+//   staffMap.set(id, v);
+//   return id;
+// };
+// export const getAllStaffs = () => {
+//   return staffMap.entries();
+// };
+// export const getLastStaffId = () => {
+//   return staffMap.size - 1;
+// };
 
 const stylesMap = new DefaultMap<number, PaintElementStyle<PaintElement>[]>(
   () => []

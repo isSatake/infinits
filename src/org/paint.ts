@@ -15,6 +15,7 @@ import {
   restPathMap,
   upFlagMap,
 } from "./notation/constants";
+import { StaffStyle } from "./score-states";
 import { pitchToY } from "./style/style";
 import {
   BarStyle,
@@ -83,24 +84,32 @@ const paintGClef = (
 
 export const paintStaff = (
   ctx: CanvasRenderingContext2D,
-  left: number,
-  top: number,
-  width: number,
-  scale: number
+  style: StaffStyle
 ) => {
-  const heightHead = UNIT * scale;
-  for (let i = 0; i < 5; i++) {
-    const y = top + heightHead * i;
+  for (const line of style.lines) {
     ctx.save();
     ctx.strokeStyle = "#000";
-    ctx.lineWidth = bStaffLineWidth * scale;
+    ctx.lineWidth = line.width;
     ctx.beginPath();
-    ctx.moveTo(left, y);
-    ctx.lineTo(left + width, y);
+    ctx.moveTo(0, line.y);
+    ctx.lineTo(style.width, line.y);
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
   }
+  // const heightHead = UNIT * scale;
+  // for (let i = 0; i < 5; i++) {
+  //   const y = top + heightHead * i;
+  //   ctx.save();
+  //   ctx.strokeStyle = "#000";
+  //   ctx.lineWidth = bStaffLineWidth * scale;
+  //   ctx.beginPath();
+  //   ctx.moveTo(left, y);
+  //   ctx.lineTo(left + width, y);
+  //   ctx.closePath();
+  //   ctx.stroke();
+  //   ctx.restore();
+  // }
 };
 
 /**

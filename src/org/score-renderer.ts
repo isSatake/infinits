@@ -9,7 +9,6 @@ import {
   getPointing,
   initElementBBoxes,
   setStyles,
-  getAllStaffs,
   getStyles,
   clearCaretsMap,
   getMatrix,
@@ -25,18 +24,18 @@ export const setUpdated = (v: boolean) => {
 export const updateMain = () => {
   clearCaretsMap();
   initElementBBoxes();
-  for (const [id] of getAllStaffs()) {
-    setStyles(
-      id,
-      determinePaintElementStyle(
-        getElements(id),
-        UNIT,
-        { clef: { type: "g" } },
-        getPointing()
-      )
-    );
-    updateUIState(id);
-  }
+  // for (const [id] of getAllStaffs()) {
+  //   setStyles(
+  //     id,
+  //     determinePaintElementStyle(
+  //       getElements(id),
+  //       UNIT,
+  //       { clef: { type: "g" } },
+  //       getPointing()
+  //     )
+  //   );
+  //   updateUIState(id);
+  // }
   setUpdated(true);
 };
 
@@ -66,19 +65,19 @@ export const renderStaff = (ctx: CanvasRenderingContext2D, position: Point) => {
   const { a, b, c, d, e, f } = getMatrix();
   ctx.transform(a, b, c, d, e, f);
   // ctx.scale(getInitScale(), getInitScale());
-  for (const [id, staff] of getAllStaffs()) {
-    ctx.save();
-    ctx.translate(staff.position.x, staff.position.y);
-    paintStaff(ctx, 0, 0, UNIT * 100, 1);
-    for (const style of getStyles(id)) {
-      paintStyle(ctx, style);
-      // paintBBox(ctx, style.bbox); // debug
-      if (style.element.type !== "beam" && style.element.type !== "tie") {
-        ctx.translate(style.width, 0);
-      }
-    }
-    ctx.restore();
-  }
+  // for (const [id, staff] of getAllStaffs()) {
+  //   ctx.save();
+  //   ctx.translate(staff.position.x, staff.position.y);
+  //   paintStaff(ctx, 0, 0, UNIT * 100, 1);
+  //   for (const style of getStyles(id)) {
+  //     paintStyle(ctx, style);
+  //     // paintBBox(ctx, style.bbox); // debug
+  //     if (style.element.type !== "beam" && style.element.type !== "tie") {
+  //       ctx.translate(style.width, 0);
+  //     }
+  //   }
+  //   ctx.restore();
+  // }
   ctx.restore();
   renderCaret(ctx);
 };
@@ -88,15 +87,15 @@ const renderCaret = (mainCtx: CanvasRenderingContext2D) => {
   const { a, b, c, d, e, f } = getMatrix();
   mainCtx.transform(a, b, c, d, e, f);
   // mainCtx.scale(getInitScale(), getInitScale());
-  for (const [id, staff] of getAllStaffs()) {
-    mainCtx.save();
-    mainCtx.translate(staff.position.x, staff.position.y);
-    paintCaret({
-      ctx: mainCtx,
-      scale: 1,
-      caret: getCurrentCaret(id),
-    });
-    mainCtx.restore();
-  }
+  // for (const [id, staff] of getAllStaffs()) {
+  //   mainCtx.save();
+  //   mainCtx.translate(staff.position.x, staff.position.y);
+  //   paintCaret({
+  //     ctx: mainCtx,
+  //     scale: 1,
+  //     caret: getCurrentCaret(id),
+  //   });
+  //   mainCtx.restore();
+  // }
   mainCtx.restore();
 };

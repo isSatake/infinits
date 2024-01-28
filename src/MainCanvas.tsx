@@ -1,12 +1,26 @@
 import React from "react";
 import { UNIT } from "@/org/font/bravura";
-import { BBox, Point, Size, offsetBBox, scaleSize } from "@/org/geometry";
-import { paintCaret, paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
+import {
+  BBox,
+  Point,
+  Size,
+  isPointInBBox,
+  offsetBBox,
+  scaleSize,
+} from "@/org/geometry";
+import {
+  paintBBox,
+  paintCaret,
+  paintStaff,
+  paintStyle,
+  resetCanvas2,
+} from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
 import { StaffStyle } from "@/org/score-states";
 import {
   determineCaretStyle,
   determinePaintElementStyle,
+  genStaffStyle,
 } from "@/org/style/style";
 import {
   CaretStyle,
@@ -27,9 +41,7 @@ import { determineCanvasScale, resizeCanvas } from "./util";
 // staff id -> staff style
 let staffId = 0;
 const staffMapAtom = atom<Map<number, StaffStyle>>(
-  new Map([
-    [staffId++, { clef: { type: "g" as const }, position: { x: 0, y: 0 } }],
-  ])
+  new Map([[staffId++, genStaffStyle({ x: 0, y: 0 })]])
 );
 
 // staff id -> element style
@@ -136,10 +148,10 @@ export const MainCanvas = () => {
     for (const [id, staff] of staffMap.entries()) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
-      paintStaff(ctx, 0, 0, UNIT * 100, 1);
+      paintStaff(ctx, staff);
       for (const style of styleMap.get(id) ?? []) {
         paintStyle(ctx, style);
-        // paintBBox(ctx, style.bbox); // debug
+        paintBBox(ctx, style.bbox); // debug
         if (style.element.type !== "beam" && style.element.type !== "tie") {
           ctx.translate(style.width, 0);
         }
@@ -174,6 +186,7 @@ const useMainPointerHandler = () => {
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
+  const [hoge, setHoge] = useState<number>(0);
 
   const onDown = useCallback(
     (ev: React.PointerEvent) => {
@@ -182,6 +195,18 @@ const useMainPointerHandler = () => {
         setDoubleZoomTimer(
           window.setTimeout(() => {
             setDoubleZoomTimer(-1);
+            const point = mtx.inverse().transformPoint({
+              x: ev.clientX,
+              y: ev.clientY,
+            });
+            const staffId = Array.from(staffMap.keys()).find((id) => {
+              const staff = staffMap.get(id)!;
+              return isPointInBBox(point, staff.bbox);
+            });
+            if (staffId !== undefined) {
+              console.log("2024/01/28", "staff", staffId);
+              setHoge(staffId);
+            }
           }, kDoubleClickThresholdMs)
         );
       } else {
@@ -210,6 +235,9 @@ const useMainPointerHandler = () => {
         );
         return;
       }
+      if (false) {
+        // TODO drag and drop staff
+      }
       const dx = (ev.clientX - down.clientX) / tmpMtx.a;
       const dy = (ev.clientY - down.clientY) / tmpMtx.a;
       setMtx(tmpMtx.translate(dx, dy));
@@ -224,12 +252,12 @@ const useMainPointerHandler = () => {
 
   const onDoubleClick = useCallback(
     (ev: React.PointerEvent) => {
-      staffMap.set(staffId++, {
-        clef: { type: "g" as const },
-        position: mtx
-          .inverse()
-          .transformPoint({ x: ev.clientX, y: ev.clientY }),
-      });
+      staffMap.set(
+        staffId++,
+        genStaffStyle(
+          mtx.inverse().transformPoint({ x: ev.clientX, y: ev.clientY })
+        )
+      );
       setStaffMap(new Map(staffMap));
     },
     [staffMap, mtx]

@@ -1,3 +1,4 @@
+import { kDefaultStaffWidth } from "@/constants";
 import {
   bBarlineSeparation,
   bBeamSpacing,
@@ -6,6 +7,7 @@ import {
   bLedgerLineThickness,
   bRepeatBarlineDotSeparation,
   bStaffHeight,
+  bStaffLineWidth,
   bStemWidth,
   bThickBarlineThickness,
   bThinBarlineThickness,
@@ -34,6 +36,7 @@ import {
   Rest,
 } from "../notation/types";
 import { kDefaultCaretWidth } from "../score-preferences";
+import { StaffStyle } from "../score-states";
 import {
   BarStyle,
   BeamStyle,
@@ -1184,5 +1187,28 @@ export const determineCaretStyle = (
     y: 0,
     width: caretWidth,
     elIdx,
+  };
+};
+
+export const genStaffStyle = (position: Point): StaffStyle => {
+  const width = kDefaultStaffWidth;
+  const length = 5;
+  // TODO 本当はbStaffLineWidthを考慮してオフセットせなあかん
+  const lines = Array.from({ length }).map((_, i) => ({
+    y: position.y + i * UNIT,
+    width: bStaffLineWidth,
+  }));
+  const height = UNIT * length;
+  return {
+    clef: { type: "g" },
+    position,
+    width,
+    lines,
+    bbox: {
+      left: position.x,
+      top: position.y,
+      right: width - position.x,
+      bottom: height - position.y,
+    },
   };
 };
