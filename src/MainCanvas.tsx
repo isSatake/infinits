@@ -133,11 +133,11 @@ export const MainCanvas = () => {
     ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    for (const [_, staff] of staffMap.entries()) {
+    for (const [id, staff] of staffMap.entries()) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
       paintStaff(ctx, 0, 0, UNIT * 100, 1);
-      for (const style of styles) {
+      for (const style of styleMap.get(id) ?? []) {
         paintStyle(ctx, style);
         // paintBBox(ctx, style.bbox); // debug
         if (style.element.type !== "beam" && style.element.type !== "tie") {
