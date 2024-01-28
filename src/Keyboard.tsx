@@ -436,7 +436,8 @@ const Bars = () => {
             "[data-bartype]"
           ) as HTMLDivElement;
           console.log("target div", div);
-          const subtype = div?.dataset.bartype as BarTypes;
+          // click時はpreview前にonUpを通るのでbartype: undefinedになる
+          const subtype = (div?.dataset.bartype as BarTypes) ?? "single";
           console.log(ev);
           console.log(subtype);
           inputBar(subtype);
@@ -472,7 +473,7 @@ const Bars = () => {
 
 const Return = () => (
   <GrayKey>
-    <div className="keyImag returnKey" />
+    <div className="keyImg returnKey" />
   </GrayKey>
 );
 
