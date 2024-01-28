@@ -81,10 +81,6 @@ export const usePointerHandler = ({
       ) > kDragThresholdMagnitude
     ) {
       setDragging(true);
-      if (longDownTimer !== -1) {
-        window.clearTimeout(longDownTimer);
-        setLongDownTimer(-1);
-      }
       if (doubleClickTimer !== -1) {
         window.clearTimeout(doubleClickTimer);
         setDoubleClickTimer(-1);

@@ -533,7 +533,42 @@ const determineBarStyle = (
         bottom: bStaffHeight,
       },
     };
+  } else if (bar.subtype === "final") {
+    const boldWidth = bThickBarlineThickness * UNIT;
+    const width = thinWidth + barlineSeparation + boldWidth;
+    return {
+      element: {
+        type: "bar",
+        bar,
+        ...(pointing ? { color: kPointingColor } : {}),
+        elements: [
+          {
+            type: "line",
+            position: { x: 0, y: 0 },
+            height: bStaffHeight,
+            lineWidth: thinWidth,
+          },
+          {
+            type: "line",
+            position: {
+              x: thinWidth + barlineSeparation,
+              y: 0,
+            },
+            height: bStaffHeight,
+            lineWidth: boldWidth,
+          },
+        ],
+      },
+      width,
+      bbox: {
+        left: 0,
+        top: 0,
+        right: width,
+        bottom: bStaffHeight,
+      },
+    };
   } else {
+    // repeat
     const boldWidth = bThickBarlineThickness * UNIT;
     const dotToLineSeparation = bRepeatBarlineDotSeparation * UNIT;
     const width =
