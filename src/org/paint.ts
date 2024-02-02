@@ -97,19 +97,6 @@ export const paintStaff = (
     ctx.stroke();
     ctx.restore();
   }
-  // const heightHead = UNIT * scale;
-  // for (let i = 0; i < 5; i++) {
-  //   const y = top + heightHead * i;
-  //   ctx.save();
-  //   ctx.strokeStyle = "#000";
-  //   ctx.lineWidth = bStaffLineWidth * scale;
-  //   ctx.beginPath();
-  //   ctx.moveTo(left, y);
-  //   ctx.lineTo(left + width, y);
-  //   ctx.closePath();
-  //   ctx.stroke();
-  //   ctx.restore();
-  // }
 };
 
 /**
@@ -247,7 +234,9 @@ export const paintStyle = (
   { element }: PaintElementStyle<PaintElement>
 ) => {
   const { type } = element;
-  if (type === "clef") {
+  if (type === "staff") {
+    paintStaff(ctx, element);
+  } else if (type === "clef") {
     paintGClef(ctx, element, 0, 0);
   } else if (type === "note") {
     paintNote({ ctx, element });
@@ -265,9 +254,13 @@ export const paintStyle = (
 };
 
 // debug
-export const paintBBox = (ctx: CanvasRenderingContext2D, bbox: BBox) => {
+export const paintBBox = (
+  ctx: CanvasRenderingContext2D,
+  bbox: BBox,
+  color?: string
+) => {
   ctx.save();
-  ctx.strokeStyle = "#FF0000";
+  ctx.strokeStyle = color ?? "#FF0000";
   ctx.strokeRect(
     bbox.left,
     bbox.top,

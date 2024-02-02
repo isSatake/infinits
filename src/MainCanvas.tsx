@@ -41,7 +41,15 @@ import { determineCanvasScale, resizeCanvas } from "./util";
 // staff id -> staff style
 let staffId = 0;
 const staffMapAtom = atom<Map<number, StaffStyle>>(
-  new Map([[staffId++, genStaffStyle({ x: 0, y: 0 })]])
+  new Map([
+    [
+      staffId++,
+      genStaffStyle(
+        { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
+        { x: 0, y: 0 }
+      ),
+    ],
+  ])
 );
 
 // staff id -> element style
@@ -117,7 +125,13 @@ export const MainCanvas = () => {
     const caretStyles: CaretStyle[] = [];
     let cursor = 0;
     for (const style of styles) {
-      const { width, element, caretOption, bbox: _bbox, index: elIdx } = style;
+      const {
+        width,
+        element: { type },
+        caretOption,
+        bbox: _bbox,
+        index: elIdx,
+      } = style;
       const b = { bbox: offsetBBox(_bbox, { x: cursor }), elIdx };
       bboxMap.get(id)?.push(b) ?? bboxMap.set(id, [b]);
       setBBoxMap(new Map(bboxMap));
@@ -125,7 +139,7 @@ export const MainCanvas = () => {
         const caret = determineCaretStyle(caretOption, width, cursor);
         caretStyles.push(caret);
       }
-      if (element.type !== "beam" && element.type !== "tie") {
+      if (type !== "staff" && type !== "beam" && type !== "tie") {
         cursor += width;
       }
     }
@@ -148,11 +162,12 @@ export const MainCanvas = () => {
     for (const [id, staff] of staffMap.entries()) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
-      paintStaff(ctx, staff);
+      // paintStaff(ctx, staff);
       for (const style of styleMap.get(id) ?? []) {
+        const { type } = style.element;
         paintStyle(ctx, style);
-        paintBBox(ctx, style.bbox); // debug
-        if (style.element.type !== "beam" && style.element.type !== "tie") {
+        paintBBox(ctx, style.bbox, type === "staff" ? "blue" : undefined); // debug
+        if (type !== "staff" && type !== "beam" && type !== "tie") {
           ctx.translate(style.width, 0);
         }
       }
@@ -183,10 +198,15 @@ export const MainCanvas = () => {
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const [staffMap, setStaffMap] = useAtom(staffMapAtom);
+  const styleMap = useAtomValue(elementMapAtom);
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
-  const [hoge, setHoge] = useState<number>(0);
+  const [hoge, setHoge] = useState<number>();
+
+  useEffect(() => {
+    console.log("2024/01/28", "hoge", hoge);
+  }, [hoge]);
 
   const onDown = useCallback(
     (ev: React.PointerEvent) => {
@@ -199,12 +219,14 @@ const useMainPointerHandler = () => {
               x: ev.clientX,
               y: ev.clientY,
             });
-            const staffId = Array.from(staffMap.keys()).find((id) => {
+            const staffId = Array.from(styleMap.keys()).find((id) => {
               const staff = staffMap.get(id)!;
+              // TODO styleMapをなめてbboxを取得するのは効率が悪い
+              // staffごとのpaint style objを定義して、ルートにstaffstyleを置いて
+              // bboxをすぐ引けるようにする
               return isPointInBBox(point, staff.bbox);
             });
             if (staffId !== undefined) {
-              console.log("2024/01/28", "staff", staffId);
               setHoge(staffId);
             }
           }, kDoubleClickThresholdMs)
@@ -217,7 +239,7 @@ const useMainPointerHandler = () => {
         );
       }
     },
-    [mtx, doubleZoomTimer]
+    [mtx, doubleZoomTimer, styleMap]
   );
 
   const onDrag = useCallback(
@@ -235,19 +257,26 @@ const useMainPointerHandler = () => {
         );
         return;
       }
-      if (false) {
-        // TODO drag and drop staff
+      if (hoge !== undefined) {
+        const staff = staffMap.get(hoge)!;
+        staff.position = mtx
+          .inverse()
+          .transformPoint({ x: ev.clientX, y: ev.clientY });
+        console.log("2024/01/28", "staff", staff.position);
+        setStaffMap(new Map(staffMap));
+        return;
       }
       const dx = (ev.clientX - down.clientX) / tmpMtx.a;
       const dy = (ev.clientY - down.clientY) / tmpMtx.a;
       setMtx(tmpMtx.translate(dx, dy));
     },
-    [tmpMtx, doubleZoomPoint]
+    [mtx, tmpMtx, doubleZoomPoint, hoge, staffMap]
   );
 
   const onUp = useCallback(() => {
     setTmpMtx(undefined);
     setDoubleZoomPoint(undefined);
+    setHoge(undefined);
   }, []);
 
   const onDoubleClick = useCallback(
@@ -255,6 +284,7 @@ const useMainPointerHandler = () => {
       staffMap.set(
         staffId++,
         genStaffStyle(
+          { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
           mtx.inverse().transformPoint({ x: ev.clientX, y: ev.clientY })
         )
       );
