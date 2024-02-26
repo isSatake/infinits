@@ -211,31 +211,39 @@ const useMainPointerHandler = () => {
   const onDown = useCallback(
     (ev: React.PointerEvent) => {
       setTmpMtx(mtx);
-      if (doubleZoomTimer === -1) {
-        setDoubleZoomTimer(
-          window.setTimeout(() => {
-            setDoubleZoomTimer(-1);
-            const point = mtx.inverse().transformPoint({
-              x: ev.clientX,
-              y: ev.clientY,
-            });
-            const staffId = Array.from(styleMap.keys()).find((id) => {
-              const staff = staffMap.get(id)!;
-              // TODO styleMapをなめてbboxを取得するのは効率が悪い
-              // staffごとのpaint style objを定義して、ルートにstaffstyleを置いて
-              // bboxをすぐ引けるようにする
-              return isPointInBBox(point, staff.bbox);
-            });
-            if (staffId !== undefined) {
-              setHoge(staffId);
-            }
-          }, kDoubleClickThresholdMs)
-        );
-      } else {
+      const point = mtx
+        .inverse()
+        .transformPoint({ x: ev.clientX, y: ev.clientY });
+      if (doubleZoomTimer > -1) {
         window.clearTimeout(doubleZoomTimer);
         setDoubleZoomTimer(-1);
-        setDoubleZoomPoint(
-          mtx.inverse().transformPoint({ x: ev.clientX, y: ev.clientY })
+        setDoubleZoomPoint(point);
+      } else {
+        const dndStaff = () => {
+          console.log("2024/01/28", "dndStaff");
+          setDoubleZoomTimer(-1);
+          // TODO styleMapをなめてbboxを取得するのは効率が悪い
+          // staffごとのpaint style objを定義して、ルートにstaffstyleを置いて
+          // bboxをすぐ引けるようにする
+          // TODO pointとstaffの位置をhogeに入れる
+          // DnD開始時にstaffがポインタに飛ばないように
+          const style = Array.from(styleMap.entries()).find(([_, styles]) => {
+            const staff = styles.find(
+              (style): style is PaintElementStyle<StaffStyle> =>
+                style.element.type === "staff"
+            );
+            if (staff) {
+              const bb = offsetBBox(staff.bbox, staff.element.position);
+              console.log("dnd", point, bb);
+              return isPointInBBox(point, bb);
+            }
+          });
+          if (style) {
+            setHoge(style[0]);
+          }
+        };
+        setDoubleZoomTimer(
+          window.setTimeout(dndStaff, kDoubleClickThresholdMs)
         );
       }
     },
