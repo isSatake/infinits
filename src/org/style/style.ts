@@ -1,3 +1,4 @@
+import { kDefaultStaffWidth } from "@/constants";
 import {
   bBarlineSeparation,
   bBeamSpacing,
@@ -6,6 +7,7 @@ import {
   bLedgerLineThickness,
   bRepeatBarlineDotSeparation,
   bStaffHeight,
+  bStaffLineWidth,
   bStemWidth,
   bThickBarlineThickness,
   bThinBarlineThickness,
@@ -32,8 +34,10 @@ import {
   Pitch,
   PitchAcc,
   Rest,
+  Staff,
 } from "../notation/types";
 import { kDefaultCaretWidth } from "../score-preferences";
+import { StaffStyle } from "../score-states";
 import {
   BarStyle,
   BeamStyle,
@@ -1058,7 +1062,7 @@ const determineClefStyle = (
 export const determinePaintElementStyle = (
   elements: MusicalElement[],
   gapWidth: number,
-  headOpts?: { clef: Clef },
+  staffStyle?: StaffStyle,
   pointing?: Pointing
 ): PaintElementStyle<PaintElement>[] => {
   const styles: PaintElementStyle<PaintElement>[] = [];
@@ -1068,13 +1072,14 @@ export const determinePaintElementStyle = (
   });
   let left = 0;
   console.log("left", left);
-  if (headOpts) {
+  if (staffStyle) {
     styles.push(gapEl);
     left += gapWidth;
     console.log("left", left);
-    if (headOpts.clef) {
+    const { staff } = staffStyle;
+    if (staff.clef) {
       const _pointing = pointing?.index === -1 ? pointing : undefined;
-      const clef = determineClefStyle(headOpts.clef, -1, _pointing);
+      const clef = determineClefStyle(staff.clef, -1, _pointing);
       styles.push(clef);
       left += clef.width;
       console.log("left", left);
@@ -1169,6 +1174,19 @@ export const determinePaintElementStyle = (
   for (let { index, style } of ties) {
     styles.splice(index, 0, style);
   }
+  if (staffStyle) {
+    const width = Math.max(staffStyle.width, left);
+    styles.unshift({
+      element: staffStyle,
+      width,
+      bbox: {
+        left: 0,
+        top: 0,
+        right: width,
+        bottom: UNIT * (staffStyle.staff.lineCount - 1),
+      },
+    });
+  }
   return styles;
 };
 
@@ -1186,3 +1204,22 @@ export const determineCaretStyle = (
     elIdx,
   };
 };
+
+export const genStaffStyle = (staff: Staff, position: Point): StaffStyle => {
+  return {
+    type: "staff",
+    staff,
+    position,
+    width: kDefaultStaffWidth,
+    lines: Array.from({ length: staff.lineCount }).map((_, i) => ({
+      y: UNIT * i,
+      width: bStaffLineWidth,
+    })),
+  };
+};
+
+// export type StaffPaintStyle = {
+//   staff: StaffStyle;
+//   elements: PaintElementStyle<PaintElement>[];
+//   caret: CaretStyle;
+// };

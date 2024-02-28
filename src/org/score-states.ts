@@ -1,5 +1,5 @@
 import { BBox, Point } from "./geometry";
-import { Clef, MusicalElement } from "./notation/types";
+import { Clef, MusicalElement, Staff } from "./notation/types";
 import {
   CaretStyle,
   PaintElement,
@@ -57,27 +57,11 @@ export const setLastEditedIndex = (id: number, idx: number) => {
 };
 
 export type StaffStyle = {
-  clef: Clef;
+  type: "staff";
+  staff: Staff;
   position: Point;
-};
-const staffMap = new DefaultMap<number, StaffStyle>(() => ({
-  clef: { type: "g" },
-  position: { x: 0, y: 0 },
-}));
-export const getStaff = (id: number) => staffMap.get(id);
-export const setStaff = (id: number, v: StaffStyle) => {
-  staffMap.set(id, v);
-};
-export const addStaff = (v: StaffStyle): number => {
-  const id = staffMap.size;
-  staffMap.set(id, v);
-  return id;
-};
-export const getAllStaffs = () => {
-  return staffMap.entries();
-};
-export const getLastStaffId = () => {
-  return staffMap.size - 1;
+  width: number;
+  lines: { y: number; width: number }[];
 };
 
 const stylesMap = new DefaultMap<number, PaintElementStyle<PaintElement>[]>(

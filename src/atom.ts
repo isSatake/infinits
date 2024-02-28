@@ -30,7 +30,7 @@ export const previewSetterAtom = atom(
       canvasCenter: update.canvasCenter,
       staff: update.staff ??
         get(previewAtom)?.staff ?? {
-          clef: { type: "g" as const },
+          clef: { pitch: "g" as const },
           position: { x: 0, y: 0 },
         },
       elements: update.elements ?? get(previewAtom)?.elements ?? [],

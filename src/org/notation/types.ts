@@ -1,11 +1,11 @@
 export const durations = [1, 2, 4, 8, 16, 32] as const;
-export type Duration = typeof durations[number];
+export type Duration = (typeof durations)[number];
 
 // C4 (middleC) = 0
 export type Pitch = number;
 
 export const kAccidentals = ["sharp", "natural", "flat"] as const;
-export type Accidental = typeof kAccidentals[number];
+export type Accidental = (typeof kAccidentals)[number];
 
 export type PitchAcc = {
   pitch: Pitch;
@@ -42,5 +42,12 @@ export type Repeat = {
 export type MusicalElement = Note | Rest | Bar;
 
 export type Clef = {
-  type: "g";
+  type: "clef";
+  pitch: "g" | "f" | "c";
+};
+
+export type Staff = {
+  type: "staff";
+  clef: Clef;
+  lineCount: number;
 };
