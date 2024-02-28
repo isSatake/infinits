@@ -1,5 +1,6 @@
 import { BBox, Point } from "../geometry";
 import { Accidental, Bar, Clef, Duration, Note, Rest } from "../notation/types";
+import { StaffStyle } from "../score-states";
 
 export type CaretStyle = { x: number; y: number; width: number; elIdx: number };
 type OptionalColor = { color?: string };
@@ -66,6 +67,7 @@ export type TieStyle = {
   end: Point;
 } & OptionalColor;
 export type PaintElement =
+  | StaffStyle
   | NoteStyle
   | RestStyle
   | BeamStyle
