@@ -9,7 +9,7 @@ import {
 } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import { caretAtom, caretStyleAtom, elementsAtom } from "./atom";
+import { caretAtom, caretStyleAtom, elementsAtom, previewAtom } from "./atom";
 import { usePointerHandler } from "./hooks";
 import { FC, useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";

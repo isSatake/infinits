@@ -12,6 +12,7 @@ export type PreviewState = {
   elements: MusicalElement[];
   insertedIndex: number;
 };
+export const previewAtom = atom<PreviewState | undefined>(undefined);
 
 export const caretAtom = atom<{ staffId: number; idx: number }>({
   staffId: 0,
