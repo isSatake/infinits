@@ -63,22 +63,6 @@ export type StaffStyle = {
   width: number;
   lines: { y: number; width: number }[];
 };
-// const staffMap = new DefaultMap<number, StaffStyle>(genStaffStyle);
-// export const getStaff = (id: number) => staffMap.get(id);
-// export const setStaff = (id: number, v: StaffStyle) => {
-//   staffMap.set(id, v);
-// };
-// export const addStaff = (v: StaffStyle): number => {
-//   const id = staffMap.size;
-//   staffMap.set(id, v);
-//   return id;
-// };
-// export const getAllStaffs = () => {
-//   return staffMap.entries();
-// };
-// export const getLastStaffId = () => {
-//   return staffMap.size - 1;
-// };
 
 const stylesMap = new DefaultMap<number, PaintElementStyle<PaintElement>[]>(
   () => []
