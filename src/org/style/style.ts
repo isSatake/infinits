@@ -37,7 +37,7 @@ import {
   Staff,
 } from "../notation/types";
 import { kDefaultCaretWidth } from "../score-preferences";
-import { StaffStyle } from "../score-states";
+import { StaffStyle } from "./types";
 import {
   BarStyle,
   BeamStyle,
@@ -1217,9 +1217,3 @@ export const genStaffStyle = (staff: Staff, position: Point): StaffStyle => {
     })),
   };
 };
-
-// export type StaffPaintStyle = {
-//   staff: StaffStyle;
-//   elements: PaintElementStyle<PaintElement>[];
-//   caret: CaretStyle;
-// };

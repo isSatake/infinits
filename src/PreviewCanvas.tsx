@@ -1,7 +1,7 @@
 import React from "react";
 import { useEffect, useRef } from "react";
 import { resizeCanvas } from "./util";
-import { paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
+import { paintStyle, resetCanvas2 } from "@/org/paint";
 import { PreviewState } from "./atom";
 import { atom, useAtom } from "jotai";
 import {
@@ -65,7 +65,6 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     ctx.scale(devicePixelRatio, devicePixelRatio);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    paintStaff(ctx, 0, 0, UNIT * 100, 1);
     // 入力中Elementをセンタリング
     const centerX = elIdxToX.get(preview.insertedIndex)!;
     ctx.translate(htmlWidth / 2 / a - centerX, 0);

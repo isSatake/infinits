@@ -10,14 +10,9 @@ import {
   scalePoint,
   scaleSize,
 } from "@/org/geometry";
-import {
-  paintBBox,
-  paintCaret,
-  paintStyle,
-  resetCanvas2,
-} from "@/org/paint";
+import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
-import { StaffStyle } from "@/org/score-states";
+import { StaffStyle } from "./org/style/types";
 import {
   determineCaretStyle,
   determinePaintElementStyle,
@@ -40,8 +35,9 @@ import {
 import { determineCanvasScale, resizeCanvas } from "./util";
 
 // staff id -> staff style
+// atom.tsに移動
 let staffId = 0;
-const staffMapAtom = atom<Map<number, StaffStyle>>(
+export const staffMapAtom = atom<Map<number, StaffStyle>>(
   new Map([
     [
       staffId++,

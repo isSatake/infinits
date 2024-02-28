@@ -9,16 +9,12 @@ import {
 } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import {
-  caretAtom,
-  caretStyleAtom,
-  elementsAtom,
-  previewSetterAtom,
-} from "./atom";
+import { caretAtom, caretStyleAtom, elementsAtom } from "./atom";
 import { usePointerHandler } from "./hooks";
 import { FC, useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
+import { staffMapAtom } from "./MainCanvas";
 
 export const Keyboard = () => {
   return (
@@ -199,20 +195,25 @@ const useInputElements: (duration: Duration) => (newPitch: PitchAcc) => {
 };
 
 const usePreviewHandlers = (duration: Duration) => {
-  const preview = useSetAtom(previewSetterAtom);
+  const preview = useSetAtom(previewAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const genPreviewElements = useInputElements(duration);
   const [caret, setCaret] = useAtom(caretAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
+  const staff = useAtomValue(staffMapAtom).get(caret.staffId);
 
   return usePointerHandler({
     onLongDown: (ev) => {
+      if (!staff) {
+        return;
+      }
       const newPitch = {
         pitch: pitchByDistance(getPreviewScale(), 0, 6),
         accidental,
       };
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
+        staff: { ...staff, position: { x: 0, y: 0 } },
         ...genPreviewElements(newPitch),
       });
     },
@@ -223,12 +224,14 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const { elements, insertedIndex, caretAdvance } =
-        genPreviewElements(newPitch);
+      const { elements, caretAdvance } = genPreviewElements(newPitch);
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
     },
     onDrag: (ev, down) => {
+      if (!staff) {
+        return;
+      }
       const dy = down.clientY - ev.clientY;
       const newPitch = {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
@@ -236,6 +239,7 @@ const usePreviewHandlers = (duration: Duration) => {
       };
       preview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
+        staff: { ...staff, position: { x: 0, y: 0 } },
         ...genPreviewElements(newPitch),
       });
     },

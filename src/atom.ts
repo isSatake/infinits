@@ -1,6 +1,6 @@
 import { Point } from "@/org/geometry";
 import { MusicalElement } from "@/org/notation/types";
-import { StaffStyle } from "@/org/score-states";
+import { StaffStyle } from "./org/style/types";
 import { atom } from "jotai";
 import { kSampleElements } from "./constants";
 import { CaretStyle } from "@/org/style/types";
@@ -12,33 +12,6 @@ export type PreviewState = {
   elements: MusicalElement[];
   insertedIndex: number;
 };
-export const previewAtom = atom<PreviewState | undefined>(undefined);
-// canvasCenter以外の値をPATCHできるatom
-export const previewSetterAtom = atom(
-  (get) => get(previewAtom),
-  (
-    get,
-    set,
-    update: ({ canvasCenter: Point } & Partial<PreviewState>) | undefined
-  ) => {
-    if (update === undefined) {
-      set(previewAtom, undefined);
-      return;
-    }
-    set(previewAtom, {
-      ...update,
-      canvasCenter: update.canvasCenter,
-      staff: update.staff ??
-        get(previewAtom)?.staff ?? {
-          clef: { pitch: "g" as const },
-          position: { x: 0, y: 0 },
-        },
-      elements: update.elements ?? get(previewAtom)?.elements ?? [],
-      insertedIndex:
-        update.insertedIndex ?? get(previewAtom)?.insertedIndex ?? 0,
-    });
-  }
-);
 
 export const caretAtom = atom<{ staffId: number; idx: number }>({
   staffId: 0,
