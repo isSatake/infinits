@@ -9,12 +9,17 @@ import {
 } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import { caretAtom, caretStyleAtom, elementsAtom, previewAtom } from "./atom";
+import {
+  caretAtom,
+  caretStyleAtom,
+  elementsAtom,
+  previewAtom,
+  useStaffs,
+} from "./atom";
 import { usePointerHandler } from "./hooks";
 import { FC, useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
-import { staffMapAtom } from "./MainCanvas";
 
 export const Keyboard = () => {
   return (
@@ -200,7 +205,7 @@ const usePreviewHandlers = (duration: Duration) => {
   const genPreviewElements = useInputElements(duration);
   const [caret, setCaret] = useAtom(caretAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
-  const staff = useAtomValue(staffMapAtom).get(caret.staffId);
+  const staff = useStaffs().get(caret.staffId);
 
   return usePointerHandler({
     onLongDown: (ev) => {

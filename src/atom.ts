@@ -1,9 +1,11 @@
 import { Point } from "@/org/geometry";
 import { MusicalElement } from "@/org/notation/types";
-import { StaffStyle } from "./org/style/types";
-import { atom } from "jotai";
-import { kSampleElements } from "./constants";
 import { CaretStyle } from "@/org/style/types";
+import { atom, useAtom } from "jotai";
+import { useCallback, useRef } from "react";
+import { kSampleElements } from "./constants";
+import { genStaffStyle } from "./org/style/style";
+import { StaffStyle } from "./org/style/types";
 
 // PreviewCanvasの表示
 export type PreviewState = {
@@ -24,3 +26,33 @@ export const caretStyleAtom = atom<CaretStyle[]>([]);
 export const elementsAtom = atom<Map<number, MusicalElement[]>>(
   new Map([[0, kSampleElements]])
 );
+// staff id -> staff style
+const staffMapAtom = atom<Map<number, StaffStyle>>(new Map());
+export const useStaffs = (): {
+  map: Map<number, StaffStyle>;
+  get: (id: number) => StaffStyle | undefined;
+  add: (style: StaffStyle) => void;
+  update: (id: number, fn: (style: StaffStyle) => StaffStyle) => void;
+} => {
+  const [map, setMap] = useAtom(staffMapAtom);
+  const idRef = useRef(0);
+  const add = useCallback(
+    (style: StaffStyle) => {
+      map.set(idRef.current++, style);
+      setMap(new Map(map));
+    },
+    [map]
+  );
+  const get = useCallback((id: number) => map.get(id), [map]);
+  const update = useCallback(
+    (id: number, fn: (style: StaffStyle) => StaffStyle) => {
+      const style = map.get(id);
+      if (style) {
+        map.set(id, fn(style));
+        setMap(new Map(map));
+      }
+    },
+    [map]
+  );
+  return { map, add, get, update };
+};

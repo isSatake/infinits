@@ -26,28 +26,13 @@ import {
 } from "@/org/style/types";
 import { atom, useAtom, useAtomValue } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { caretAtom, caretStyleAtom, elementsAtom } from "./atom";
+import { caretAtom, caretStyleAtom, elementsAtom, useStaffs } from "./atom";
 import {
   kDoubleClickThresholdMs,
   usePointerHandler,
   useResizeHandler,
 } from "./hooks";
 import { determineCanvasScale, resizeCanvas } from "./util";
-
-// staff id -> staff style
-// atom.tsに移動
-let staffId = 0;
-export const staffMapAtom = atom<Map<number, StaffStyle>>(
-  new Map([
-    [
-      staffId++,
-      genStaffStyle(
-        { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
-        { x: 0, y: 0 }
-      ),
-    ],
-  ])
-);
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -65,7 +50,6 @@ const mtxAtom = atom<DOMMatrix>(
 
 export const MainCanvas = () => {
   const ref = useRef<HTMLCanvasElement>(null);
-  const staffMap = useAtomValue(staffMapAtom);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
@@ -79,6 +63,7 @@ export const MainCanvas = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
+  const staffs = useStaffs();
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -100,7 +85,7 @@ export const MainCanvas = () => {
   useEffect(() => {
     console.log("render", "start");
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
-    for (const [id, staff] of staffMap.entries()) {
+    for (const [id, staff] of staffs.map) {
       const styles = determinePaintElementStyle(
         elements.get(id) ?? [],
         UNIT,
@@ -110,7 +95,7 @@ export const MainCanvas = () => {
       map.set(id, styles);
     }
     setStyleMap(map);
-  }, [staffMap, elements, pointing]);
+  }, [staffs.map, elements, pointing]);
 
   // caret style
   useEffect(() => {
@@ -156,7 +141,7 @@ export const MainCanvas = () => {
     ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    for (const [id, staff] of staffMap.entries()) {
+    for (const [id, staff] of staffs.map) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
       // paintStaff(ctx, staff);
@@ -170,7 +155,7 @@ export const MainCanvas = () => {
       }
       ctx.restore();
     }
-    const currentStaff = staffMap.get(focus.staffId);
+    const currentStaff = staffs.get(focus.staffId);
     const caret = caretStyle.at(focus.idx);
     if (currentStaff && caret) {
       ctx.save();
@@ -180,7 +165,7 @@ export const MainCanvas = () => {
     }
     ctx.restore();
     console.log("render", "end");
-  }, [mtx, staffMap, styleMap, caretStyle, focus, canvasSize]);
+  }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
 
   return (
     <canvas
@@ -194,12 +179,12 @@ export const MainCanvas = () => {
 
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
-  const [staffMap, setStaffMap] = useAtom(staffMapAtom);
   const styleMap = useAtomValue(elementMapAtom);
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
   const [dragStaff, setDragStaff] = useState<{ id: number; offset: Point }>();
+  const staffs = useStaffs();
 
   useEffect(() => {
     console.log("2024/01/28", "hoge", dragStaff);
@@ -270,20 +255,21 @@ const useMainPointerHandler = () => {
         return;
       }
       if (dragStaff !== undefined) {
-        const staff = staffMap.get(dragStaff.id)!;
-        const point = mtx.inverse().transformPoint({
-          x: ev.clientX,
-          y: ev.clientY,
+        staffs.update(dragStaff.id, (staff) => {
+          const point = mtx.inverse().transformPoint({
+            x: ev.clientX,
+            y: ev.clientY,
+          });
+          staff.position = addPoint(point, scalePoint(dragStaff.offset, -1));
+          return staff;
         });
-        staff.position = addPoint(point, scalePoint(dragStaff.offset, -1));
-        setStaffMap(new Map(staffMap));
         return;
       }
       const dx = (ev.clientX - down.clientX) / tmpMtx.a;
       const dy = (ev.clientY - down.clientY) / tmpMtx.a;
       setMtx(tmpMtx.translate(dx, dy));
     },
-    [mtx, tmpMtx, doubleZoomPoint, dragStaff, staffMap]
+    [mtx, tmpMtx, doubleZoomPoint, dragStaff, staffs]
   );
 
   const onUp = useCallback(() => {
@@ -294,16 +280,14 @@ const useMainPointerHandler = () => {
 
   const onDoubleClick = useCallback(
     (ev: React.PointerEvent) => {
-      staffMap.set(
-        staffId++,
+      staffs.add(
         genStaffStyle(
           { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
           mtx.inverse().transformPoint({ x: ev.clientX, y: ev.clientY })
         )
       );
-      setStaffMap(new Map(staffMap));
     },
-    [staffMap, mtx]
+    [staffs, mtx]
   );
 
   return {
