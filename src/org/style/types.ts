@@ -1,9 +1,25 @@
 import { BBox, Point } from "../geometry";
-import { Accidental, Bar, Clef, Duration, Note, Rest } from "../notation/types";
-import { StaffStyle } from "../score-states";
+import {
+  Accidental,
+  Bar,
+  Clef,
+  Duration,
+  Note,
+  Rest,
+  Staff,
+} from "../notation/types";
 
 export type CaretStyle = { x: number; y: number; width: number; elIdx: number };
 type OptionalColor = { color?: string };
+export type PaintElement =
+  | StaffStyle
+  | NoteStyle
+  | RestStyle
+  | BeamStyle
+  | BarStyle
+  | ClefStyle
+  | GapStyle
+  | TieStyle;
 // 1音
 export type NoteStyle = {
   type: "note";
@@ -66,15 +82,13 @@ export type TieStyle = {
   cpHigh: Point;
   end: Point;
 } & OptionalColor;
-export type PaintElement =
-  | StaffStyle
-  | NoteStyle
-  | RestStyle
-  | BeamStyle
-  | BarStyle
-  | ClefStyle
-  | GapStyle
-  | TieStyle;
+export type StaffStyle = {
+  type: "staff";
+  staff: Staff;
+  position: Point;
+  width: number;
+  lines: { y: number; width: number }[];
+};
 export type Pointing = { index: number; type: PointingType };
 type PointingType = "note" | "rest" | "bar" | "clef";
 export type CaretOption = {

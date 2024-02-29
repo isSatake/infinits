@@ -1,7 +1,7 @@
 import React from "react";
 import { useEffect, useRef } from "react";
 import { resizeCanvas } from "./util";
-import { paintStaff, paintStyle, resetCanvas2 } from "@/org/paint";
+import { paintStyle, resetCanvas2 } from "@/org/paint";
 import { PreviewState } from "./atom";
 import { atom, useAtom } from "jotai";
 import {
@@ -18,11 +18,11 @@ const htmlHeight = getPreviewHeight();
 // B4がcanvasのvertical centerにくるように
 const topOfStaff = htmlHeight / 2 - (bStaffHeight * getPreviewScale()) / 2;
 
-const mtxAtom = atom<DOMMatrix | undefined>(undefined);
+// x: 左端 y: 中心
+const mtx = new DOMMatrix([1, 0, 0, 1, 0, topOfStaff]).scale(getPreviewScale());
 
 export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
   const ref = useRef<HTMLCanvasElement>(null);
-  const [mtx, setMtx] = useAtom(mtxAtom);
   useEffect(() => {
     const canvas = ref.current!;
     // TODO MainCanvasと同様に最大scaleを決める
@@ -35,12 +35,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     resetCanvas2({ ctx: canvas.getContext("2d")!, fillStyle: "white" });
   }, []);
   useEffect(() => {
-    // x: 左端 y: 中心
-    setMtx(new DOMMatrix([1, 0, 0, 1, 0, topOfStaff]).scale(getPreviewScale()));
-  }, []);
-  useEffect(() => {
     console.log("preview", "start");
-    if (!preview.staff || !preview.elements || !mtx) return;
     const styles = determinePaintElementStyle(
       preview.elements,
       UNIT,
@@ -54,7 +49,11 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
       if (index !== undefined) {
         elIdxToX.set(index, cursor + width / 2);
       }
-      if (element.type !== "beam" && element.type !== "tie") {
+      if (
+        element.type !== "staff" &&
+        element.type !== "beam" &&
+        element.type !== "tie"
+      ) {
         cursor += width;
       }
     }
@@ -65,14 +64,17 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     ctx.scale(devicePixelRatio, devicePixelRatio);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    paintStaff(ctx, 0, 0, UNIT * 100, 1);
     // 入力中Elementをセンタリング
     const centerX = elIdxToX.get(preview.insertedIndex)!;
     ctx.translate(htmlWidth / 2 / a - centerX, 0);
     for (const style of styles) {
       paintStyle(ctx, style);
       // paintBBox(ctx, style.bbox); // debug
-      if (style.element.type !== "beam" && style.element.type !== "tie") {
+      if (
+        style.element.type !== "staff" &&
+        style.element.type !== "beam" &&
+        style.element.type !== "tie"
+      ) {
         ctx.translate(style.width, 0);
       }
     }

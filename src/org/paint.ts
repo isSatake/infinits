@@ -15,7 +15,7 @@ import {
   restPathMap,
   upFlagMap,
 } from "./notation/constants";
-import { StaffStyle } from "./score-states";
+import { StaffStyle } from "./style/types";
 import { pitchToY } from "./style/style";
 import {
   BarStyle,
