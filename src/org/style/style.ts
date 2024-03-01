@@ -1175,7 +1175,8 @@ export const determinePaintElementStyle = (
     styles.splice(index, 0, style);
   }
   if (staffStyle) {
-    const width = Math.max(staffStyle.width, left);
+    const width =
+      staffStyle.width.type === "auto" ? left : staffStyle.width.value;
     styles.unshift({
       element: staffStyle,
       width,
@@ -1210,7 +1211,7 @@ export const genStaffStyle = (staff: Staff, position: Point): StaffStyle => {
     type: "staff",
     staff,
     position,
-    width: kDefaultStaffWidth,
+    width: { type: "auto" },
     lines: Array.from({ length: staff.lineCount }).map((_, i) => ({
       y: UNIT * i,
       width: bStaffLineWidth,
