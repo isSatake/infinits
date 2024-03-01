@@ -190,6 +190,39 @@ const useMainPointerHandler = () => {
     console.log("2024/01/28", "hoge", dragStaff);
   }, [dragStaff]);
 
+  const dndStaff = useCallback(
+    (desktopPoint: Point) => {
+      // TODO styleMapをなめてbboxを取得するのは効率が悪い
+      // staffごとのpaint style objを定義して、ルートにstaffstyleを置いて
+      // bboxをすぐ引けるようにする
+      const style = Array.from(styleMap.entries()).find(
+        (v): v is [number, PaintElementStyle<StaffStyle>[]] => {
+          const [_, styles] = v;
+          const staff = styles.find(
+            (style): style is PaintElementStyle<StaffStyle> =>
+              style.element.type === "staff"
+          );
+          if (staff) {
+            const bb = offsetBBox(staff.bbox, staff.element.position);
+            return isPointInBBox(desktopPoint, bb);
+          }
+          return false;
+        }
+      );
+      if (style) {
+        const id = style[0];
+        const staffStyle = style[1][0].element;
+        const offset = {
+          x: desktopPoint.x - staffStyle.position.x,
+          y: desktopPoint.y - staffStyle.position.y,
+        };
+        // const offset = addPoint(point, scalePoint(staffStyle.position, -1));
+        setDragStaff({ id, offset });
+      }
+    },
+    [styleMap]
+  );
+
   const onDown = useCallback(
     (ev: React.PointerEvent) => {
       setTmpMtx(mtx);
@@ -201,42 +234,16 @@ const useMainPointerHandler = () => {
         setDoubleZoomTimer(-1);
         setDoubleZoomPoint(point);
       } else {
-        const dndStaff = () => {
-          setDoubleZoomTimer(-1);
-          // TODO styleMapをなめてbboxを取得するのは効率が悪い
-          // staffごとのpaint style objを定義して、ルートにstaffstyleを置いて
-          // bboxをすぐ引けるようにする
-          const style = Array.from(styleMap.entries()).find(
-            (v): v is [number, PaintElementStyle<StaffStyle>[]] => {
-              const [_, styles] = v;
-              const staff = styles.find(
-                (style): style is PaintElementStyle<StaffStyle> =>
-                  style.element.type === "staff"
-              );
-              if (staff) {
-                const bb = offsetBBox(staff.bbox, staff.element.position);
-                return isPointInBBox(point, bb);
-              }
-              return false;
-            }
-          );
-          if (style) {
-            const id = style[0];
-            const staffStyle = style[1][0].element;
-            const offset = {
-              x: point.x - staffStyle.position.x,
-              y: point.y - staffStyle.position.y,
-            };
-            // const offset = addPoint(point, scalePoint(staffStyle.position, -1));
-            setDragStaff({ id, offset });
-          }
-        };
+        dndStaff(point);
         setDoubleZoomTimer(
-          window.setTimeout(dndStaff, kDoubleClickThresholdMs)
+          window.setTimeout(
+            () => setDoubleZoomTimer(-1),
+            kDoubleClickThresholdMs
+          )
         );
       }
     },
-    [mtx, doubleZoomTimer, styleMap]
+    [mtx, doubleZoomTimer, styleMap, dndStaff]
   );
 
   const onDrag = useCallback(
