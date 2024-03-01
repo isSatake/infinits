@@ -86,8 +86,8 @@ export type StaffStyle = {
   type: "staff";
   staff: Staff;
   position: Point;
-  width: number;
   lines: { y: number; width: number }[];
+  width: { type: "auto" } | { type: "fixed"; value: number };
 };
 export type Pointing = { index: number; type: PointingType };
 type PointingType = "note" | "rest" | "bar" | "clef";
