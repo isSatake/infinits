@@ -84,7 +84,8 @@ const paintGClef = (
 
 export const paintStaff = (
   ctx: CanvasRenderingContext2D,
-  style: StaffStyle
+  style: StaffStyle,
+  computedWidth: number
 ) => {
   for (const line of style.lines) {
     ctx.save();
@@ -92,7 +93,7 @@ export const paintStaff = (
     ctx.lineWidth = line.width;
     ctx.beginPath();
     ctx.moveTo(0, line.y);
-    ctx.lineTo(style.width, line.y);
+    ctx.lineTo(computedWidth, line.y);
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
@@ -231,11 +232,12 @@ const paintTie = (ctx: CanvasRenderingContext2D, tie: TieStyle) => {
 
 export const paintStyle = (
   ctx: CanvasRenderingContext2D,
-  { element }: PaintElementStyle<PaintElement>
+  style: PaintElementStyle<PaintElement>
 ) => {
+  const { element } = style;
   const { type } = element;
-  if (type === "staff") {
-    paintStaff(ctx, element);
+  if (element.type === "staff") {
+    paintStaff(ctx, element, style.width);
   } else if (type === "clef") {
     paintGClef(ctx, element, 0, 0);
   } else if (type === "note") {
