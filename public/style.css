@@ -507,7 +507,37 @@ body {
 }
 
 #contextMenu {
-  box-shadow: 2px 2px;
+  box-shadow: 5px 5px;
   border: black 1px solid;
-  padding: 5px;
+}
+
+#contextMenu > * {
+  font-size: 4em;
+  padding: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (hover: hover) {
+  #contextMenu > *:hover {
+    background: #ccc;
+  }
+}
+
+#contextMenu > *:active {
+  background: #aaa;
+}
+
+dialog {
+  width: 80vw;
+  box-shadow: 5px 5px;
+  border: black 1px solid;
+  user-select: none;
+  -webkit-user-select: none;
+  .title {
+    font-size: 4em;
+    font-weight: bold;
+    text-align: center;
+    padding: 20px;
+  }
 }

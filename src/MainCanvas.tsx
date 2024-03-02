@@ -55,11 +55,10 @@ const popoverAtom = atom<
     }
   | undefined
 >(undefined);
-const showDialogAtom = atom<{ message: string } | undefined>(undefined);
+const showDialogAtom = atom<{ title: string } | undefined>(undefined);
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
@@ -68,7 +67,6 @@ export const MainCanvas = () => {
   const pointing = useAtomValue(pointingAtom);
   const focus = useAtomValue(caretAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
-  const popover = useAtomValue(popoverAtom);
   const dialog = useAtomValue(showDialogAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
@@ -181,17 +179,6 @@ export const MainCanvas = () => {
   }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
 
   useEffect(() => {
-    const el = popoverRef.current!;
-    if (popover) {
-      el.style.left = `${popover.htmlPoint.x}px`;
-      el.style.top = `${popover.htmlPoint.y}px`;
-      el.showPopover();
-    } else {
-      el.hidePopover();
-    }
-  }, [popover]);
-
-  useEffect(() => {
     dialog ? dialogRef.current?.showModal() : dialogRef.current?.close();
   }, [dialog]);
 
@@ -203,14 +190,42 @@ export const MainCanvas = () => {
         ref={canvasRef}
         {...useMainPointerHandler()}
       ></canvas>
-      {/* @ts-ignore */}
-      <div id="contextMenu" popover="manual" ref={popoverRef}>
-        <p>{popover?.message}</p>
-      </div>
+      <ContextMenu />
       <dialog ref={dialogRef}>
-        <p>{dialog?.message}</p>
+        <div className="title">{dialog?.title}</div>
       </dialog>
     </>
+  );
+};
+
+const ContextMenu = () => {
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [popover, setPopover] = useAtom(popoverAtom);
+  const setShowDialog = useSetAtom(showDialogAtom);
+  const caret = useAtomValue(caretAtom);
+  const staffs = useStaffs();
+
+  useEffect(() => {
+    const el = popoverRef.current!;
+    if (popover) {
+      el.style.left = `${popover.htmlPoint.x}px`;
+      el.style.top = `${popover.htmlPoint.y}px`;
+      el.showPopover();
+    } else {
+      el.hidePopover();
+    }
+  }, [popover]);
+
+  const onClickDelete = useCallback(() => {
+    setShowDialog({ title: "Delete?" });
+    setPopover(undefined);
+  }, [caret, staffs]);
+
+  return (
+    // @ts-ignore
+    <div id="contextMenu" popover="manual" ref={popoverRef}>
+      <button onClick={onClickDelete}>Delete</button>
+    </div>
   );
 };
 
