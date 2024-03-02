@@ -24,7 +24,7 @@ import {
   PaintElementStyle,
   Pointing,
 } from "@/org/style/types";
-import { atom, useAtom, useAtomValue } from "jotai";
+import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { caretAtom, caretStyleAtom, elementsAtom, useStaffs } from "./atom";
 import {
@@ -48,8 +48,11 @@ const mtxAtom = atom<DOMMatrix>(
   new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
 );
 
+const showDialogAtom = atom<{ message: string } | undefined>(undefined);
+
 export const MainCanvas = () => {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
@@ -57,8 +60,9 @@ export const MainCanvas = () => {
   const pointing = useAtomValue(pointingAtom);
   const focus = useAtomValue(caretAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
+  const dialog = useAtomValue(showDialogAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
-  const [canvasSize, setCanvasSize] = useState<Size>(ref.current!);
+  const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
   const [windowSize, setWindowSize] = useState<Size>({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -69,7 +73,7 @@ export const MainCanvas = () => {
   useResizeHandler(resizeHandler);
 
   useEffect(() => {
-    resizeCanvas(ref.current!, canvasScale, windowSize);
+    resizeCanvas(canvasRef.current!, canvasScale, windowSize);
     setCanvasSize(scaleSize(windowSize, canvasScale));
   }, [canvasScale, windowSize]);
 
@@ -134,7 +138,7 @@ export const MainCanvas = () => {
     if (!styles) {
       return;
     }
-    const ctx = ref.current?.getContext("2d")!;
+    const ctx = canvasRef.current?.getContext("2d")!;
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
     // pointer handlerでdpr考慮しなくて済むように
@@ -167,19 +171,29 @@ export const MainCanvas = () => {
     console.log("render", "end");
   }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
 
+  useEffect(() => {
+    dialog ? dialogRef.current?.showModal() : dialogRef.current?.close();
+  }, [dialog]);
+
   return (
-    <canvas
-      id="mainCanvas"
-      className="absolute"
-      ref={ref}
-      {...useMainPointerHandler()}
-    ></canvas>
+    <>
+      <canvas
+        id="mainCanvas"
+        className="absolute"
+        ref={canvasRef}
+        {...useMainPointerHandler()}
+      ></canvas>
+      <dialog ref={dialogRef}>
+        <p>{dialog?.message}</p>
+      </dialog>
+    </>
   );
 };
 
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(elementMapAtom);
+  const setShowDialog = useSetAtom(showDialogAtom);
   const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
@@ -236,7 +250,7 @@ const useMainPointerHandler = () => {
         .transformPoint({ x: ev.clientX, y: ev.clientY });
       const id = getStaffIdOnPoint(point);
       if (id > -1) {
-        console.log("longdown", id);
+        setShowDialog({ message: `staff id: ${id}` });
       }
     },
     [getStaffIdOnPoint, mtx, doubleZoomPoint]
