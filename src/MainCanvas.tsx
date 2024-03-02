@@ -185,42 +185,22 @@ const useMainPointerHandler = () => {
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
   const [dragStaff, setDragStaff] = useState<{ id: number; offset: Point }>();
   const staffs = useStaffs();
-
-  useEffect(() => {
-    console.log("2024/01/28", "hoge", dragStaff);
-  }, [dragStaff]);
+  const getStaffIdOnPoint = usePointingStaffId(styleMap);
 
   const dndStaff = useCallback(
     (desktopPoint: Point) => {
-      // TODO styleMapをなめてbboxを取得するのは効率が悪い
-      // staffごとのpaint style objを定義して、ルートにstaffstyleを置いて
-      // bboxをすぐ引けるようにする
-      const style = Array.from(styleMap.entries()).find(
-        (v): v is [number, PaintElementStyle<StaffStyle>[]] => {
-          const [_, styles] = v;
-          const staff = styles.find(
-            (style): style is PaintElementStyle<StaffStyle> =>
-              style.element.type === "staff"
-          );
-          if (staff) {
-            const bb = offsetBBox(staff.bbox, staff.element.position);
-            return isPointInBBox(desktopPoint, bb);
-          }
-          return false;
-        }
-      );
-      if (style) {
-        const id = style[0];
-        const staffStyle = style[1][0].element;
-        const offset = {
-          x: desktopPoint.x - staffStyle.position.x,
-          y: desktopPoint.y - staffStyle.position.y,
-        };
-        // const offset = addPoint(point, scalePoint(staffStyle.position, -1));
-        setDragStaff({ id, offset });
+      const id = getStaffIdOnPoint(desktopPoint);
+      const staffStyle = staffs.get(id);
+      if (!staffStyle) {
+        return;
       }
+      const offset = {
+        x: desktopPoint.x - staffStyle.position.x,
+        y: desktopPoint.y - staffStyle.position.y,
+      };
+      setDragStaff({ id, offset });
     },
-    [styleMap]
+    [styleMap, getStaffIdOnPoint, staffs]
   );
 
   const onDown = useCallback(
@@ -244,6 +224,22 @@ const useMainPointerHandler = () => {
       }
     },
     [mtx, doubleZoomTimer, styleMap, dndStaff]
+  );
+
+  const onLongDown = useCallback(
+    (ev: React.PointerEvent) => {
+      if (doubleZoomPoint) {
+        return;
+      }
+      const point = mtx
+        .inverse()
+        .transformPoint({ x: ev.clientX, y: ev.clientY });
+      const id = getStaffIdOnPoint(point);
+      if (id > -1) {
+        console.log("longdown", id);
+      }
+    },
+    [getStaffIdOnPoint, mtx, doubleZoomPoint]
   );
 
   const onDrag = useCallback(
@@ -304,9 +300,36 @@ const useMainPointerHandler = () => {
     },
     ...usePointerHandler({
       onDown,
+      onLongDown,
       onDrag,
       onUp,
       onDoubleClick,
     }),
   };
+};
+
+const usePointingStaffId = (
+  styleMap: Map<number, PaintElementStyle<PaintElement>[]>
+): ((desktopPoint: Point) => number) => {
+  return useCallback(
+    (desktopPoint: Point): number => {
+      return (
+        Array.from(styleMap.entries()).find(
+          (v): v is [number, PaintElementStyle<StaffStyle>[]] => {
+            const [_, styles] = v;
+            const staff = styles.find(
+              (style): style is PaintElementStyle<StaffStyle> =>
+                style.element.type === "staff"
+            );
+            if (staff) {
+              const bb = offsetBBox(staff.bbox, staff.element.position);
+              return isPointInBBox(desktopPoint, bb);
+            }
+            return false;
+          }
+        )?.[0] ?? -1
+      );
+    },
+    [styleMap]
+  );
 };
