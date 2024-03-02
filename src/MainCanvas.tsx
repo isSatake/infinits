@@ -48,10 +48,18 @@ const mtxAtom = atom<DOMMatrix>(
   new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
 );
 
+const popoverAtom = atom<
+  | {
+      htmlPoint: Point;
+      message: string;
+    }
+  | undefined
+>(undefined);
 const showDialogAtom = atom<{ message: string } | undefined>(undefined);
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
@@ -60,6 +68,7 @@ export const MainCanvas = () => {
   const pointing = useAtomValue(pointingAtom);
   const focus = useAtomValue(caretAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
+  const popover = useAtomValue(popoverAtom);
   const dialog = useAtomValue(showDialogAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
@@ -172,6 +181,17 @@ export const MainCanvas = () => {
   }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
 
   useEffect(() => {
+    const el = popoverRef.current!;
+    if (popover) {
+      el.style.left = `${popover.htmlPoint.x}px`;
+      el.style.top = `${popover.htmlPoint.y}px`;
+      el.showPopover();
+    } else {
+      el.hidePopover();
+    }
+  }, [popover]);
+
+  useEffect(() => {
     dialog ? dialogRef.current?.showModal() : dialogRef.current?.close();
   }, [dialog]);
 
@@ -183,6 +203,10 @@ export const MainCanvas = () => {
         ref={canvasRef}
         {...useMainPointerHandler()}
       ></canvas>
+      {/* @ts-ignore */}
+      <div id="contextMenu" popover="manual" ref={popoverRef}>
+        <p>{popover?.message}</p>
+      </div>
       <dialog ref={dialogRef}>
         <p>{dialog?.message}</p>
       </dialog>
@@ -193,8 +217,9 @@ export const MainCanvas = () => {
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(elementMapAtom);
+  const setPopover = useSetAtom(popoverAtom);
   const setShowDialog = useSetAtom(showDialogAtom);
-  const [tmpMtx, setTmpMtx] = useState<DOMMatrix>();
+  const [downMtx, setDownMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
   const [dragStaff, setDragStaff] = useState<{ id: number; offset: Point }>();
@@ -219,7 +244,8 @@ const useMainPointerHandler = () => {
 
   const onDown = useCallback(
     (ev: React.PointerEvent) => {
-      setTmpMtx(mtx);
+      setPopover(undefined);
+      setDownMtx(mtx);
       const point = mtx
         .inverse()
         .transformPoint({ x: ev.clientX, y: ev.clientY });
@@ -250,7 +276,12 @@ const useMainPointerHandler = () => {
         .transformPoint({ x: ev.clientX, y: ev.clientY });
       const id = getStaffIdOnPoint(point);
       if (id > -1) {
-        setShowDialog({ message: `staff id: ${id}` });
+        setDownMtx(undefined);
+        setDragStaff(undefined);
+        setPopover({
+          htmlPoint: { x: ev.clientX, y: ev.clientY },
+          message: `staff id: ${id}`,
+        });
       }
     },
     [getStaffIdOnPoint, mtx, doubleZoomPoint]
@@ -258,13 +289,13 @@ const useMainPointerHandler = () => {
 
   const onDrag = useCallback(
     (ev: React.PointerEvent, down: React.PointerEvent) => {
-      if (!tmpMtx) {
+      if (!downMtx) {
         return;
       }
       if (doubleZoomPoint) {
         const scale = Math.exp((ev.clientY - down.clientY) / 100);
         setMtx(
-          tmpMtx
+          downMtx
             .translate(doubleZoomPoint.x, doubleZoomPoint.y)
             .scale(scale, scale)
             .translate(-doubleZoomPoint.x, -doubleZoomPoint.y)
@@ -282,15 +313,15 @@ const useMainPointerHandler = () => {
         });
         return;
       }
-      const dx = (ev.clientX - down.clientX) / tmpMtx.a;
-      const dy = (ev.clientY - down.clientY) / tmpMtx.a;
-      setMtx(tmpMtx.translate(dx, dy));
+      const dx = (ev.clientX - down.clientX) / downMtx.a;
+      const dy = (ev.clientY - down.clientY) / downMtx.a;
+      setMtx(downMtx.translate(dx, dy));
     },
-    [mtx, tmpMtx, doubleZoomPoint, dragStaff, staffs]
+    [mtx, downMtx, doubleZoomPoint, dragStaff, staffs]
   );
 
   const onUp = useCallback(() => {
-    setTmpMtx(undefined);
+    setDownMtx(undefined);
     setDoubleZoomPoint(undefined);
     setDragStaff(undefined);
   }, []);

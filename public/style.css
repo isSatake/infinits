@@ -505,3 +505,9 @@ body {
   transition-duration: 300ms;
   pointer-events: none;
 }
+
+#contextMenu {
+  box-shadow: 2px 2px;
+  border: black 1px solid;
+  padding: 5px;
+}
