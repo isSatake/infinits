@@ -65,7 +65,6 @@ const showDialogAtom = atom<
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
@@ -73,7 +72,6 @@ export const MainCanvas = () => {
   const pointing = useAtomValue(pointingAtom);
   const focus = useAtomValue(caretAtom);
   const [mtx, setMtx] = useAtom(mtxAtom);
-  const dialog = useAtomValue(showDialogAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
   const [windowSize, setWindowSize] = useState<Size>({
@@ -184,10 +182,6 @@ export const MainCanvas = () => {
     console.log("render", "end");
   }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
 
-  useEffect(() => {
-    dialog ? dialogRef.current?.showModal() : dialogRef.current?.close();
-  }, [dialog]);
-
   return (
     <>
       <canvas
@@ -197,17 +191,28 @@ export const MainCanvas = () => {
         {...useMainPointerHandler()}
       ></canvas>
       <ContextMenu />
-      <dialog ref={dialogRef}>
-        <div className="title">{dialog?.title}</div>
-        <div className="buttons">
-          {dialog?.buttons?.map((button, i) => (
-            <button key={i} onClick={button.onClick}>
-              {button.label}
-            </button>
-          ))}
-        </div>
-      </dialog>
+      <Dialog />
     </>
+  );
+};
+
+const Dialog = () => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialog = useAtomValue(showDialogAtom);
+  useEffect(() => {
+    dialog ? dialogRef.current?.showModal() : dialogRef.current?.close();
+  }, [dialog]);
+  return (
+    <dialog ref={dialogRef}>
+      <div className="title">{dialog?.title}</div>
+      <div className="buttons">
+        {dialog?.buttons?.map((button, i) => (
+          <button key={i} onClick={button.onClick}>
+            {button.label}
+          </button>
+        ))}
+      </div>
+    </dialog>
   );
 };
 
@@ -263,7 +268,6 @@ const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(elementMapAtom);
   const setPopover = useSetAtom(popoverAtom);
-  const setShowDialog = useSetAtom(showDialogAtom);
   const [downMtx, setDownMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
