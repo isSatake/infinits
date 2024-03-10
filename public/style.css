@@ -519,17 +519,18 @@ body {
 }
 
 @media (hover: hover) {
-  #contextMenu > *:hover {
+  button:hover {
     background: #ccc;
   }
 }
 
-#contextMenu > *:active {
+button:active {
   background: #aaa;
 }
 
 dialog {
   width: 80vw;
+  padding: 0;
   box-shadow: 5px 5px;
   border: black 1px solid;
   user-select: none;
@@ -538,6 +539,18 @@ dialog {
     font-size: 4em;
     font-weight: bold;
     text-align: center;
-    padding: 20px;
+    padding: 40px;
+  }
+  .buttons {
+    display: flex;
+    font-size: 3em;
+    button {
+      padding: 20px;
+      min-width: 50%;
+      border-top: 1px solid black;
+    }
+    button + button {
+      border-left: 1px solid black;
+    }
   }
 }

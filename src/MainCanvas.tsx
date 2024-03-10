@@ -55,7 +55,13 @@ const popoverAtom = atom<
     }
   | undefined
 >(undefined);
-const showDialogAtom = atom<{ title: string } | undefined>(undefined);
+const showDialogAtom = atom<
+  | {
+      title: string;
+      buttons?: { label: string; onClick: () => void }[];
+    }
+  | undefined
+>(undefined);
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -193,6 +199,13 @@ export const MainCanvas = () => {
       <ContextMenu />
       <dialog ref={dialogRef}>
         <div className="title">{dialog?.title}</div>
+        <div className="buttons">
+          {dialog?.buttons?.map((button, i) => (
+            <button key={i} onClick={button.onClick}>
+              {button.label}
+            </button>
+          ))}
+        </div>
       </dialog>
     </>
   );
@@ -217,7 +230,24 @@ const ContextMenu = () => {
   }, [popover]);
 
   const onClickDelete = useCallback(() => {
-    setShowDialog({ title: "Delete?" });
+    setShowDialog({
+      title: "Delete?",
+      buttons: [
+        {
+          label: "OK",
+          onClick: () => {
+            staffs.remove(caret.staffId);
+            setShowDialog(undefined);
+          },
+        },
+        {
+          label: "Cancel",
+          onClick: () => {
+            setShowDialog(undefined);
+          },
+        },
+      ],
+    });
     setPopover(undefined);
   }, [caret, staffs]);
 
