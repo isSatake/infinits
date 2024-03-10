@@ -219,6 +219,7 @@ const useMainPointerHandler = () => {
       if (doubleZoomTimer > -1) {
         window.clearTimeout(doubleZoomTimer);
         setDoubleZoomTimer(-1);
+        console.log("set doublezoompoint", point);
         setDoubleZoomPoint(point);
       } else {
         dndStaff(point);
@@ -235,6 +236,7 @@ const useMainPointerHandler = () => {
 
   const onLongDown = useCallback(
     (ev: React.PointerEvent) => {
+      console.log("longdown", "doubleZoomPoint", doubleZoomPoint);
       if (doubleZoomPoint) {
         return;
       }
