@@ -245,8 +245,8 @@ const useMainPointerHandler = () => {
         .transformPoint({ x: ev.clientX, y: ev.clientY });
       const id = getStaffIdOnPoint(point);
       if (id > -1) {
-        setDownMtx(undefined);
-        setDragStaff(undefined);
+        // setDownMtx(undefined);
+        dndStaff(point);
         setPopover({
           htmlPoint: { x: ev.clientX, y: ev.clientY },
           staffId: id,
@@ -258,6 +258,7 @@ const useMainPointerHandler = () => {
 
   const onDrag = useCallback(
     (ev: React.PointerEvent, down: React.PointerEvent) => {
+      setPopover(undefined);
       if (!downMtx) {
         return;
       }
