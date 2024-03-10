@@ -30,7 +30,7 @@ import {
   caretAtom,
   caretStyleAtom,
   elementsAtom,
-  popoverAtom,
+  contextMenuAtom,
   useStaffs,
 } from "./atom";
 import {
@@ -41,6 +41,7 @@ import {
 import { determineCanvasScale, resizeCanvas } from "./util";
 import { ContextMenu } from "./ContextMenu";
 import { Dialog } from "./Dialog";
+import { setCarets } from "./org/score-states";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -91,7 +92,6 @@ export const MainCanvas = () => {
 
   // element style
   useEffect(() => {
-    console.log("render", "start");
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
     for (const [id, staff] of staffs.map) {
       const styles = determinePaintElementStyle(
@@ -102,6 +102,7 @@ export const MainCanvas = () => {
       );
       map.set(id, styles);
     }
+    console.log("new style map", map);
     setStyleMap(map);
   }, [staffs.map, elements, pointing]);
 
@@ -138,10 +139,6 @@ export const MainCanvas = () => {
 
   // paint
   useEffect(() => {
-    const styles = styleMap.get(focus.staffId);
-    if (!styles) {
-      return;
-    }
     const ctx = canvasRef.current?.getContext("2d")!;
     ctx.save();
     resetCanvas2({ ctx, fillStyle: "white" });
@@ -172,7 +169,6 @@ export const MainCanvas = () => {
       ctx.restore();
     }
     ctx.restore();
-    console.log("render", "end");
   }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
 
   return (
@@ -188,7 +184,8 @@ export const MainCanvas = () => {
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(elementMapAtom);
-  const setPopover = useSetAtom(popoverAtom);
+  const setPopover = useSetAtom(contextMenuAtom);
+  const setCarets = useSetAtom(caretAtom);
   const [downMtx, setDownMtx] = useState<DOMMatrix>();
   const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
   const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
@@ -250,7 +247,7 @@ const useMainPointerHandler = () => {
         setDragStaff(undefined);
         setPopover({
           htmlPoint: { x: ev.clientX, y: ev.clientY },
-          message: `staff id: ${id}`,
+          staffId: id,
         });
       }
     },
@@ -296,6 +293,19 @@ const useMainPointerHandler = () => {
     setDragStaff(undefined);
   }, []);
 
+  const onClick = useCallback(
+    (ev: React.PointerEvent) => {
+      const point = mtx
+        .inverse()
+        .transformPoint({ x: ev.clientX, y: ev.clientY });
+      const id = getStaffIdOnPoint(point);
+      if (id > -1) {
+        setCarets({ staffId: id, idx: 0 });
+      }
+    },
+    [mtx, getStaffIdOnPoint]
+  );
+
   const onDoubleClick = useCallback(
     (ev: React.PointerEvent) => {
       staffs.add(
@@ -319,6 +329,7 @@ const useMainPointerHandler = () => {
       onDrag,
       onUp,
       onDoubleClick,
+      onClick,
     }),
   };
 };

@@ -1,12 +1,11 @@
-import { useAtom, useSetAtom, useAtomValue } from "jotai";
-import React, { useRef, useEffect, useCallback } from "react";
-import { caretAtom, popoverAtom, showDialogAtom, useStaffs } from "./atom";
+import { useAtom, useSetAtom } from "jotai";
+import React, { useCallback, useEffect, useRef } from "react";
+import { contextMenuAtom, showDialogAtom, useStaffs } from "./atom";
 
 export const ContextMenu = () => {
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [popover, setPopover] = useAtom(popoverAtom);
+  const [popover, setPopover] = useAtom(contextMenuAtom);
   const setShowDialog = useSetAtom(showDialogAtom);
-  const caret = useAtomValue(caretAtom);
   const staffs = useStaffs();
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export const ContextMenu = () => {
         {
           label: "OK",
           onClick: () => {
-            staffs.remove(caret.staffId);
+            staffs.remove(popover!.staffId);
             setShowDialog(undefined);
           },
         },
@@ -40,7 +39,7 @@ export const ContextMenu = () => {
       ],
     });
     setPopover(undefined);
-  }, [caret, staffs]);
+  }, [popover, staffs]);
 
   return (
     // @ts-ignore

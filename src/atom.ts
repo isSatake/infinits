@@ -55,17 +55,20 @@ export const useStaffs = (): {
     },
     [map]
   );
-  const remove = useCallback((id: number) => {
-    map.delete(id);
-    setMap(new Map(map));
-  }, [map]);
+  const remove = useCallback(
+    (id: number) => {
+      map.delete(id);
+      setMap(new Map(map));
+    },
+    [map]
+  );
   return { map, add, get, update, remove };
 };
 
-export const popoverAtom = atom<
+export const contextMenuAtom = atom<
   | {
       htmlPoint: Point;
-      message: string;
+      staffId: number;
     }
   | undefined
 >(undefined);
