@@ -33,6 +33,7 @@ export const useStaffs = (): {
   get: (id: number) => StaffStyle | undefined;
   add: (style: StaffStyle) => void;
   update: (id: number, fn: (style: StaffStyle) => StaffStyle) => void;
+  remove: (id: number) => void;
 } => {
   const [map, setMap] = useAtom(staffMapAtom);
   const idRef = useRef(0);
@@ -54,5 +55,28 @@ export const useStaffs = (): {
     },
     [map]
   );
-  return { map, add, get, update };
+  const remove = useCallback(
+    (id: number) => {
+      map.delete(id);
+      setMap(new Map(map));
+    },
+    [map]
+  );
+  return { map, add, get, update, remove };
 };
+
+export const contextMenuAtom = atom<
+  | {
+      htmlPoint: Point;
+      staffId: number;
+    }
+  | undefined
+>(undefined);
+
+export const showDialogAtom = atom<
+  | {
+      title: string;
+      buttons?: { label: string; onClick: () => void }[];
+    }
+  | undefined
+>(undefined);
