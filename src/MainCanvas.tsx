@@ -26,13 +26,21 @@ import {
 } from "@/org/style/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { caretAtom, caretStyleAtom, elementsAtom, useStaffs } from "./atom";
+import {
+  caretAtom,
+  caretStyleAtom,
+  elementsAtom,
+  popoverAtom,
+  useStaffs,
+} from "./atom";
 import {
   kDoubleClickThresholdMs,
   usePointerHandler,
   useResizeHandler,
 } from "./hooks";
 import { determineCanvasScale, resizeCanvas } from "./util";
+import { ContextMenu } from "./ContextMenu";
+import { Dialog } from "./Dialog";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -47,21 +55,6 @@ const pointingAtom = atom<Pointing | undefined>(undefined);
 const mtxAtom = atom<DOMMatrix>(
   new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
 );
-
-const popoverAtom = atom<
-  | {
-      htmlPoint: Point;
-      message: string;
-    }
-  | undefined
->(undefined);
-const showDialogAtom = atom<
-  | {
-      title: string;
-      buttons?: { label: string; onClick: () => void }[];
-    }
-  | undefined
->(undefined);
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -193,74 +186,6 @@ export const MainCanvas = () => {
       <ContextMenu />
       <Dialog />
     </>
-  );
-};
-
-const Dialog = () => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const dialog = useAtomValue(showDialogAtom);
-  useEffect(() => {
-    dialog ? dialogRef.current?.showModal() : dialogRef.current?.close();
-  }, [dialog]);
-  return (
-    <dialog ref={dialogRef}>
-      <div className="title">{dialog?.title}</div>
-      <div className="buttons">
-        {dialog?.buttons?.map((button, i) => (
-          <button key={i} onClick={button.onClick}>
-            {button.label}
-          </button>
-        ))}
-      </div>
-    </dialog>
-  );
-};
-
-const ContextMenu = () => {
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const [popover, setPopover] = useAtom(popoverAtom);
-  const setShowDialog = useSetAtom(showDialogAtom);
-  const caret = useAtomValue(caretAtom);
-  const staffs = useStaffs();
-
-  useEffect(() => {
-    const el = popoverRef.current!;
-    if (popover) {
-      el.style.left = `${popover.htmlPoint.x}px`;
-      el.style.top = `${popover.htmlPoint.y}px`;
-      el.showPopover();
-    } else {
-      el.hidePopover();
-    }
-  }, [popover]);
-
-  const onClickDelete = useCallback(() => {
-    setShowDialog({
-      title: "Delete?",
-      buttons: [
-        {
-          label: "OK",
-          onClick: () => {
-            staffs.remove(caret.staffId);
-            setShowDialog(undefined);
-          },
-        },
-        {
-          label: "Cancel",
-          onClick: () => {
-            setShowDialog(undefined);
-          },
-        },
-      ],
-    });
-    setPopover(undefined);
-  }, [caret, staffs]);
-
-  return (
-    // @ts-ignore
-    <div id="contextMenu" popover="manual" ref={popoverRef}>
-      <button onClick={onClickDelete}>Delete</button>
-    </div>
   );
 };
 

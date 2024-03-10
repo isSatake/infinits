@@ -61,3 +61,19 @@ export const useStaffs = (): {
   }, [map]);
   return { map, add, get, update, remove };
 };
+
+export const popoverAtom = atom<
+  | {
+      htmlPoint: Point;
+      message: string;
+    }
+  | undefined
+>(undefined);
+
+export const showDialogAtom = atom<
+  | {
+      title: string;
+      buttons?: { label: string; onClick: () => void }[];
+    }
+  | undefined
+>(undefined);
