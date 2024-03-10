@@ -176,16 +176,12 @@ export const MainCanvas = () => {
   }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
 
   return (
-    <>
-      <canvas
-        id="mainCanvas"
-        className="absolute"
-        ref={canvasRef}
-        {...useMainPointerHandler()}
-      ></canvas>
-      <ContextMenu />
-      <Dialog />
-    </>
+    <canvas
+      id="mainCanvas"
+      className="absolute"
+      ref={canvasRef}
+      {...useMainPointerHandler()}
+    ></canvas>
   );
 };
 
