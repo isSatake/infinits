@@ -1071,23 +1071,19 @@ export const determinePaintElementStyle = (
     height: bStaffHeight,
   });
   let left = 0;
-  console.log("left", left);
   if (staffStyle) {
     styles.push(gapEl);
     left += gapWidth;
-    console.log("left", left);
     const { staff } = staffStyle;
     if (staff.clef) {
       const _pointing = pointing?.index === -1 ? pointing : undefined;
       const clef = determineClefStyle(staff.clef, -1, _pointing);
       styles.push(clef);
       left += clef.width;
-      console.log("left", left);
     }
   }
   styles.push({ ...gapEl, caretOption: { index: -1, defaultWidth: true } });
   left += gapWidth;
-  console.log("left", left);
   let index = 0;
   while (index < elements.length) {
     const el = elements[index];

@@ -505,3 +505,52 @@ body {
   transition-duration: 300ms;
   pointer-events: none;
 }
+
+#contextMenu {
+  box-shadow: 5px 5px;
+  border: black 1px solid;
+}
+
+#contextMenu > * {
+  font-size: 4em;
+  padding: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (hover: hover) {
+  button:hover {
+    background: #ccc;
+  }
+}
+
+button:active {
+  background: #aaa;
+}
+
+dialog {
+  width: 80vw;
+  padding: 0;
+  box-shadow: 5px 5px;
+  border: black 1px solid;
+  user-select: none;
+  -webkit-user-select: none;
+  .title {
+    font-size: 4em;
+    font-weight: bold;
+    text-align: center;
+    padding: 40px;
+  }
+  .buttons {
+    display: flex;
+    font-size: 3em;
+    button {
+      padding: 20px;
+      min-width: 50%;
+      border-top: 1px solid black;
+    }
+    button + button {
+      border-left: 1px solid black;
+    }
+  }
+}

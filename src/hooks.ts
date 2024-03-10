@@ -1,5 +1,5 @@
 import { Size, magnitude } from "@/org/geometry";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const kLongDownThresholdMs = 300;
 export const kDoubleClickThresholdMs = 300;
@@ -31,12 +31,17 @@ export const usePointerHandler = ({
   const [doubleClickTimer, setDoubleClickTimer] = useState<number>(-1);
   const [dragging, setDragging] = useState<boolean>(false);
 
+  const onLongDownRef = useRef(onLongDown);
+  useEffect(() => {
+    onLongDownRef.current = onLongDown;
+  }, [onLongDown]);
+
   const onPointerDown = (ev: React.PointerEvent) => {
     setDown(ev);
     onDown?.(ev);
     setLongDownTimer(
       window.setTimeout(() => {
-        onLongDown?.(ev);
+        onLongDownRef.current?.(ev);
         setLongDownTimer(-1);
       }, kLongDownThresholdMs)
     );
