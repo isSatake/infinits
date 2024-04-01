@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { UNIT } from "@/org/font/bravura";
 import {
   BBox,
@@ -42,6 +42,7 @@ import { determineCanvasScale, resizeCanvas } from "./util";
 import { ContextMenu } from "./ContextMenu";
 import { Dialog } from "./Dialog";
 import { setCarets } from "./org/score-states";
+import { CanvasHandler } from "./state-machine";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -193,6 +194,46 @@ const useMainPointerHandler = () => {
   const staffs = useStaffs();
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
 
+  const h = useMemo(() => {
+    const ch = new CanvasHandler({
+      onClick: () => {
+        console.log("CanvasState", "click");
+      },
+      onPan: () => {
+        console.log("CanvasState", "pan");
+      },
+      onZoom: (point: Point, dz: number) => {
+        console.log("CanvasState", "zoom");
+        if (!downMtx) {
+          setDownMtx(mtx);
+        }
+        const _downMtx = downMtx ?? mtx;
+        const scale = Math.exp(dz / 100);
+        const origin = mtx.inverse().transformPoint(point);
+        setMtx(
+          _downMtx
+            .translate(origin.x, origin.y)
+            .scale(scale, scale)
+            .translate(-origin.x, -origin.y)
+        );
+      },
+      onAddStaff: (point: Point) => {
+        console.log("CanvasState", "add staff");
+        staffs.add(
+          genStaffStyle(
+            { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
+            mtx.inverse().transformPoint(point)
+          )
+        );
+      },
+    });
+    return {
+      onPointerDown: (ev: React.PointerEvent) => ch.on("down", ev),
+      onPointerMove: (ev: React.PointerEvent) => ch.on("move", ev),
+      onPointerUp: (ev: React.PointerEvent) => ch.on("up", ev),
+    };
+  }, []);
+
   const dndStaff = useCallback(
     (desktopPoint: Point) => {
       const id = getStaffIdOnPoint(desktopPoint);
@@ -326,14 +367,15 @@ const useMainPointerHandler = () => {
       // iOS Safariでダブルタップ長押し時に拡大鏡が出るのを防ぐ
       ev.preventDefault();
     },
-    ...usePointerHandler({
-      onDown,
-      onLongDown,
-      onDrag,
-      onUp,
-      onDoubleClick,
-      onClick,
-    }),
+    ...h,
+    // ...usePointerHandler({
+    //   onDown,
+    //   onLongDown,
+    //   onDrag,
+    //   onUp,
+    //   onDoubleClick,
+    //   onClick,
+    // }),
   };
 };
 
