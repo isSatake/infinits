@@ -1,18 +1,14 @@
-import React, { useMemo } from "react";
 import { UNIT } from "@/org/font/bravura";
 import {
   BBox,
   Point,
   Size,
-  addPoint,
   isPointInBBox,
   offsetBBox,
-  scalePoint,
   scaleSize,
 } from "@/org/geometry";
 import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
-import { StaffStyle } from "./org/style/types";
 import {
   determineCaretStyle,
   determinePaintElementStyle,
@@ -25,24 +21,18 @@ import {
   Pointing,
 } from "@/org/style/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   caretAtom,
   caretStyleAtom,
-  elementsAtom,
   contextMenuAtom,
+  elementsAtom,
   useStaffs,
 } from "./atom";
-import {
-  kDoubleClickThresholdMs,
-  usePointerHandler,
-  useResizeHandler,
-} from "./hooks";
+import { useResizeHandler } from "./hooks";
+import { StaffStyle } from "./org/style/types";
+import { PointerEventStateMachine } from "./state-machine";
 import { determineCanvasScale, resizeCanvas } from "./util";
-import { ContextMenu } from "./ContextMenu";
-import { Dialog } from "./Dialog";
-import { setCarets } from "./org/score-states";
-import { CanvasHandler } from "./state-machine";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -191,22 +181,89 @@ const useMainPointerHandler = () => {
   const [dragStaff, setDragStaff] = useState<{ id: number; offset: Point }>();
   const staffs = useStaffs();
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
-  const canvasHandler = useRef<CanvasHandler>(new CanvasHandler());
+  const canvasHandler = useRef(new PointerEventStateMachine());
+  const staffHandler = useRef(new PointerEventStateMachine());
 
   useEffect(() => {
     canvasHandler.current.onIdle = () => {
       console.log("CanvasState", "idle");
       setDownMtx(undefined);
+    };
+    staffHandler.current.onIdle = () => {
+      console.log("StaffState", "idle");
       setDragStaff(undefined);
     };
   }, []);
 
+  const dndStaff = useCallback(
+    (desktopPoint: Point) => {
+      const id = getStaffIdOnPoint(desktopPoint);
+      const staffStyle = staffs.get(id);
+      if (!staffStyle) {
+        return;
+      }
+      const offset = {
+        x: desktopPoint.x - staffStyle.position.x,
+        y: desktopPoint.y - staffStyle.position.y,
+      };
+      return { id, offset };
+    },
+    [styleMap, getStaffIdOnPoint, staffs]
+  );
+
   useEffect(() => {
-    canvasHandler.current.onDown = () => {
-      console.log("CanvasState", "down");
+    // 気になる
+    const onDown = (forStaff: boolean) => (point: Point) => {
+      const ret = dndStaff(mtx.inverse().transformPoint(point));
+      if (ret) {
+        setDragStaff(ret);
+        return forStaff;
+      }
       setDownMtx(mtx);
+      return !forStaff;
     };
-  }, [mtx]);
+    canvasHandler.current.onDown = (point: Point) => {
+      console.log("CanvasState", "down");
+      setPopover(undefined);
+      return onDown(false)(point);
+    };
+    staffHandler.current.onDown = (point: Point) => {
+      console.log("StaffState", "down");
+      return onDown(true)(point);
+    };
+  }, [mtx, dndStaff]);
+
+  useEffect(() => {
+    staffHandler.current.onSingleMove = (
+      dx: number,
+      dy: number,
+      _point: Point,
+      down: Point
+    ) => {
+      console.log("StaffState", "move");
+      if (!dragStaff) {
+        return;
+      }
+      const { id, offset } = dragStaff;
+      const point = mtx.inverse().transformPoint(_point);
+      staffs.update(id, (style) => {
+        return {
+          ...style,
+          position: { x: point.x - offset.x, y: point.y - offset.y },
+        };
+      });
+    };
+  }, [dragStaff]);
+
+  useEffect(() => {
+    staffHandler.current.onLongDown = (point: Point) => {
+      console.log("StaffState", "long down");
+      const id = getStaffIdOnPoint(mtx.inverse().transformPoint(point));
+      if (id > -1) {
+        setPopover({ htmlPoint: point, staffId: id });
+      }
+    };
+  }, [getStaffIdOnPoint]);
 
   useEffect(() => {
     canvasHandler.current.onClick = (_point: Point) => {
@@ -220,7 +277,11 @@ const useMainPointerHandler = () => {
   }, [mtx, getStaffIdOnPoint]);
 
   useEffect(() => {
-    canvasHandler.current.onPan = (_dx: number, _dy: number, down: Point) => {
+    canvasHandler.current.onSingleMove = (
+      _dx: number,
+      _dy: number,
+      down: Point
+    ) => {
       console.log("CanvasState", "pan");
       if (!downMtx) {
         return;
@@ -258,34 +319,25 @@ const useMainPointerHandler = () => {
         )
       );
     };
-  }, [mtx]);
-
-  const dndStaff = useCallback(
-    (desktopPoint: Point) => {
-      const id = getStaffIdOnPoint(desktopPoint);
-      const staffStyle = staffs.get(id);
-      if (!staffStyle) {
-        return;
-      }
-      const offset = {
-        x: desktopPoint.x - staffStyle.position.x,
-        y: desktopPoint.y - staffStyle.position.y,
-      };
-      setDragStaff({ id, offset });
-    },
-    [styleMap, getStaffIdOnPoint, staffs]
-  );
+  }, [mtx, staffs]);
 
   return {
     onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {
       // iOS Safariでダブルタップ長押し時に拡大鏡が出るのを防ぐ
       ev.preventDefault();
     },
-    onPointerDown: (ev: React.PointerEvent) =>
-      canvasHandler.current.on("down", ev),
-    onPointerMove: (ev: React.PointerEvent) =>
-      canvasHandler.current.on("move", ev),
-    onPointerUp: (ev: React.PointerEvent) => canvasHandler.current.on("up", ev),
+    onPointerDown: (ev: React.PointerEvent) => {
+      canvasHandler.current.on("down", ev);
+      staffHandler.current.on("down", ev);
+    },
+    onPointerMove: (ev: React.PointerEvent) => {
+      canvasHandler.current.on("move", ev);
+      staffHandler.current.on("move", ev);
+    },
+    onPointerUp: (ev: React.PointerEvent) => {
+      canvasHandler.current.on("up", ev);
+      staffHandler.current.on("up", ev);
+    },
   };
 };
 
