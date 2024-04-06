@@ -188,51 +188,77 @@ const useMainPointerHandler = () => {
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(caretAtom);
   const [downMtx, setDownMtx] = useState<DOMMatrix>();
-  const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
-  const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
   const [dragStaff, setDragStaff] = useState<{ id: number; offset: Point }>();
   const staffs = useStaffs();
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
+  const canvasHandler = useRef<CanvasHandler>(new CanvasHandler());
 
-  const h = useMemo(() => {
-    const ch = new CanvasHandler({
-      onClick: () => {
-        console.log("CanvasState", "click");
-      },
-      onPan: () => {
-        console.log("CanvasState", "pan");
-      },
-      onZoom: (point: Point, dz: number) => {
-        console.log("CanvasState", "zoom");
-        if (!downMtx) {
-          setDownMtx(mtx);
-        }
-        const _downMtx = downMtx ?? mtx;
-        const scale = Math.exp(dz / 100);
-        const origin = mtx.inverse().transformPoint(point);
-        setMtx(
-          _downMtx
-            .translate(origin.x, origin.y)
-            .scale(scale, scale)
-            .translate(-origin.x, -origin.y)
-        );
-      },
-      onAddStaff: (point: Point) => {
-        console.log("CanvasState", "add staff");
-        staffs.add(
-          genStaffStyle(
-            { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
-            mtx.inverse().transformPoint(point)
-          )
-        );
-      },
-    });
-    return {
-      onPointerDown: (ev: React.PointerEvent) => ch.on("down", ev),
-      onPointerMove: (ev: React.PointerEvent) => ch.on("move", ev),
-      onPointerUp: (ev: React.PointerEvent) => ch.on("up", ev),
+  useEffect(() => {
+    canvasHandler.current.onIdle = () => {
+      console.log("CanvasState", "idle");
+      setDownMtx(undefined);
+      setDragStaff(undefined);
     };
   }, []);
+
+  useEffect(() => {
+    canvasHandler.current.onDown = () => {
+      console.log("CanvasState", "down");
+      setDownMtx(mtx);
+    };
+  }, [mtx]);
+
+  useEffect(() => {
+    canvasHandler.current.onClick = (_point: Point) => {
+      console.log("CanvasState", "click");
+      const point = mtx.inverse().transformPoint(_point);
+      const id = getStaffIdOnPoint(point);
+      if (id > -1) {
+        setCarets({ staffId: id, idx: 0 });
+      }
+    };
+  }, [mtx, getStaffIdOnPoint]);
+
+  useEffect(() => {
+    canvasHandler.current.onPan = (_dx: number, _dy: number, down: Point) => {
+      console.log("CanvasState", "pan");
+      if (!downMtx) {
+        return;
+      }
+      const dx = _dx / downMtx.a;
+      const dy = _dy / downMtx.a;
+      setMtx(downMtx.translate(dx, dy));
+    };
+  }, [mtx, downMtx]);
+
+  useEffect(() => {
+    canvasHandler.current.onDoubleZoom = (point: Point, dz: number) => {
+      console.log("CanvasState", "zoom");
+      if (!downMtx) {
+        return;
+      }
+      const scale = Math.exp(dz / 100);
+      const origin = downMtx.inverse().transformPoint(point);
+      setMtx(
+        downMtx
+          .translate(origin.x, origin.y)
+          .scale(scale, scale)
+          .translate(-origin.x, -origin.y)
+      );
+    };
+  }, [downMtx]);
+
+  useEffect(() => {
+    canvasHandler.current.onDoubleClick = (point: Point) => {
+      console.log("CanvasState", "add staff");
+      staffs.add(
+        genStaffStyle(
+          { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
+          mtx.inverse().transformPoint(point)
+        )
+      );
+    };
+  }, [mtx]);
 
   const dndStaff = useCallback(
     (desktopPoint: Point) => {
@@ -250,132 +276,16 @@ const useMainPointerHandler = () => {
     [styleMap, getStaffIdOnPoint, staffs]
   );
 
-  const onDown = useCallback(
-    (ev: React.PointerEvent) => {
-      setPopover(undefined);
-      setDownMtx(mtx);
-      const point = mtx
-        .inverse()
-        .transformPoint({ x: ev.clientX, y: ev.clientY });
-      if (doubleZoomTimer > -1) {
-        window.clearTimeout(doubleZoomTimer);
-        setDoubleZoomTimer(-1);
-        console.log("set doublezoompoint", point);
-        setDoubleZoomPoint(point);
-      } else {
-        dndStaff(point);
-        setDoubleZoomTimer(
-          window.setTimeout(
-            () => setDoubleZoomTimer(-1),
-            kDoubleClickThresholdMs
-          )
-        );
-      }
-    },
-    [mtx, doubleZoomTimer, styleMap, dndStaff]
-  );
-
-  const onLongDown = useCallback(
-    (ev: React.PointerEvent) => {
-      console.log("longdown", "doubleZoomPoint", doubleZoomPoint);
-      if (doubleZoomPoint) {
-        return;
-      }
-      const point = mtx
-        .inverse()
-        .transformPoint({ x: ev.clientX, y: ev.clientY });
-      const id = getStaffIdOnPoint(point);
-      if (id > -1) {
-        // setDownMtx(undefined);
-        dndStaff(point);
-        setPopover({
-          htmlPoint: { x: ev.clientX, y: ev.clientY },
-          staffId: id,
-        });
-      }
-    },
-    [getStaffIdOnPoint, mtx, doubleZoomPoint]
-  );
-
-  const onDrag = useCallback(
-    (ev: React.PointerEvent, down: React.PointerEvent) => {
-      setPopover(undefined);
-      if (!downMtx) {
-        return;
-      }
-      if (doubleZoomPoint) {
-        const scale = Math.exp((ev.clientY - down.clientY) / 100);
-        setMtx(
-          downMtx
-            .translate(doubleZoomPoint.x, doubleZoomPoint.y)
-            .scale(scale, scale)
-            .translate(-doubleZoomPoint.x, -doubleZoomPoint.y)
-        );
-        return;
-      }
-      if (dragStaff !== undefined) {
-        staffs.update(dragStaff.id, (staff) => {
-          const point = mtx.inverse().transformPoint({
-            x: ev.clientX,
-            y: ev.clientY,
-          });
-          staff.position = addPoint(point, scalePoint(dragStaff.offset, -1));
-          return staff;
-        });
-        return;
-      }
-      const dx = (ev.clientX - down.clientX) / downMtx.a;
-      const dy = (ev.clientY - down.clientY) / downMtx.a;
-      setMtx(downMtx.translate(dx, dy));
-    },
-    [mtx, downMtx, doubleZoomPoint, dragStaff, staffs]
-  );
-
-  const onUp = useCallback(() => {
-    setDownMtx(undefined);
-    setDoubleZoomPoint(undefined);
-    setDragStaff(undefined);
-  }, []);
-
-  const onClick = useCallback(
-    (ev: React.PointerEvent) => {
-      const point = mtx
-        .inverse()
-        .transformPoint({ x: ev.clientX, y: ev.clientY });
-      const id = getStaffIdOnPoint(point);
-      if (id > -1) {
-        setCarets({ staffId: id, idx: 0 });
-      }
-    },
-    [mtx, getStaffIdOnPoint]
-  );
-
-  const onDoubleClick = useCallback(
-    (ev: React.PointerEvent) => {
-      staffs.add(
-        genStaffStyle(
-          { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
-          mtx.inverse().transformPoint({ x: ev.clientX, y: ev.clientY })
-        )
-      );
-    },
-    [staffs, mtx]
-  );
-
   return {
     onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {
       // iOS Safariでダブルタップ長押し時に拡大鏡が出るのを防ぐ
       ev.preventDefault();
     },
-    ...h,
-    // ...usePointerHandler({
-    //   onDown,
-    //   onLongDown,
-    //   onDrag,
-    //   onUp,
-    //   onDoubleClick,
-    //   onClick,
-    // }),
+    onPointerDown: (ev: React.PointerEvent) =>
+      canvasHandler.current.on("down", ev),
+    onPointerMove: (ev: React.PointerEvent) =>
+      canvasHandler.current.on("move", ev),
+    onPointerUp: (ev: React.PointerEvent) => canvasHandler.current.on("up", ev),
   };
 };
 
