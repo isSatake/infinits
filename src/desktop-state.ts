@@ -23,12 +23,7 @@ export type DesktopStateProps = {
   moveStaff: { staffId: number; offset: Point; point: Point };
   focusStaff: { staffId: number };
 };
-/**
- * デスクトップの操作状態
- * 知らないもの:
- *  - mtx
- *  - staff
- */
+
 export class DesktopStateMachine {
   private _state: DesktopState = { type: "idle" };
   private set state(state: DesktopState) {
