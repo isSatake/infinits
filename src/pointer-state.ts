@@ -1,13 +1,15 @@
 import { Point, magnitude } from "./org/geometry";
 
-type State =
+export type PointerState =
   | { type: "idle" }
   | { type: "down"; down: React.PointerEvent }
   | { type: "longDown"; down: React.PointerEvent }
-  | { type: "singleMove"; down: React.PointerEvent }
-  | { type: "singleTap" }
+  | { type: "move"; diff: Point; point: Point; down: React.PointerEvent }
+  | { type: "singleTap"; point: Point }
+  | { type: "click"; point: Point }
   | { type: "doubleDown"; down: React.PointerEvent }
-  | { type: "doubleMove"; down: React.PointerEvent };
+  | { type: "doubleClick"; point: Point }
+  | { type: "doubleMove"; point: Point; down: React.PointerEvent };
 
 export class PointerEventStateMachine {
   private static THRESHOLD_IDLE = 300;
@@ -16,16 +18,17 @@ export class PointerEventStateMachine {
   private idleTimer: number = -1;
   private longDownTimer: number = -1;
 
-  private _state: State = { type: "idle" };
-  private set state(state: State) {
+  private _state: PointerState = { type: "idle" };
+  private set state(state: PointerState) {
     this._state = state;
+    this.onState(state);
     console.log("set", state.type);
   }
   private get state() {
     return this._state;
   }
 
-  constructor() {}
+  constructor(private onState: (state: PointerState) => void) {}
 
   private _onIdle: () => void = () => {};
   set onIdle(fn: () => void) {
@@ -35,8 +38,8 @@ export class PointerEventStateMachine {
   /**
    * @returns true if the event is consumed
    */
-  private _onDown: (point: Point) => boolean = () => false;
-  set onDown(fn: (point: Point) => boolean) {
+  private _onDown: (point: Point) => void = () => {};
+  set onDown(fn: (point: Point) => void) {
     this._onDown = fn;
   }
 
@@ -50,16 +53,10 @@ export class PointerEventStateMachine {
     this._onClick = fn;
   }
 
-  private _onSingleMove: (
-    dx: number,
-    dy: number,
-    point: Point,
-    down: Point
-  ) => void = () => {};
-  set onSingleMove(
-    fn: (dx: number, dy: number, point: Point, down: Point) => void
-  ) {
-    this._onSingleMove = fn;
+  private _onMove: (dx: number, dy: number, point: Point, down: Point) => void =
+    () => {};
+  set onMove(fn: (dx: number, dy: number, point: Point, down: Point) => void) {
+    this._onMove = fn;
   }
 
   private _onDoubleZoom: (point: Point, dz: number) => void = () => {};
@@ -84,8 +81,8 @@ export class PointerEventStateMachine {
       case "longDown":
         this.longDownHandler.get(evType)?.();
         break;
-      case "singleMove":
-        this.panHandler.get(evType)?.(ev, this.state.down);
+      case "move":
+        this.moveHandler.get(evType)?.(ev, this.state.down);
         break;
       case "singleTap":
         this.singleTapHandler.get(evType)?.(ev);
@@ -102,11 +99,7 @@ export class PointerEventStateMachine {
     [
       "down",
       (ev: React.PointerEvent) => {
-        const consumed = this._onDown({ x: ev.clientX, y: ev.clientY });
-        if (!consumed) {
-          this.setIdle(false);
-          return;
-        }
+        this._onDown({ x: ev.clientX, y: ev.clientY });
         this.state = { type: "down", down: ev };
         this.longDownTimer = window.setTimeout(() => {
           this.state = { type: "longDown", down: ev };
@@ -120,14 +113,13 @@ export class PointerEventStateMachine {
     [
       "move",
       (ev: React.PointerEvent, down: React.PointerEvent) => {
+        const point = { x: ev.clientX, y: ev.clientY };
         if (
-          magnitude(
-            { x: ev.clientX, y: ev.clientY },
-            { x: down.clientX, y: down.clientY }
-          ) > PointerEventStateMachine.THRESHOLD_MOVE
+          magnitude(point, { x: down.clientX, y: down.clientY }) >
+          PointerEventStateMachine.THRESHOLD_MOVE
         ) {
           this.clearIdleTimer();
-          this.state = { type: "singleMove", down };
+          this.state = { type: "move", diff: { x: 0, y: 0 }, point, down };
           window.clearTimeout(this.longDownTimer);
           this.longDownTimer = -1;
         }
@@ -136,10 +128,12 @@ export class PointerEventStateMachine {
     [
       "up",
       (ev: React.PointerEvent) => {
-        this.state = { type: "singleTap" };
-        this.setIdle(true, () =>
-          this._onClick({ x: ev.clientX, y: ev.clientY })
-        );
+        const point = { x: ev.clientX, y: ev.clientY };
+        this.state = { type: "singleTap", point };
+        this.setIdle(true, () => {
+          this._onClick(point);
+          this.state = { type: "click", point };
+        });
         window.clearTimeout(this.longDownTimer);
         this.longDownTimer = -1;
       },
@@ -148,16 +142,20 @@ export class PointerEventStateMachine {
 
   private longDownHandler = new Map([["up", () => this.setIdle(false)]]);
 
-  private panHandler = new Map([
+  private moveHandler = new Map([
     [
       "move",
       (ev: React.PointerEvent, down: React.PointerEvent) => {
-        this._onSingleMove(
-          ev.clientX - down.clientX,
-          ev.clientY - down.clientY,
-          { x: ev.clientX, y: ev.clientY },
-          { x: down.clientX, y: down.clientY }
-        );
+        const point = { x: ev.clientX, y: ev.clientY };
+        const diff = {
+          x: point.x - down.clientX,
+          y: point.y - down.clientY,
+        };
+        this._onMove(diff.x, diff.y, point, {
+          x: down.clientX,
+          y: down.clientY,
+        });
+        this.state = { type: "move", diff, point, down };
       },
     ],
     ["up", () => this.setIdle(false)],
@@ -177,19 +175,22 @@ export class PointerEventStateMachine {
     [
       "move",
       (ev: React.PointerEvent, down: React.PointerEvent) => {
+        const point = { x: ev.clientX, y: ev.clientY };
         if (
-          magnitude(
-            { x: ev.clientX, y: ev.clientY },
-            { x: down.clientX, y: down.clientY }
-          ) > PointerEventStateMachine.THRESHOLD_MOVE
+          magnitude(point, { x: down.clientX, y: down.clientY }) >
+          PointerEventStateMachine.THRESHOLD_MOVE
         ) {
-          this.state = { type: "doubleMove", down };
+          this.state = { type: "doubleMove", point, down };
         }
       },
     ],
     [
       "up",
       (ev: React.PointerEvent) => {
+        this.state = {
+          type: "doubleClick",
+          point: { x: ev.clientX, y: ev.clientY },
+        };
         this._onDoubleClick({ x: ev.clientX, y: ev.clientY });
         this.setIdle(false);
       },
@@ -204,6 +205,11 @@ export class PointerEventStateMachine {
           { x: down.clientX, y: down.clientY },
           ev.clientY - down.clientY
         );
+        this.state = {
+          type: "doubleMove",
+          point: { x: ev.clientX, y: ev.clientY },
+          down,
+        };
       },
     ],
     ["up", () => this.setIdle(false)],
