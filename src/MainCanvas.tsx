@@ -1,18 +1,14 @@
-import React from "react";
 import { UNIT } from "@/org/font/bravura";
 import {
   BBox,
   Point,
   Size,
-  addPoint,
   isPointInBBox,
   offsetBBox,
-  scalePoint,
   scaleSize,
 } from "@/org/geometry";
 import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/org/paint";
 import { getInitScale } from "@/org/score-preferences";
-import { StaffStyle } from "./org/style/types";
 import {
   determineCaretStyle,
   determinePaintElementStyle,
@@ -25,23 +21,19 @@ import {
   Pointing,
 } from "@/org/style/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   caretAtom,
   caretStyleAtom,
-  elementsAtom,
   contextMenuAtom,
+  elementsAtom,
   useStaffs,
 } from "./atom";
-import {
-  kDoubleClickThresholdMs,
-  usePointerHandler,
-  useResizeHandler,
-} from "./hooks";
+import { useResizeHandler } from "./hooks";
+import { StaffStyle } from "./org/style/types";
+import { PointerEventStateMachine } from "./pointer-state";
 import { determineCanvasScale, resizeCanvas } from "./util";
-import { ContextMenu } from "./ContextMenu";
-import { Dialog } from "./Dialog";
-import { setCarets } from "./org/score-states";
+import { DesktopStateMachine, DesktopStateProps } from "./desktop-state";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -186,17 +178,22 @@ const useMainPointerHandler = () => {
   const styleMap = useAtomValue(elementMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(caretAtom);
-  const [downMtx, setDownMtx] = useState<DOMMatrix>();
-  const [doubleZoomTimer, setDoubleZoomTimer] = useState<number>(-1);
-  const [doubleZoomPoint, setDoubleZoomPoint] = useState<Point>();
-  const [dragStaff, setDragStaff] = useState<{ id: number; offset: Point }>();
   const staffs = useStaffs();
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
+  const desktopState = useRef(new DesktopStateMachine());
+  const canvasHandler = useRef(
+    new PointerEventStateMachine(desktopState.current.on)
+  );
+  const staffHandler = useRef(new PointerEventStateMachine(() => {}));
+
+  useEffect(() => {
+    desktopState.current.mtx = mtx;
+  }, [mtx]);
 
   const dndStaff = useCallback(
     (desktopPoint: Point) => {
-      const id = getStaffIdOnPoint(desktopPoint);
-      const staffStyle = staffs.get(id);
+      const staffId = getStaffIdOnPoint(desktopPoint);
+      const staffStyle = staffs.get(staffId);
       if (!staffStyle) {
         return;
       }
@@ -204,136 +201,114 @@ const useMainPointerHandler = () => {
         x: desktopPoint.x - staffStyle.position.x,
         y: desktopPoint.y - staffStyle.position.y,
       };
-      setDragStaff({ id, offset });
+      return { staffId, offset };
     },
-    [styleMap, getStaffIdOnPoint, staffs]
+    [getStaffIdOnPoint, staffs]
   );
 
-  const onDown = useCallback(
-    (ev: React.PointerEvent) => {
-      setPopover(undefined);
-      setDownMtx(mtx);
-      const point = mtx
-        .inverse()
-        .transformPoint({ x: ev.clientX, y: ev.clientY });
-      if (doubleZoomTimer > -1) {
-        window.clearTimeout(doubleZoomTimer);
-        setDoubleZoomTimer(-1);
-        console.log("set doublezoompoint", point);
-        setDoubleZoomPoint(point);
-      } else {
-        dndStaff(point);
-        setDoubleZoomTimer(
-          window.setTimeout(
-            () => setDoubleZoomTimer(-1),
-            kDoubleClickThresholdMs
-          )
-        );
-      }
-    },
-    [mtx, doubleZoomTimer, styleMap, dndStaff]
-  );
+  useEffect(() => {
+    desktopState.current.getStaffOnPoint = dndStaff;
+  }, [dndStaff]);
 
-  const onLongDown = useCallback(
-    (ev: React.PointerEvent) => {
-      console.log("longdown", "doubleZoomPoint", doubleZoomPoint);
-      if (doubleZoomPoint) {
-        return;
-      }
-      const point = mtx
-        .inverse()
-        .transformPoint({ x: ev.clientX, y: ev.clientY });
-      const id = getStaffIdOnPoint(point);
-      if (id > -1) {
-        // setDownMtx(undefined);
-        dndStaff(point);
-        setPopover({
-          htmlPoint: { x: ev.clientX, y: ev.clientY },
-          staffId: id,
-        });
-      }
-    },
-    [getStaffIdOnPoint, mtx, doubleZoomPoint]
-  );
-
-  const onDrag = useCallback(
-    (ev: React.PointerEvent, down: React.PointerEvent) => {
-      setPopover(undefined);
-      if (!downMtx) {
-        return;
-      }
-      if (doubleZoomPoint) {
-        const scale = Math.exp((ev.clientY - down.clientY) / 100);
-        setMtx(
-          downMtx
-            .translate(doubleZoomPoint.x, doubleZoomPoint.y)
-            .scale(scale, scale)
-            .translate(-doubleZoomPoint.x, -doubleZoomPoint.y)
-        );
-        return;
-      }
-      if (dragStaff !== undefined) {
-        staffs.update(dragStaff.id, (staff) => {
-          const point = mtx.inverse().transformPoint({
-            x: ev.clientX,
-            y: ev.clientY,
-          });
-          staff.position = addPoint(point, scalePoint(dragStaff.offset, -1));
-          return staff;
-        });
-        return;
-      }
-      const dx = (ev.clientX - down.clientX) / downMtx.a;
-      const dy = (ev.clientY - down.clientY) / downMtx.a;
-      setMtx(downMtx.translate(dx, dy));
-    },
-    [mtx, downMtx, doubleZoomPoint, dragStaff, staffs]
-  );
-
-  const onUp = useCallback(() => {
-    setDownMtx(undefined);
-    setDoubleZoomPoint(undefined);
-    setDragStaff(undefined);
+  const onIdle = useCallback(() => {
+    console.log("CanvasState", "idle");
+    setPopover(undefined);
   }, []);
 
-  const onClick = useCallback(
-    (ev: React.PointerEvent) => {
-      const point = mtx
-        .inverse()
-        .transformPoint({ x: ev.clientX, y: ev.clientY });
-      const id = getStaffIdOnPoint(point);
-      if (id > -1) {
-        setCarets({ staffId: id, idx: 0 });
+  const onMoveStaff = useCallback(
+    (args: DesktopStateProps["moveStaff"]) => {
+      const { staffId, point, offset } = args;
+      const position = { x: point.x - offset.x, y: point.y - offset.y };
+      staffs.update(staffId, (style) => ({ ...style, position }));
+    },
+    [staffs, mtx]
+  );
+
+  const onCtxMenuStaff = useCallback(
+    ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
+      setPopover({ htmlPoint, staffId });
+    },
+    []
+  );
+
+  const onFocusStaff = useCallback(
+    ({ staffId }: DesktopStateProps["focusStaff"]) => {
+      if (staffId > -1) {
+        setCarets({ staffId, idx: 0 });
       }
     },
     [mtx, getStaffIdOnPoint]
   );
 
-  const onDoubleClick = useCallback(
-    (ev: React.PointerEvent) => {
+  const onPan = useCallback(({ translated }: DesktopStateProps["pan"]) => {
+    console.log("CanvasState", "pan");
+    setMtx(translated);
+  }, []);
+
+  const onZoom = useCallback(({ translated }: DesktopStateProps["zoom"]) => {
+    console.log("CanvasState", "zoom");
+    setMtx(translated);
+  }, []);
+
+  const onAddStaff = useCallback(
+    ({ point }: DesktopStateProps["addStaff"]) => {
       staffs.add(
         genStaffStyle(
           { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
-          mtx.inverse().transformPoint({ x: ev.clientX, y: ev.clientY })
+          point
         )
       );
     },
-    [staffs, mtx]
+    [mtx, staffs]
   );
+
+  useEffect(() => {
+    desktopState.current.onState = (state) => {
+      switch (state.type) {
+        case "idle":
+          onIdle();
+          break;
+        case "downCanvas":
+          break;
+        case "addStaff":
+          onAddStaff(state);
+          break;
+        case "focusStaff":
+          onFocusStaff(state);
+          break;
+        case "moveStaff":
+          onMoveStaff(state);
+          break;
+        case "ctxMenuStaff":
+          onCtxMenuStaff(state);
+          break;
+        case "pan":
+          onPan(state);
+          break;
+        case "zoom":
+          onZoom(state);
+          break;
+      }
+    };
+  }, [onAddStaff, onFocusStaff]);
 
   return {
     onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {
       // iOS Safariでダブルタップ長押し時に拡大鏡が出るのを防ぐ
       ev.preventDefault();
     },
-    ...usePointerHandler({
-      onDown,
-      onLongDown,
-      onDrag,
-      onUp,
-      onDoubleClick,
-      onClick,
-    }),
+    onPointerDown: (ev: React.PointerEvent) => {
+      canvasHandler.current.on("down", ev);
+      staffHandler.current.on("down", ev);
+    },
+    onPointerMove: (ev: React.PointerEvent) => {
+      canvasHandler.current.on("move", ev);
+      staffHandler.current.on("move", ev);
+    },
+    onPointerUp: (ev: React.PointerEvent) => {
+      canvasHandler.current.on("up", ev);
+      staffHandler.current.on("up", ev);
+    },
   };
 };
 
