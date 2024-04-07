@@ -30,45 +30,6 @@ export class PointerEventStateMachine {
 
   constructor(private onState: (state: PointerState) => void) {}
 
-  private _onIdle: () => void = () => {};
-  set onIdle(fn: () => void) {
-    this._onIdle = fn;
-  }
-
-  /**
-   * @returns true if the event is consumed
-   */
-  private _onDown: (point: Point) => void = () => {};
-  set onDown(fn: (point: Point) => void) {
-    this._onDown = fn;
-  }
-
-  private _onLongDown: (point: Point) => void = () => {};
-  set onLongDown(fn: (point: Point) => void) {
-    this._onLongDown = fn;
-  }
-
-  private _onClick: (point: Point) => void = () => {};
-  set onClick(fn: (point: Point) => void) {
-    this._onClick = fn;
-  }
-
-  private _onMove: (dx: number, dy: number, point: Point, down: Point) => void =
-    () => {};
-  set onMove(fn: (dx: number, dy: number, point: Point, down: Point) => void) {
-    this._onMove = fn;
-  }
-
-  private _onDoubleZoom: (point: Point, dz: number) => void = () => {};
-  set onDoubleZoom(fn: (point: Point, dz: number) => void) {
-    this._onDoubleZoom = fn;
-  }
-
-  private _onDoubleClick: (point: Point) => void = () => {};
-  set onDoubleClick(fn: (point: Point) => void) {
-    this._onDoubleClick = fn;
-  }
-
   on(evType: "down" | "move" | "up", ev: React.PointerEvent) {
     console.log(this.state.type, `-> on-${evType}`);
     switch (this.state.type) {
@@ -99,11 +60,9 @@ export class PointerEventStateMachine {
     [
       "down",
       (ev: React.PointerEvent) => {
-        this._onDown({ x: ev.clientX, y: ev.clientY });
         this.state = { type: "down", down: ev };
         this.longDownTimer = window.setTimeout(() => {
           this.state = { type: "longDown", down: ev };
-          this._onLongDown({ x: ev.clientX, y: ev.clientY });
         }, PointerEventStateMachine.THRESHOLD_IDLE);
       },
     ],
@@ -131,7 +90,6 @@ export class PointerEventStateMachine {
         const point = { x: ev.clientX, y: ev.clientY };
         this.state = { type: "singleTap", point };
         this.setIdle(true, () => {
-          this._onClick(point);
           this.state = { type: "click", point };
         });
         window.clearTimeout(this.longDownTimer);
@@ -151,10 +109,6 @@ export class PointerEventStateMachine {
           x: point.x - down.clientX,
           y: point.y - down.clientY,
         };
-        this._onMove(diff.x, diff.y, point, {
-          x: down.clientX,
-          y: down.clientY,
-        });
         this.state = { type: "move", diff, point, down };
       },
     ],
@@ -191,7 +145,6 @@ export class PointerEventStateMachine {
           type: "doubleClick",
           point: { x: ev.clientX, y: ev.clientY },
         };
-        this._onDoubleClick({ x: ev.clientX, y: ev.clientY });
         this.setIdle(false);
       },
     ],
@@ -201,10 +154,6 @@ export class PointerEventStateMachine {
     [
       "move",
       (ev: React.PointerEvent, down: React.PointerEvent) => {
-        this._onDoubleZoom(
-          { x: down.clientX, y: down.clientY },
-          ev.clientY - down.clientY
-        );
         this.state = {
           type: "doubleMove",
           point: { x: ev.clientX, y: ev.clientY },
@@ -219,7 +168,6 @@ export class PointerEventStateMachine {
     const callback = () => {
       fn?.();
       this.state = { type: "idle" };
-      this._onIdle();
       this.clearIdleTimer();
     };
     if (shouldDelay) {
