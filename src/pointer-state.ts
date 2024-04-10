@@ -4,6 +4,13 @@ export type PointerState =
   | { type: "idle" }
   | { type: "down"; down: React.PointerEvent }
   | { type: "longDown"; down: React.PointerEvent }
+  | {
+      type: "multiDown";
+      down: {
+        [pointerId: number]: React.PointerEvent;
+      };
+    }
+  | { type: "keepDown"; down: React.PointerEvent }
   | { type: "move"; diff: Point; point: Point; down: React.PointerEvent }
   | { type: "singleTap"; point: Point }
   | { type: "click"; point: Point }
@@ -40,7 +47,13 @@ export class PointerEventStateMachine {
         this.downHandler.get(evType)?.(ev, this.state.down);
         break;
       case "longDown":
-        this.longDownHandler.get(evType)?.();
+        this.longDownHandler.get(evType)?.(ev);
+        break;
+      case "multiDown":
+        this.multiDownHandler.get(evType)?.(ev);
+        break;
+      case "keepDown":
+        this.keepDownHandler.get(evType)?.(ev, this.state.down);
         break;
       case "move":
         this.moveHandler.get(evType)?.(ev, this.state.down);
@@ -96,9 +109,83 @@ export class PointerEventStateMachine {
         this.longDownTimer = -1;
       },
     ],
+    [
+      "down",
+      (ev: React.PointerEvent) => {
+        if (
+          this.state.type !== "down" ||
+          this.state.down.pointerId === ev.pointerId
+        ) {
+          return;
+        }
+        this.state = {
+          type: "multiDown",
+          down: {
+            [this.state.down.pointerId]: this.state.down,
+            [ev.pointerId]: ev,
+          },
+        };
+        window.clearTimeout(this.longDownTimer);
+        this.longDownTimer = -1;
+      },
+    ],
   ]);
 
-  private longDownHandler = new Map([["up", () => this.setIdle(false)]]);
+  private longDownHandler = new Map([
+    ["up", () => this.setIdle(false)],
+    [
+      "down",
+      (ev: React.PointerEvent) => {
+        if (
+          this.state.type !== "longDown" ||
+          this.state.down.pointerId === ev.pointerId
+        ) {
+          return;
+        }
+        this.state = {
+          type: "multiDown",
+          down: {
+            [this.state.down.pointerId]: this.state.down,
+            [ev.pointerId]: ev,
+          },
+        };
+      },
+    ],
+  ]);
+
+  private multiDownHandler = new Map([
+    [
+      "up",
+      (ev: React.PointerEvent) => {
+        if (this.state.type !== "multiDown") {
+          return;
+        }
+        if (this.state.down[ev.pointerId]) {
+          delete this.state.down[ev.pointerId];
+          this.state = {
+            type: "keepDown",
+            down: Object.values(this.state.down)[0],
+          };
+        }
+      },
+    ],
+  ]);
+
+  private keepDownHandler = new Map([
+    ["up", () => this.setIdle(false)],
+    [
+      "move",
+      (ev: React.PointerEvent, down: React.PointerEvent) => {
+        const point = { x: ev.clientX, y: ev.clientY };
+        if (
+          magnitude(point, { x: down.clientX, y: down.clientY }) >
+          PointerEventStateMachine.THRESHOLD_MOVE
+        ) {
+          this.state = { type: "move", diff: { x: 0, y: 0 }, point, down };
+        }
+      },
+    ],
+  ]);
 
   private moveHandler = new Map([
     [
@@ -113,6 +200,24 @@ export class PointerEventStateMachine {
       },
     ],
     ["up", () => this.setIdle(false)],
+    [
+      "down",
+      (ev: React.PointerEvent) => {
+        if (
+          this.state.type !== "move" ||
+          this.state.down.pointerId === ev.pointerId
+        ) {
+          return;
+        }
+        this.state = {
+          type: "multiDown",
+          down: {
+            [this.state.down.pointerId]: this.state.down,
+            [ev.pointerId]: ev,
+          },
+        };
+      },
+    ],
   ]);
 
   private singleTapHandler = new Map([
