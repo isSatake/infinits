@@ -6,9 +6,8 @@ export type PointerState =
   | { type: "longDown"; down: React.PointerEvent }
   | {
       type: "multiDown";
-      down: {
-        [pointerId: number]: React.PointerEvent;
-      };
+      down: { [pointerId: number]: React.PointerEvent };
+      points: { [pointerId: number]: Point };
     }
   | { type: "keepDown"; down: React.PointerEvent }
   | { type: "move"; diff: Point; point: Point; down: React.PointerEvent }
@@ -16,7 +15,12 @@ export type PointerState =
   | { type: "click"; point: Point }
   | { type: "doubleDown"; down: React.PointerEvent }
   | { type: "doubleClick"; point: Point }
-  | { type: "doubleMove"; point: Point; down: React.PointerEvent };
+  | { type: "doubleMove"; point: Point; down: React.PointerEvent }
+  | {
+      type: "pinch";
+      down: { [pointerId: number]: React.PointerEvent };
+      points: { [pointerId: number]: Point };
+    };
 
 export class PointerEventStateMachine {
   private static THRESHOLD_IDLE = 300;
@@ -65,7 +69,10 @@ export class PointerEventStateMachine {
         this.doubleDownHandler.get(evType)?.(ev, this.state.down);
         break;
       case "doubleMove":
-        this.zoomHandler.get(evType)?.(ev, this.state.down);
+        this.doubleZoomHandler.get(evType)?.(ev, this.state.down);
+        break;
+      case "pinch":
+        this.pinchHandler.get(evType)?.(ev);
         break;
     }
   }
@@ -118,11 +125,17 @@ export class PointerEventStateMachine {
         ) {
           return;
         }
+        const p0 = {
+          id: this.state.down.pointerId,
+          ev: this.state.down,
+        };
+        const p1 = { id: ev.pointerId, ev };
         this.state = {
           type: "multiDown",
-          down: {
-            [this.state.down.pointerId]: this.state.down,
-            [ev.pointerId]: ev,
+          down: { [p0.id]: p0.ev, [p1.id]: p1.ev },
+          points: {
+            [p0.id]: { x: p0.ev.clientX, y: p0.ev.clientY },
+            [p1.id]: { x: p1.ev.clientX, y: p1.ev.clientY },
           },
         };
         window.clearTimeout(this.longDownTimer);
@@ -142,11 +155,17 @@ export class PointerEventStateMachine {
         ) {
           return;
         }
+        const p0 = {
+          id: this.state.down.pointerId,
+          ev: this.state.down,
+        };
+        const p1 = { id: ev.pointerId, ev };
         this.state = {
           type: "multiDown",
-          down: {
-            [this.state.down.pointerId]: this.state.down,
-            [ev.pointerId]: ev,
+          down: { [p0.id]: p0.ev, [p1.id]: p1.ev },
+          points: {
+            [p0.id]: { x: p0.ev.clientX, y: p0.ev.clientY },
+            [p1.id]: { x: p1.ev.clientX, y: p1.ev.clientY },
           },
         };
       },
@@ -166,6 +185,35 @@ export class PointerEventStateMachine {
             type: "keepDown",
             down: Object.values(this.state.down)[0],
           };
+        }
+      },
+    ],
+    [
+      "move",
+      (ev: React.PointerEvent) => {
+        if (this.state.type !== "multiDown") {
+          return;
+        }
+        // 2点間の距離がTHRESHOLD_MOVEを超えたら"pinch"
+        const [d0, d1] = Object.values(this.state.down);
+        const downMagnitude = Math.sqrt(
+          (d0.clientX - d1.clientX) ** 2 + (d0.clientY - d1.clientY) ** 2
+        );
+        const { points } = this.state;
+        if (!points[ev.pointerId]) {
+          return;
+        }
+        points[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+        const [p0, p1] = Object.values(points);
+        if (!p0 || !p1) {
+          return;
+        }
+        const magnitude = Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
+        if (
+          Math.abs(downMagnitude - magnitude) >
+          PointerEventStateMachine.THRESHOLD_MOVE
+        ) {
+          this.state = { type: "pinch", down: this.state.down, points };
         }
       },
     ],
@@ -209,11 +257,17 @@ export class PointerEventStateMachine {
         ) {
           return;
         }
+        const p0 = {
+          id: this.state.down.pointerId,
+          ev: this.state.down,
+        };
+        const p1 = { id: ev.pointerId, ev };
         this.state = {
           type: "multiDown",
-          down: {
-            [this.state.down.pointerId]: this.state.down,
-            [ev.pointerId]: ev,
+          down: { [p0.id]: p0.ev, [p1.id]: p1.ev },
+          points: {
+            [p0.id]: { x: p0.ev.clientX, y: p0.ev.clientY },
+            [p1.id]: { x: p1.ev.clientX, y: p1.ev.clientY },
           },
         };
       },
@@ -255,7 +309,7 @@ export class PointerEventStateMachine {
     ],
   ]);
 
-  private zoomHandler = new Map([
+  private doubleZoomHandler = new Map([
     [
       "move",
       (ev: React.PointerEvent, down: React.PointerEvent) => {
@@ -268,6 +322,8 @@ export class PointerEventStateMachine {
     ],
     ["up", () => this.setIdle(false)],
   ]);
+
+  private pinchHandler = new Map([]);
 
   private setIdle = (shouldDelay: boolean, fn?: () => void) => {
     const callback = () => {
