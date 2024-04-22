@@ -70,7 +70,7 @@ export class PointerEventStateMachine {
         this.doubleDownHandler.get(evType)?.(ev, this.state.down);
         break;
       case "doubleMove":
-        this.doubleZoomHandler.get(evType)?.(ev, this.state.down);
+        this.doubleMoveHandler.get(evType)?.(ev, this.state.down);
         break;
       case "pinch":
         this.pinchHandler.get(evType)?.(ev);
@@ -287,7 +287,7 @@ export class PointerEventStateMachine {
     ],
   ]);
 
-  private doubleZoomHandler = new Map([
+  private doubleMoveHandler = new Map([
     [
       "move",
       (ev: React.PointerEvent, down: React.PointerEvent) => {
@@ -309,7 +309,12 @@ export class PointerEventStateMachine {
           return;
         }
         if (this.state.points[ev.pointerId]) {
-          this.state.points[ev.pointerId] = ev;
+          // this.state.points[ev.pointerId] = ev;
+          this.state = {
+            type: "pinch",
+            down: this.state.down,
+            points: { ...this.state.points, [ev.pointerId]: ev },
+          };
         }
       },
     ],

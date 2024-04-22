@@ -137,6 +137,34 @@ export class DesktopStateMachine {
           };
         }
         break;
+      case "pinch":
+        {
+          const [d0, d1] = Object.values(state.down).map((ev) => ({
+            x: ev.clientX,
+            y: ev.clientY,
+          }));
+          const [p0, p1] = Object.values(state.points).map((ev) => ({
+            x: ev.clientX,
+            y: ev.clientY,
+          }));
+          const dm = Math.sqrt((d0.x - d1.x) ** 2 + (d0.y - d1.y) ** 2);
+          const pm = Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
+          const scale = Math.exp((pm - dm) / 100);
+          const origin = this.state.downMtx.inverse().transformPoint({
+            x: Math.abs(d0.x - d1.x) / 2,
+            y: Math.abs(d0.y - d1.y) / 2,
+          });
+          const translated = this.state.downMtx
+            .translate(origin.x, origin.y)
+            .scale(scale, scale)
+            .translate(-origin.x, -origin.y);
+          this.state = {
+            type: "zoom",
+            downMtx: this.state.downMtx,
+            translated,
+          };
+        }
+        break;
       case "doubleClick":
         this.state = {
           type: "addStaff",
@@ -181,6 +209,33 @@ export class DesktopStateMachine {
           .translate(-origin.x, -origin.y);
         this.state = { type: "zoom", downMtx: this.state.downMtx, translated };
         break;
+      case "pinch": {
+        const [d0, d1] = Object.values(state.down).map((ev) => ({
+          x: ev.clientX,
+          y: ev.clientY,
+        }));
+        const [p0, p1] = Object.values(state.points).map((ev) => ({
+          x: ev.clientX,
+          y: ev.clientY,
+        }));
+        const dm = Math.sqrt((d0.x - d1.x) ** 2 + (d0.y - d1.y) ** 2);
+        const pm = Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
+        const scale = Math.exp((pm - dm) / 100);
+        const origin = this.state.downMtx.inverse().transformPoint({
+          x: Math.abs(d0.x - d1.x) / 2,
+          y: Math.abs(d0.y - d1.y) / 2,
+        });
+        const translated = this.state.downMtx
+          .translate(origin.x, origin.y)
+          .scale(scale, scale)
+          .translate(-origin.x, -origin.y);
+        this.state = {
+          type: "zoom",
+          downMtx: this.state.downMtx,
+          translated,
+        };
+        break;
+      }
       case "idle":
         this.state = { type: "idle" };
         break;
