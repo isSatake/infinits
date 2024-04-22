@@ -7,7 +7,7 @@ export type PointerState =
   | {
       type: "multiDown";
       down: { [pointerId: number]: React.PointerEvent };
-      points: { [pointerId: number]: Point };
+      points: { [pointerId: number]: React.PointerEvent };
     }
   | { type: "keepDown"; down: React.PointerEvent }
   | { type: "move"; diff: Point; point: Point; down: React.PointerEvent }
@@ -19,8 +19,9 @@ export type PointerState =
   | {
       type: "pinch";
       down: { [pointerId: number]: React.PointerEvent };
-      points: { [pointerId: number]: Point };
-    };
+      points: { [pointerId: number]: React.PointerEvent };
+    }
+  | { type: "keepDown"; down: React.PointerEvent };
 
 export class PointerEventStateMachine {
   private static THRESHOLD_IDLE = 300;
@@ -125,19 +126,11 @@ export class PointerEventStateMachine {
         ) {
           return;
         }
-        const p0 = {
-          id: this.state.down.pointerId,
-          ev: this.state.down,
+        const down = {
+          [this.state.down.pointerId]: this.state.down,
+          [ev.pointerId]: ev,
         };
-        const p1 = { id: ev.pointerId, ev };
-        this.state = {
-          type: "multiDown",
-          down: { [p0.id]: p0.ev, [p1.id]: p1.ev },
-          points: {
-            [p0.id]: { x: p0.ev.clientX, y: p0.ev.clientY },
-            [p1.id]: { x: p1.ev.clientX, y: p1.ev.clientY },
-          },
-        };
+        this.state = { type: "multiDown", down, points: down };
         window.clearTimeout(this.longDownTimer);
         this.longDownTimer = -1;
       },
@@ -155,19 +148,11 @@ export class PointerEventStateMachine {
         ) {
           return;
         }
-        const p0 = {
-          id: this.state.down.pointerId,
-          ev: this.state.down,
+        const down = {
+          [this.state.down.pointerId]: this.state.down,
+          [ev.pointerId]: ev,
         };
-        const p1 = { id: ev.pointerId, ev };
-        this.state = {
-          type: "multiDown",
-          down: { [p0.id]: p0.ev, [p1.id]: p1.ev },
-          points: {
-            [p0.id]: { x: p0.ev.clientX, y: p0.ev.clientY },
-            [p1.id]: { x: p1.ev.clientX, y: p1.ev.clientY },
-          },
-        };
+        this.state = { type: "multiDown", down, points: down };
       },
     ],
   ]);
@@ -203,12 +188,14 @@ export class PointerEventStateMachine {
         if (!points[ev.pointerId]) {
           return;
         }
-        points[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+        points[ev.pointerId] = ev;
         const [p0, p1] = Object.values(points);
         if (!p0 || !p1) {
           return;
         }
-        const magnitude = Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
+        const magnitude = Math.sqrt(
+          (p0.clientX - p1.clientX) ** 2 + (p0.clientY - p1.clientY) ** 2
+        );
         if (
           Math.abs(downMagnitude - magnitude) >
           PointerEventStateMachine.THRESHOLD_MOVE
@@ -257,19 +244,11 @@ export class PointerEventStateMachine {
         ) {
           return;
         }
-        const p0 = {
-          id: this.state.down.pointerId,
-          ev: this.state.down,
+        const down = {
+          [this.state.down.pointerId]: this.state.down,
+          [ev.pointerId]: ev,
         };
-        const p1 = { id: ev.pointerId, ev };
-        this.state = {
-          type: "multiDown",
-          down: { [p0.id]: p0.ev, [p1.id]: p1.ev },
-          points: {
-            [p0.id]: { x: p0.ev.clientX, y: p0.ev.clientY },
-            [p1.id]: { x: p1.ev.clientX, y: p1.ev.clientY },
-          },
-        };
+        this.state = { type: "multiDown", down, points: down };
       },
     ],
   ]);
@@ -323,7 +302,30 @@ export class PointerEventStateMachine {
     ["up", () => this.setIdle(false)],
   ]);
 
-  private pinchHandler = new Map([]);
+  private pinchHandler = new Map([
+    [
+      "up",
+      (ev: React.PointerEvent) => {
+        if (this.state.type !== "pinch") {
+          return;
+        }
+        console.log(
+          "pinch",
+          "points",
+          Object.keys(this.state.points),
+          "ev",
+          ev.pointerId
+        );
+        const p = this.state.points[`${ev.pointerId}`];
+        const [[_, rest]] = Object.entries(this.state.points).filter(
+          ([id, _]) => id !== `${ev.pointerId}`
+        );
+        if (p && rest) {
+          this.state = { type: "keepDown", down: rest };
+        }
+      },
+    ],
+  ]);
 
   private setIdle = (shouldDelay: boolean, fn?: () => void) => {
     const callback = () => {
