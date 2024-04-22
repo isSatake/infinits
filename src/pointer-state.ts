@@ -179,7 +179,6 @@ export class PointerEventStateMachine {
         if (this.state.type !== "multiDown") {
           return;
         }
-        // 2点間の距離がTHRESHOLD_MOVEを超えたら"pinch"
         const [d0, d1] = Object.values(this.state.down);
         const downMagnitude = Math.sqrt(
           (d0.clientX - d1.clientX) ** 2 + (d0.clientY - d1.clientY) ** 2
@@ -304,18 +303,22 @@ export class PointerEventStateMachine {
 
   private pinchHandler = new Map([
     [
+      "move",
+      (ev: React.PointerEvent) => {
+        if (this.state.type !== "pinch") {
+          return;
+        }
+        if (this.state.points[ev.pointerId]) {
+          this.state.points[ev.pointerId] = ev;
+        }
+      },
+    ],
+    [
       "up",
       (ev: React.PointerEvent) => {
         if (this.state.type !== "pinch") {
           return;
         }
-        console.log(
-          "pinch",
-          "points",
-          Object.keys(this.state.points),
-          "ev",
-          ev.pointerId
-        );
         const p = this.state.points[`${ev.pointerId}`];
         const [[_, rest]] = Object.entries(this.state.points).filter(
           ([id, _]) => id !== `${ev.pointerId}`
