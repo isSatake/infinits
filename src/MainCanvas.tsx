@@ -184,7 +184,6 @@ const useMainPointerHandler = () => {
   const canvasHandler = useRef(
     new PointerEventStateMachine(desktopState.current.on)
   );
-  const staffHandler = useRef(new PointerEventStateMachine(() => {}));
 
   useEffect(() => {
     desktopState.current.mtx = mtx;
@@ -221,7 +220,7 @@ const useMainPointerHandler = () => {
       const position = { x: point.x - offset.x, y: point.y - offset.y };
       staffs.update(staffId, (style) => ({ ...style, position }));
     },
-    [staffs, mtx]
+    [staffs]
   );
 
   const onCtxMenuStaff = useCallback(
@@ -237,7 +236,7 @@ const useMainPointerHandler = () => {
         setCarets({ staffId, idx: 0 });
       }
     },
-    [mtx, getStaffIdOnPoint]
+    []
   );
 
   const onPan = useCallback(({ translated }: DesktopStateProps["pan"]) => {
@@ -259,7 +258,7 @@ const useMainPointerHandler = () => {
         )
       );
     },
-    [mtx, staffs]
+    [staffs]
   );
 
   useEffect(() => {
@@ -290,7 +289,7 @@ const useMainPointerHandler = () => {
           break;
       }
     };
-  }, [onAddStaff, onFocusStaff]);
+  }, [onAddStaff, onMoveStaff]);
 
   return {
     onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {
@@ -299,15 +298,12 @@ const useMainPointerHandler = () => {
     },
     onPointerDown: (ev: React.PointerEvent) => {
       canvasHandler.current.on("down", ev);
-      staffHandler.current.on("down", ev);
     },
     onPointerMove: (ev: React.PointerEvent) => {
       canvasHandler.current.on("move", ev);
-      staffHandler.current.on("move", ev);
     },
     onPointerUp: (ev: React.PointerEvent) => {
       canvasHandler.current.on("up", ev);
-      staffHandler.current.on("up", ev);
     },
   };
 };

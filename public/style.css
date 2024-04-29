@@ -554,3 +554,6 @@ dialog {
     }
   }
 }
+dialog::backdrop {
+  pointer-events: none;
+}
