@@ -151,8 +151,8 @@ export class DesktopStateMachine {
           const pm = Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
           const scale = Math.exp((pm - dm) / 100);
           const origin = this.state.downMtx.inverse().transformPoint({
-            x: Math.abs(d0.x - d1.x) / 2,
-            y: Math.abs(d0.y - d1.y) / 2,
+            x: (d0.x + d1.x) / 2,
+            y: (d0.y + d1.y) / 2,
           });
           const translated = this.state.downMtx
             .translate(origin.x, origin.y)
@@ -222,8 +222,8 @@ export class DesktopStateMachine {
         const pm = Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
         const scale = Math.exp((pm - dm) / 100);
         const origin = this.state.downMtx.inverse().transformPoint({
-          x: Math.abs(d0.x - d1.x) / 2,
-          y: Math.abs(d0.y - d1.y) / 2,
+          x: (d0.x + d1.x) / 2,
+          y: (d0.y + d1.y) / 2,
         });
         const translated = this.state.downMtx
           .translate(origin.x, origin.y)
