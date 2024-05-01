@@ -231,16 +231,14 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const { elements, caretAdvance } = genPreviewElements(newPitch);
+      const { elements, insertedIndex, caretAdvance } =
+        genPreviewElements(newPitch);
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
-      const notes: Frequency[] = [];
-      for (const el of elements) {
-        if (el.type === "note") {
-          notes.push(convert(el.pitches[0]));
-        }
+      const edited = elements[insertedIndex];
+      if (edited.type === "note") {
+        sampler.triggerAttackRelease(edited.pitches.map(convert), "8n");
       }
-      sampler.triggerAttackRelease(notes, "8n");
     },
     onDrag: (ev, down) => {
       if (!staff) {
