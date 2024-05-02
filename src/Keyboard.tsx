@@ -5,7 +5,9 @@ import {
   BarTypes,
   Duration,
   MusicalElement,
+  Note,
   PitchAcc,
+  Rest,
 } from "@/org/notation/types";
 import { getPreviewScale } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
@@ -20,8 +22,8 @@ import { usePointerHandler } from "./hooks";
 import { FC, useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
-import { Sampler } from "tone";
-import { Frequency } from "tone/build/esm/core/type/Units";
+import { start, Sampler, Part, Transport } from "tone";
+import { Time, Frequency } from "tone/build/esm/core/type/Units";
 
 export const Keyboard = () => {
   return (
@@ -235,10 +237,34 @@ const usePreviewHandlers = (duration: Duration) => {
         genPreviewElements(newPitch);
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
-      const edited = elements[insertedIndex];
-      if (edited.type === "note") {
-        sampler.triggerAttackRelease(edited.pitches.map(convert), "8n");
-      }
+      // const edited = elements[insertedIndex];
+      // if (edited.type === "note") {
+      //   sampler.triggerAttackRelease(edited.pitches.map(convert), "8n");
+      // }
+      const arr: ({ time: Time } & MusicalElement)[] = [];
+      let currentPPQ = 0; // quater = 192
+      elements
+        .filter((el): el is Note | Rest => el.type !== "bar")
+        .forEach((el) => {
+          arr.push({
+            time: `${currentPPQ}i`,
+            ...el,
+          });
+          currentPPQ += (192 * 4) / el.duration;
+        });
+      const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
+        if (value.type === "note") {
+          sampler.triggerAttackRelease(
+            value.pitches.map(convert),
+            `${value.duration}n`,
+            time
+          );
+        }
+      }, arr);
+      start().then(() => {
+        part.start();
+        Transport.start();
+      });
     },
     onDrag: (ev, down) => {
       if (!staff) {
