@@ -246,10 +246,7 @@ const usePreviewHandlers = (duration: Duration) => {
       elements
         .filter((el): el is Note | Rest => el.type !== "bar")
         .forEach((el) => {
-          arr.push({
-            time: `${currentPPQ}i`,
-            ...el,
-          });
+          arr.push({ time: `${currentPPQ}i`, ...el });
           currentPPQ += (192 * 4) / el.duration;
         });
       const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
@@ -587,7 +584,11 @@ const Root = ({ children }: { children: React.ReactNode }) => {
 };
 
 const Header = () => {
-  return <div className="keyHeader"></div>;
+  return (
+    <div className="keyHeader">
+      <button className="play"></button>
+    </div>
+  );
 };
 
 const Container = ({ children }: { children: React.ReactNode }) => {
