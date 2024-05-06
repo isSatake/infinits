@@ -237,31 +237,7 @@ const usePreviewHandlers = (duration: Duration) => {
         genPreviewElements(newPitch);
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
-      // const edited = elements[insertedIndex];
-      // if (edited.type === "note") {
-      //   sampler.triggerAttackRelease(edited.pitches.map(convert), "8n");
-      // }
-      const arr: ({ time: Time } & MusicalElement)[] = [];
-      let currentPPQ = 0; // quater = 192
-      elements
-        .filter((el): el is Note | Rest => el.type !== "bar")
-        .forEach((el) => {
-          arr.push({ time: `${currentPPQ}i`, ...el });
-          currentPPQ += (192 * 4) / el.duration;
-        });
-      const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
-        if (value.type === "note") {
-          sampler.triggerAttackRelease(
-            value.pitches.map(convert),
-            `${value.duration}n`,
-            time
-          );
-        }
-      }, arr);
-      start().then(() => {
-        part.start();
-        Transport.start();
-      });
+      startPreviewTone([elements[insertedIndex]]);
     },
     onDrag: (ev, down) => {
       if (!staff) {
@@ -279,6 +255,29 @@ const usePreviewHandlers = (duration: Duration) => {
       });
     },
   });
+};
+
+const startPreviewTone = async (elements: MusicalElement[]) => {
+  const arr: ({ time: Time } & MusicalElement)[] = [];
+  let currentPPQ = 0;
+  elements
+    .filter((el): el is Note | Rest => el.type !== "bar")
+    .forEach((el) => {
+      arr.push({ time: `${currentPPQ}i`, ...el });
+      currentPPQ += (Transport.PPQ * 4) / el.duration;
+    });
+  const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
+    if (value.type === "note") {
+      sampler.triggerAttackRelease(
+        value.pitches.map(convert),
+        `${value.duration}n`,
+        time
+      );
+    }
+  }, arr);
+  await start();
+  part.start();
+  Transport.start();
 };
 
 const Whole: FC = () => {
@@ -584,9 +583,15 @@ const Root = ({ children }: { children: React.ReactNode }) => {
 };
 
 const Header = () => {
+  const elements = useAtomValue(elementsAtom);
+  const { staffId } = useAtomValue(caretAtom);
+  const onPlay = useCallback(
+    () => startPreviewTone(elements.get(staffId) ?? []),
+    [elements, staffId]
+  );
   return (
     <div className="keyHeader">
-      <button className="play"></button>
+      <button className="play" onClick={onPlay}></button>
     </div>
   );
 };
