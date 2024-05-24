@@ -49,12 +49,23 @@ body {
   box-shadow: #ccc 0 20px 70px -10px;
 } */
 
-/* .keyHeader {
-  height: 54px;
-} */
-
 .keyHeader {
-  height: 126px;
+  display: grid;
+  width: 98vw;
+  height: 94px;
+  padding: 16px 0;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: 1fr;
+  gap: 16px;
+
+  .play {
+    grid-column: 3;
+    background-image: url("./img/play_24.svg");
+    background-size: 50%;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 12px;
+  }
 }
 
 /* .desktop > .keyContainer {
@@ -509,6 +520,16 @@ body {
 #contextMenu {
   box-shadow: 5px 5px;
   border: black 1px solid;
+
+  @media (hover: hover) {
+    button:hover {
+      background: #ccc;
+    }
+  }
+
+  button:active {
+    background: #aaa;
+  }
 }
 
 #contextMenu > * {
@@ -516,16 +537,6 @@ body {
   padding: 20px;
   user-select: none;
   -webkit-user-select: none;
-}
-
-@media (hover: hover) {
-  button:hover {
-    background: #ccc;
-  }
-}
-
-button:active {
-  background: #aaa;
 }
 
 dialog {
