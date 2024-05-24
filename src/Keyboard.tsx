@@ -585,13 +585,13 @@ const Root = ({ children }: { children: React.ReactNode }) => {
 const Header = () => {
   const elements = useAtomValue(elementsAtom);
   const { staffId } = useAtomValue(caretAtom);
-  const onPlay = useCallback(
+  const onClick = useCallback(
     () => startPreviewTone(elements.get(staffId) ?? []),
     [elements, staffId]
   );
   return (
     <div className="keyHeader">
-      <button className="play" onClick={onPlay}></button>
+      <button className="play" onClick={onClick}></button>
     </div>
   );
 };
