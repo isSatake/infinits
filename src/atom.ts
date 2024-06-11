@@ -3,8 +3,6 @@ import { MusicalElement } from "@/org/notation/types";
 import { CaretStyle } from "@/org/style/types";
 import { atom, useAtom } from "jotai";
 import { useCallback, useRef } from "react";
-import { kSampleElements } from "./constants";
-import { genStaffStyle } from "./org/style/style";
 import { StaffStyle } from "./org/style/types";
 
 // PreviewCanvasの表示
@@ -24,7 +22,7 @@ export const caretStyleAtom = atom<CaretStyle[]>([]);
 
 // staff id -> elements
 export const elementsAtom = atom<Map<number, MusicalElement[]>>(
-  new Map([[0, kSampleElements]])
+  new Map([[0, []]])
 );
 // staff id -> staff style
 const staffMapAtom = atom<Map<number, StaffStyle>>(new Map());
