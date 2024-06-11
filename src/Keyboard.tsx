@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { pitchByDistance } from "@/org/callbacks/note-input";
 import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
 import {
@@ -195,16 +195,21 @@ const useInputElements: (duration: Duration) => (
       });
       const ne = tietie(_ne);
       const newElement = sortChord(ne);
-      let caretIndex = caret.idx;
+      let offset = 0;
       if (position) {
-        caretIndex += position === "left" ? -1 : 1;
+        if (position === "left" && caret.idx > 0) {
+          offset = -1;
+        } else if (position === "right" && caret.idx < baseElements.length) {
+          offset = 1;
+        }
       }
-      return inputMusicalElement({
-        caretIndex,
+      const ret = inputMusicalElement({
+        caretIndex: caret.idx + offset,
         elements: baseElements,
         newElement,
         beamMode,
       });
+      return { ...ret, caretAdvance: ret.caretAdvance + offset };
     },
     [caret.idx, baseElements, inputMode, beamMode, duration, accidental]
   );
@@ -217,6 +222,7 @@ const usePreviewHandlers = (duration: Duration) => {
   const [caret, setCaret] = useAtom(caretAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   const staff = useStaffs().get(caret.staffId);
+  const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({
     onLongDown: (ev) => {
@@ -240,8 +246,10 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const { elements, insertedIndex, caretAdvance } =
-        genPreviewElements(newPitch);
+      const { elements, insertedIndex, caretAdvance } = genPreviewElements(
+        newPitch,
+        positionRef.current
+      );
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
       // 入力時のプレビューは8分音符固定
@@ -260,17 +268,16 @@ const usePreviewHandlers = (duration: Duration) => {
       const canvasLeft = canvasCenter.x - getPreviewWidth() / 2;
       const leftBound = canvasLeft + getPreviewWidth() / 3;
       const rightBound = canvasLeft + (getPreviewWidth() / 3) * 2;
-      let position;
       if (ev.clientX < leftBound) {
-        console.log("左");
-        position = "left" as const;
+        positionRef.current = "left";
       } else if (ev.clientX > rightBound) {
-        console.log("右");
-        position = "right" as const;
+        positionRef.current = "right";
+      } else {
+        positionRef.current = undefined;
       }
       setPreview({
         ...preview,
-        ...genPreviewElements(newPitch, position),
+        ...genPreviewElements(newPitch, positionRef.current),
       });
     },
   });
