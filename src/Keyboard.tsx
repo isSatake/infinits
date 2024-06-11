@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { pitchByDistance } from "@/org/callbacks/note-input";
 import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
 import {
@@ -9,7 +9,7 @@ import {
   PitchAcc,
   Rest,
 } from "@/org/notation/types";
-import { getPreviewScale } from "@/org/score-preferences";
+import { getPreviewScale, getPreviewWidth } from "@/org/score-preferences";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   caretAtom,
@@ -171,7 +171,10 @@ const useBaseElements = () => {
   );
 };
 
-const useInputElements: (duration: Duration) => (newPitch: PitchAcc) => {
+const useInputElements: (duration: Duration) => (
+  newPitch: PitchAcc,
+  position?: "left" | "right"
+) => {
   elements: MusicalElement[];
   insertedIndex: number;
   caretAdvance: number;
@@ -184,7 +187,7 @@ const useInputElements: (duration: Duration) => (newPitch: PitchAcc) => {
   const tietie = useTie();
   const sortChord = useSortChord();
   return useCallback(
-    (newPitch: PitchAcc) => {
+    (newPitch: PitchAcc, position?: "left" | "right") => {
       const _ne = getNewElement({
         mode: inputMode,
         pitch: newPitch,
@@ -192,24 +195,34 @@ const useInputElements: (duration: Duration) => (newPitch: PitchAcc) => {
       });
       const ne = tietie(_ne);
       const newElement = sortChord(ne);
-      return inputMusicalElement({
-        caretIndex: caret.idx,
+      let offset = 0;
+      if (position) {
+        if (position === "left" && caret.idx > 0) {
+          offset = -1;
+        } else if (position === "right" && caret.idx < baseElements.length) {
+          offset = 1;
+        }
+      }
+      const ret = inputMusicalElement({
+        caretIndex: caret.idx + offset,
         elements: baseElements,
         newElement,
         beamMode,
       });
+      return { ...ret, caretAdvance: ret.caretAdvance + offset };
     },
     [caret.idx, baseElements, inputMode, beamMode, duration, accidental]
   );
 };
 
 const usePreviewHandlers = (duration: Duration) => {
-  const preview = useSetAtom(previewAtom);
+  const [preview, setPreview] = useAtom(previewAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const genPreviewElements = useInputElements(duration);
   const [caret, setCaret] = useAtom(caretAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   const staff = useStaffs().get(caret.staffId);
+  const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({
     onLongDown: (ev) => {
@@ -220,28 +233,30 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), 0, 6),
         accidental,
       };
-      preview({
+      setPreview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         staff: { ...staff, position: { x: 0, y: 0 } },
         ...genPreviewElements(newPitch),
       });
     },
     onUp: (ev, down) => {
-      preview(undefined);
+      setPreview(undefined);
       const dy = down.clientY - ev.clientY;
       const newPitch = {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const { elements, insertedIndex, caretAdvance } =
-        genPreviewElements(newPitch);
+      const { elements, insertedIndex, caretAdvance } = genPreviewElements(
+        newPitch,
+        positionRef.current
+      );
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
       // 入力時のプレビューは8分音符固定
       play([elements[insertedIndex]], 8);
     },
     onDrag: (ev, down) => {
-      if (!staff) {
+      if (!preview || !staff) {
         return;
       }
       const dy = down.clientY - ev.clientY;
@@ -249,10 +264,20 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      preview({
-        canvasCenter: { x: ev.clientX, y: ev.clientY },
-        staff: { ...staff, position: { x: 0, y: 0 } },
-        ...genPreviewElements(newPitch),
+      const { canvasCenter } = preview;
+      const canvasLeft = canvasCenter.x - getPreviewWidth() / 2;
+      const leftBound = canvasLeft + getPreviewWidth() / 3;
+      const rightBound = canvasLeft + (getPreviewWidth() / 3) * 2;
+      if (ev.clientX < leftBound) {
+        positionRef.current = "left";
+      } else if (ev.clientX > rightBound) {
+        positionRef.current = "right";
+      } else {
+        positionRef.current = undefined;
+      }
+      setPreview({
+        ...preview,
+        ...genPreviewElements(newPitch, positionRef.current),
       });
     },
   });
