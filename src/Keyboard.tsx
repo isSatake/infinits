@@ -237,7 +237,8 @@ const usePreviewHandlers = (duration: Duration) => {
         genPreviewElements(newPitch);
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
-      startPreviewTone([elements[insertedIndex]]);
+      // 入力時のプレビューは8分音符固定
+      play([elements[insertedIndex]], 8);
     },
     onDrag: (ev, down) => {
       if (!staff) {
@@ -257,13 +258,17 @@ const usePreviewHandlers = (duration: Duration) => {
   });
 };
 
-const startPreviewTone = async (elements: MusicalElement[]) => {
+const play = async (elements: MusicalElement[], duration?: Duration) => {
   const arr: ({ time: Time } & MusicalElement)[] = [];
   let currentPPQ = 0;
   elements
     .filter((el): el is Note | Rest => el.type !== "bar")
     .forEach((el) => {
-      arr.push({ time: `${currentPPQ}i`, ...el });
+      arr.push({
+        time: `${currentPPQ}i`,
+        ...el,
+        ...(duration ? { duration } : {}),
+      });
       currentPPQ += (Transport.PPQ * 4) / el.duration;
     });
   const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
@@ -586,7 +591,7 @@ const Header = () => {
   const elements = useAtomValue(elementsAtom);
   const { staffId } = useAtomValue(caretAtom);
   const onClick = useCallback(
-    () => startPreviewTone(elements.get(staffId) ?? []),
+    () => play(elements.get(staffId) ?? []),
     [elements, staffId]
   );
   return (
