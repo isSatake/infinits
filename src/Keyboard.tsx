@@ -16,6 +16,7 @@ import {
   caretStyleAtom,
   elementsAtom,
   previewAtom,
+  PreviewState,
   useStaffs,
 } from "./atom";
 import { usePointerHandler } from "./hooks";
@@ -174,12 +175,11 @@ const useBaseElements = () => {
 const useInputElements: (duration: Duration) => (
   newPitch: PitchAcc,
   position?: "left" | "right"
-) => {
-  elements: MusicalElement[];
-  insertedIndex: number;
+) => Pick<PreviewState, "elements" | "insertedIndex" | "offsetted"> & {
   caretAdvance: number;
 } = (duration: Duration) => {
   const caret = useAtomValue(caretAtom);
+  const caretStyle = useAtomValue(caretStyleAtom);
   const baseElements = useBaseElements();
   const inputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
@@ -199,7 +199,10 @@ const useInputElements: (duration: Duration) => (
       if (position) {
         if (position === "left" && caret.idx > 0) {
           offset = -1;
-        } else if (position === "right" && caret.idx < baseElements.length) {
+        } else if (
+          position === "right" &&
+          caretStyle[caret.idx].elIdx < baseElements.length
+        ) {
           offset = 1;
         }
       }
@@ -209,7 +212,11 @@ const useInputElements: (duration: Duration) => (
         newElement,
         beamMode,
       });
-      return { ...ret, caretAdvance: ret.caretAdvance + offset };
+      return {
+        ...ret,
+        caretAdvance: ret.caretAdvance + offset,
+        offsetted: offset !== 0,
+      };
     },
     [caret.idx, baseElements, inputMode, beamMode, duration, accidental]
   );
