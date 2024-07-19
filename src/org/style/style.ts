@@ -1059,12 +1059,14 @@ const determineClefStyle = (
   };
 };
 
-export const determinePaintElementStyle = (
-  elements: MusicalElement[],
-  gapWidth: number,
-  staffStyle?: StaffStyle,
-  pointing?: Pointing
-): PaintElementStyle<PaintElement>[] => {
+export const determinePaintElementStyle = (p: {
+  elements: MusicalElement[];
+  gapWidth: number;
+  staffStyle?: StaffStyle;
+  pointing?: Pointing;
+  gap?: { idx: number; width: number };
+}): PaintElementStyle<PaintElement>[] => {
+  const { elements, gapWidth, staffStyle, pointing, gap } = p;
   const styles: PaintElementStyle<PaintElement>[] = [];
   const gapEl = gapElementStyle({
     width: gapWidth,
@@ -1086,6 +1088,12 @@ export const determinePaintElementStyle = (
   left += gapWidth;
   let index = 0;
   while (index < elements.length) {
+    if (gap?.idx === index) {
+      styles.push(gapElementStyle({ width: gap.width, height: bStaffHeight }));
+      left += gap.width;
+      styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+      left += gapWidth;
+    }
     const el = elements[index];
     if (el.type === "note") {
       if (el.beam === "begin") {

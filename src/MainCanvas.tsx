@@ -86,12 +86,12 @@ export const MainCanvas = () => {
   useEffect(() => {
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
     for (const [id, staff] of staffs.map) {
-      const styles = determinePaintElementStyle(
-        elements.get(id) ?? [],
-        UNIT,
-        staff,
-        pointing
-      );
+      const styles = determinePaintElementStyle({
+        elements: elements.get(id) ?? [],
+        gapWidth: UNIT,
+        staffStyle: staff,
+        pointing,
+      });
       map.set(id, styles);
     }
     console.log("new style map", map);

@@ -11,6 +11,7 @@ export type PreviewState = {
   staff: StaffStyle;
   elements: MusicalElement[];
   insertedIndex: number;
+  offsetted: boolean;
 };
 export const previewAtom = atom<PreviewState | undefined>(undefined);
 
