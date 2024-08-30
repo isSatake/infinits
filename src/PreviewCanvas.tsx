@@ -20,6 +20,8 @@ const topOfStaff = htmlHeight / 2 - (bStaffHeight * getPreviewScale()) / 2;
 // x: 左端 y: 中心
 const mtx = new DOMMatrix([1, 0, 0, 1, 0, topOfStaff]).scale(getPreviewScale());
 
+const previewBackground = "white";
+
 export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -29,9 +31,13 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
       width: htmlWidth,
       height: htmlHeight,
     });
-    canvas.style.left = `${preview.canvasCenter.x - htmlWidth / 2}px`;
-    canvas.style.top = `${preview.canvasCenter.y - htmlHeight / 2}px`;
-    resetCanvas2({ ctx: canvas.getContext("2d")!, fillStyle: "white" });
+    const left = (window.innerWidth - htmlWidth) / 2;
+    canvas.style.left = `${left}px`;
+    canvas.style.top = `${left}px`;
+    resetCanvas2({
+      ctx: canvas.getContext("2d")!,
+      fillStyle: previewBackground,
+    });
   }, []);
 
   const init = useMemo(() => {
@@ -73,7 +79,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     });
     const ctx = ref.current?.getContext("2d")!;
     ctx.save();
-    resetCanvas2({ ctx, fillStyle: "white" });
+    resetCanvas2({ ctx, fillStyle: previewBackground });
     // pointer handlerでdpr考慮しなくて済むように
     ctx.scale(devicePixelRatio, devicePixelRatio);
     const { a, b, c, d, e, f } = mtx;
