@@ -2,7 +2,7 @@ import { Point } from "@/org/geometry";
 import { MusicalElement } from "@/org/notation/types";
 import { CaretStyle } from "@/org/style/types";
 import { atom, useAtom } from "jotai";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StaffStyle } from "./org/style/types";
 
 // PreviewCanvasの表示
@@ -15,10 +15,21 @@ export type PreviewState = {
 };
 export const previewAtom = atom<PreviewState | undefined>(undefined);
 
-export const caretAtom = atom<{ staffId: number; idx: number }>({
-  staffId: 0,
-  idx: 0,
-});
+type FocusState = { staffId: number; idx: number };
+export const focusAtom = atom<FocusState>({ staffId: 0, idx: 0 });
+export const useFocusHighlighted = (focus: FocusState): boolean => {
+  const [highlighted, setHighlighted] = useState<boolean>(true);
+  const blinkTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    setHighlighted(true);
+    blinkTimerRef.current = window.setInterval(() => {
+      setHighlighted((prev) => !prev);
+    }, 800);
+    return () => window.clearInterval(blinkTimerRef.current!);
+  }, [focus]);
+  return highlighted;
+};
+
 export const caretStyleAtom = atom<CaretStyle[]>([]);
 
 // staff id -> elements
