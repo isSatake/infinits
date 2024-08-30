@@ -276,15 +276,17 @@ export const paintCaret = ({
   ctx,
   scale,
   caret,
+  highlighted,
 }: {
   ctx: CanvasRenderingContext2D;
   scale: number;
   caret: CaretStyle;
+  highlighted: boolean;
 }) => {
   const { x, y, width } = caret;
   const height = bStaffHeight * scale;
   ctx.save();
-  ctx.fillStyle = "#FF000055";
+  ctx.fillStyle = highlighted ? "#FF000055" : "#FF000033";
   ctx.fillRect(x, y, width, height);
   ctx.restore();
 };

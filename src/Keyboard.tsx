@@ -10,9 +10,9 @@ import {
   Rest,
 } from "@/org/notation/types";
 import { getPreviewScale, getPreviewWidth } from "@/org/score-preferences";
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+import { atom, useAtom, useAtomValue } from "jotai";
 import {
-  caretAtom,
+  focusAtom,
   caretStyleAtom,
   elementsAtom,
   previewAtom,
@@ -112,7 +112,7 @@ const tieAtom = atom<TieModes>(undefined);
 // タイの整合を取る
 const useTie: () => (newEl: MusicalElement) => MusicalElement = () => {
   const tieMode = useAtomValue(tieAtom);
-  const caret = useAtomValue(caretAtom);
+  const caret = useAtomValue(focusAtom);
   const baseElements = useBaseElements();
   return useCallback(
     (newEl: MusicalElement) => {
@@ -141,7 +141,7 @@ const useTie: () => (newEl: MusicalElement) => MusicalElement = () => {
 
 // 和音をソート
 const useSortChord: () => (newEl: MusicalElement) => MusicalElement = () => {
-  const caret = useAtomValue(caretAtom);
+  const caret = useAtomValue(focusAtom);
   const baseElements = useBaseElements();
   return useCallback(
     (newEl: MusicalElement) => {
@@ -165,7 +165,7 @@ const useSortChord: () => (newEl: MusicalElement) => MusicalElement = () => {
 
 const useBaseElements = () => {
   const elements = useAtomValue(elementsAtom);
-  const caret = useAtomValue(caretAtom);
+  const caret = useAtomValue(focusAtom);
   return useMemo(
     () => [...(elements.get(caret.staffId) ?? [])],
     [elements, caret.staffId]
@@ -178,7 +178,7 @@ const useInputElements: (duration: Duration) => (
 ) => Pick<PreviewState, "elements" | "insertedIndex" | "offsetted"> & {
   caretAdvance: number;
 } = (duration: Duration) => {
-  const caret = useAtomValue(caretAtom);
+  const caret = useAtomValue(focusAtom);
   const caretStyle = useAtomValue(caretStyleAtom);
   const baseElements = useBaseElements();
   const inputMode = useAtomValue(noteInputModeAtom);
@@ -226,7 +226,7 @@ const usePreviewHandlers = (duration: Duration) => {
   const [preview, setPreview] = useAtom(previewAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const genPreviewElements = useInputElements(duration);
-  const [caret, setCaret] = useAtom(caretAtom);
+  const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   const staff = useStaffs().get(caret.staffId);
   const positionRef = useRef<"left" | "right" | undefined>();
@@ -381,7 +381,7 @@ const ThirtySecond = () => {
 };
 
 const Backspace = () => {
-  const [caret, setCaret] = useAtom(caretAtom);
+  const [caret, setCaret] = useAtom(focusAtom);
   const caretStyle = useAtomValue(caretStyleAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   return (
@@ -426,7 +426,7 @@ const Backspace = () => {
 };
 
 const ArrowLeft = () => {
-  const [caret, setCaret] = useAtom(caretAtom);
+  const [caret, setCaret] = useAtom(focusAtom);
   return (
     <GrayKey
       onClick={() => {
@@ -441,7 +441,7 @@ const ArrowLeft = () => {
 };
 
 const ArrowRight = () => {
-  const [caret, setCaret] = useAtom(caretAtom);
+  const [caret, setCaret] = useAtom(focusAtom);
   const carets = useAtomValue(caretStyleAtom);
   return (
     <GrayKey
@@ -477,7 +477,7 @@ const Dynamics = () => (
 );
 
 const useInputBar: () => (subtype: BarTypes) => void = () => {
-  const [caret, setCaret] = useAtom(caretAtom);
+  const [caret, setCaret] = useAtom(focusAtom);
   const baseElements = useBaseElements();
   const beamMode = useAtomValue(beamModeAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
@@ -621,7 +621,7 @@ const Root = ({ children }: { children: React.ReactNode }) => {
 
 const Header = () => {
   const elements = useAtomValue(elementsAtom);
-  const { staffId } = useAtomValue(caretAtom);
+  const { staffId } = useAtomValue(focusAtom);
   const onClick = useCallback(
     () => play(elements.get(staffId) ?? []),
     [elements, staffId]

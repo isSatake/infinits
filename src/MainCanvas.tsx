@@ -23,11 +23,12 @@ import {
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  caretAtom,
+  focusAtom,
   caretStyleAtom,
   contextMenuAtom,
   elementsAtom,
   useStaffs,
+  useFocusHighlighted,
 } from "./atom";
 import { useResizeHandler } from "./hooks";
 import { StaffStyle } from "./org/style/types";
@@ -56,8 +57,9 @@ export const MainCanvas = () => {
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
-  const focus = useAtomValue(caretAtom);
-  const [mtx, setMtx] = useAtom(mtxAtom);
+  const focus = useAtomValue(focusAtom);
+  const focusHighlighted = useFocusHighlighted(focus);
+  const mtx = useAtomValue(mtxAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
   const [windowSize, setWindowSize] = useState<Size>({
@@ -145,7 +147,6 @@ export const MainCanvas = () => {
       for (const style of styleMap.get(id) ?? []) {
         const { type } = style.element;
         paintStyle(ctx, style);
-        paintBBox(ctx, style.bbox, type === "staff" ? "blue" : undefined); // debug
         if (type !== "staff" && type !== "beam" && type !== "tie") {
           ctx.translate(style.width, 0);
         }
@@ -157,11 +158,11 @@ export const MainCanvas = () => {
     if (currentStaff && caret) {
       ctx.save();
       ctx.translate(currentStaff.position.x, currentStaff.position.y);
-      paintCaret({ ctx, scale: 1, caret });
+      paintCaret({ ctx, scale: 1, caret, highlighted: focusHighlighted });
       ctx.restore();
     }
     ctx.restore();
-  }, [mtx, staffs, styleMap, caretStyle, focus, canvasSize]);
+  }, [mtx, staffs, styleMap, caretStyle, focus, focusHighlighted, canvasSize]);
 
   return (
     <canvas
@@ -177,7 +178,7 @@ const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(elementMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
-  const setCarets = useSetAtom(caretAtom);
+  const setCarets = useSetAtom(focusAtom);
   const staffs = useStaffs();
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
   const desktopState = useRef(new DesktopStateMachine());
