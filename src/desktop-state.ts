@@ -154,6 +154,7 @@ export class DesktopStateMachine {
             x: (d0.x + d1.x) / 2,
             y: (d0.y + d1.y) / 2,
           });
+          // TODO zoom handlerと共通化
           const translated = this.state.downMtx
             .translate(origin.x, origin.y)
             .scale(scale, scale)
@@ -186,6 +187,13 @@ export class DesktopStateMachine {
         };
         const translated = this.state.downMtx.translate(diff.x, diff.y);
         this.state = { ...this.state, translated };
+        break;
+      case "multiDown":
+        this.state = {
+          type: "zoom",
+          downMtx: this.state.translated,
+          translated: this.state.translated,
+        };
         break;
       case "idle":
         this.state = { type: "idle" };
@@ -221,14 +229,23 @@ export class DesktopStateMachine {
         const dm = Math.sqrt((d0.x - d1.x) ** 2 + (d0.y - d1.y) ** 2);
         const pm = Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
         const scale = Math.exp((pm - dm) / 100);
-        const origin = this.state.downMtx.inverse().transformPoint({
+        const downCenter = this.state.downMtx.inverse().transformPoint({
           x: (d0.x + d1.x) / 2,
           y: (d0.y + d1.y) / 2,
         });
+        const origin = this.state.downMtx.inverse().transformPoint({
+          x: (p0.x + p1.x) / 2,
+          y: (p0.y + p1.y) / 2,
+        });
+        const originDiff = {
+          x: origin.x - downCenter.x,
+          y: origin.y - downCenter.y,
+        };
         const translated = this.state.downMtx
           .translate(origin.x, origin.y)
           .scale(scale, scale)
-          .translate(-origin.x, -origin.y);
+          .translate(-origin.x, -origin.y)
+          .translate(originDiff.x, originDiff.y);
         this.state = {
           type: "zoom",
           downMtx: this.state.downMtx,
@@ -236,6 +253,13 @@ export class DesktopStateMachine {
         };
         break;
       }
+      case "keepDown":
+        this.state = {
+          type: "pan",
+          downMtx: this.state.translated,
+          translated: this.state.translated,
+        };
+        break;
       case "idle":
         this.state = { type: "idle" };
         break;
