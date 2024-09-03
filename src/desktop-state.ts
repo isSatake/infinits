@@ -188,6 +188,13 @@ export class DesktopStateMachine {
         const translated = this.state.downMtx.translate(diff.x, diff.y);
         this.state = { ...this.state, translated };
         break;
+      case "multiDown":
+        this.state = {
+          type: "zoom",
+          downMtx: this.state.translated,
+          translated: this.state.translated,
+        };
+        break;
       case "idle":
         this.state = { type: "idle" };
         break;
