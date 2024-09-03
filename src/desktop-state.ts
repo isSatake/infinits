@@ -154,6 +154,7 @@ export class DesktopStateMachine {
             x: (d0.x + d1.x) / 2,
             y: (d0.y + d1.y) / 2,
           });
+          // TODO zoom handlerと共通化
           const translated = this.state.downMtx
             .translate(origin.x, origin.y)
             .scale(scale, scale)
@@ -245,6 +246,13 @@ export class DesktopStateMachine {
         };
         break;
       }
+      case "keepDown":
+        this.state = {
+          type: "pan",
+          downMtx: this.state.translated,
+          translated: this.state.translated,
+        };
+        break;
       case "idle":
         this.state = { type: "idle" };
         break;
