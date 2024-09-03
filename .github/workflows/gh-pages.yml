@@ -9,15 +9,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-      - name: Reset gh-pages branch
+      - name: merge main
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git fetch
-          git checkout -B gh-pages origin/gh-pages
-          git rm -rf .
-          git clean -fdx
-          git checkout main -- .gitignore
+          git checkout -b gh-pages origin/gh-pages
+          git merge main --allow-unrelated-histories -Xtheirs
       - name: compile
         run: |
           npm i
