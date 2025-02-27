@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { pitchByDistance } from "@/org/callbacks/note-input";
 import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
 import {
@@ -27,22 +27,37 @@ import { start, Sampler, Part, Transport } from "tone";
 import { Time, Frequency } from "tone/build/esm/core/type/Units";
 
 export const Keyboard = () => {
+  const inputMode = useAtomValue(noteInputModeAtom);
   return (
     <Root>
       <Header />
       <Container>
         <KeyRow>
           <InputModeSwitcher />
-          <Whole />
-          <Half />
-          <Quarter />
+          {inputMode === "chord" ? (
+            <>
+              <WholeChord />
+            </>
+          ) : (
+            <>
+              <Whole />
+              <Half />
+              <Quarter />
+            </>
+          )}
           <Backspace />
         </KeyRow>
         <KeyRow>
           <ArrowLeft />
-          <Eighth />
-          <Sixteenth />
-          <ThirtySecond />
+          {inputMode === "chord" ? (
+            <></>
+          ) : (
+            <>
+              <Eighth />
+              <Sixteenth />
+              <ThirtySecond />
+            </>
+          )}
           <ArrowRight />
         </KeyRow>
         <KeyRow>
@@ -325,6 +340,53 @@ const Whole: FC = () => {
     <WhiteKey {...previewHandlers}>
       <div className={`keyImg whole ${noteInputMode}`} />
     </WhiteKey>
+  );
+};
+
+const WholeChord: FC = () => {
+  const [rootSelector, setRootSelector] = useState<boolean>(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onToggle = (ev: Event) => {
+      // @ts-ignore
+      setRootSelector(ev.newState === "open");
+    };
+    popoverRef.current?.addEventListener("toggle", onToggle);
+    return () => {
+      popoverRef.current?.removeEventListener("hide", onToggle);
+    };
+  }, []);
+  return (
+    <WhiteKey
+      isActive={rootSelector}
+      onClick={() => setRootSelector(!rootSelector)}
+      // @ts-ignore
+      popovertarget="chordRootSelectorPopover"
+    >
+      <div className={`keyImg whole chord ${rootSelector ? "active" : ""}`} />
+      <div
+        id="chordRootSelectorPopover"
+        // @ts-ignore
+        popover="auto"
+        ref={popoverRef}
+      >
+        <ChordRootSelector duration={1} />
+      </div>
+    </WhiteKey>
+  );
+};
+
+// RootNoteを選択する
+// 親要素の真上にRootNoteを横並びに表示する
+const ChordRootSelector: FC<{ duration: Duration }> = ({ duration }) => {
+  return (
+    <div className="chordRootSelector">
+      {rootNotes.map((root) => (
+        <div className="chordRoot" key={root}>
+          {root}
+        </div>
+      ))}
+    </div>
   );
 };
 
@@ -642,11 +704,15 @@ const KeyRow = ({ children }: { children: React.ReactNode }) => {
   return <div className="keyRow">{children}</div>;
 };
 
-const WhiteKey = ({ children, ...rest }: React.ComponentProps<"div">) => {
+const WhiteKey = ({
+  isActive,
+  children,
+  ...rest
+}: { isActive?: boolean } & React.ComponentProps<"button">) => {
   return (
-    <div className="key white" {...rest}>
+    <button className={`key white ${isActive ? "active" : ""}`} {...rest}>
       {children}
-    </div>
+    </button>
   );
 };
 
@@ -712,13 +778,15 @@ const sampler = new Sampler({
   baseUrl: "https://tonejs.github.io/audio/salamander/",
 }).toDestination();
 
-const keys = ["C", "D", "E", "F", "G", "A", "B"];
+const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
+type RootNote = (typeof rootNotes)[number];
 const accs = { sharp: "#", natural: "", flat: "b" };
 const convert = (pa: PitchAcc): Frequency => {
   const { pitch, accidental } = pa;
   const oct = Math.floor(pitch / 7) + 4;
-  const mod = pitch % keys.length;
-  const note = mod < 0 ? keys.at(keys.length + mod) : keys.at(mod);
+  const mod = pitch % rootNotes.length;
+  const note =
+    mod < 0 ? rootNotes.at(rootNotes.length + mod) : rootNotes.at(mod);
   if (!note) {
     throw new Error("invalid pitch");
   }
