@@ -382,19 +382,24 @@ body {
   background-size: 30%;
 }
 
-.changeNoteRest {
+.changeInputMode {
   background-position: center;
   background-repeat: no-repeat;
 }
 
-.changeNoteRest.note {
+.changeInputMode.note {
   background-size: 20% auto;
   background-image: url(img/n4.png);
 }
 
-.changeNoteRest.rest {
+.changeInputMode.rest {
   background-size: auto 60%;
   background-image: url("./img/r4.png");
+}
+
+.changeInputMode.chord {
+  background-size: 15% auto;
+  background-image: url(img/chord.png);
 }
 
 .accidentals {

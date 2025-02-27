@@ -32,7 +32,7 @@ export const Keyboard = () => {
       <Header />
       <Container>
         <KeyRow>
-          <NoteRestToggle />
+          <InputModeSwitcher />
           <Whole />
           <Half />
           <Quarter />
@@ -68,29 +68,30 @@ export const Keyboard = () => {
   );
 };
 
-const noteInputModeAtom = atom<"note" | "rest">("note");
+type NoteInputMode = "note" | "rest" | "chord";
+const noteInputModeAtom = atom<NoteInputMode>("note");
 
-const NoteRestToggle = () => {
+const InputModeSwitcher = () => {
   const [noteInputMode, setNoteInputMode] = useAtom(noteInputModeAtom);
+  const modes: NoteInputMode[] = ["note", "rest", "chord"];
+
+  const toggleNoteInputMode = () => {
+    const currentIndex = modes.indexOf(noteInputMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setNoteInputMode(modes[nextIndex]);
+  };
+
   return (
     <>
-      <GrayKey
-        onClick={() =>
-          setNoteInputMode(noteInputMode === "note" ? "rest" : "note")
-        }
-      >
-        <div
-          className={`keyImg changeNoteRest ${
-            noteInputMode === "note" ? "note" : "rest"
-          }`}
-        />
+      <GrayKey onClick={toggleNoteInputMode}>
+        <div className={`keyImg changeInputMode ${noteInputMode}`} />
       </GrayKey>
     </>
   );
 };
 
 const getNewElement = (p: {
-  mode: "note" | "rest";
+  mode: NoteInputMode;
   duration: Duration;
   pitch: PitchAcc;
 }): MusicalElement => {
