@@ -27,51 +27,27 @@ import { start, Sampler, Part, Transport } from "tone";
 import { Time, Frequency } from "tone/build/esm/core/type/Units";
 
 export const Keyboard = () => {
-  const inputMode = useAtomValue(noteInputModeAtom);
   return (
     <Root>
       <Header />
       <Container>
         <KeyRow>
           <InputModeSwitcher />
-          {inputMode === "chord" && (
-            <>
-              <Chord root="A" />
-              <Chord root="B" />
-              <Chord root="C" />
-            </>
-          )}
-          {inputMode !== "chord" && (
-            <>
-              <Whole />
-              <Half />
-              <Quarter />
-            </>
-          )}
+          <Whole />
+          <Half />
+          <Quarter />
           <Backspace />
         </KeyRow>
         <KeyRow>
           <ArrowLeft />
-          {inputMode === "chord" && (
-            <>
-              <Chord root="D" />
-              <Chord root="E" />
-              <Chord root="F" />
-            </>
-          )}
-          {inputMode !== "chord" && (
-            <>
-              <Eighth />
-              <Sixteenth />
-              <ThirtySecond />
-            </>
-          )}
+          <Eighth />
+          <Sixteenth />
+          <ThirtySecond />
           <ArrowRight />
         </KeyRow>
         <KeyRow>
           <BeamToggle />
-          {inputMode === "chord" && <Chord root="G" />}
-          {inputMode !== "chord" && <WhiteKey />}
+          <WhiteKey />
           <Dynamics />
           <Bars />
           <Return />
@@ -401,16 +377,6 @@ const ThirtySecond = () => {
   return (
     <WhiteKey {...previewHandlers}>
       <div className={`keyImg thirtySecond ${noteInputMode} ${beamMode}`} />
-    </WhiteKey>
-  );
-};
-
-const Chord: FC<{ root: "A" | "B" | "C" | "D" | "E" | "F" | "G" }> = ({
-  root,
-}) => {
-  return (
-    <WhiteKey>
-      <div className="keyTxt">{root}</div>
     </WhiteKey>
   );
 };
