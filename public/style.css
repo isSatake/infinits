@@ -254,7 +254,8 @@ body {
 }
 
 /* whole */
-.keyImg.whole.note {
+.keyImg.whole.note,
+.keyImg.whole.chord {
   background-position-y: 65%;
   background-size: 25% auto;
   background-image: url(img/n1.png);
@@ -266,7 +267,8 @@ body {
 }
 
 /* 1/2 */
-.keyImg.half.note {
+.keyImg.half.note,
+.keyImg.half.chord {
   background-size: 18% auto;
   background-image: url(img/n2.png);
 }
@@ -277,7 +279,8 @@ body {
 }
 
 /* 1/4 */
-.keyImg.quater.note {
+.keyImg.quater.note,
+.keyImg.quater.chord {
   background-size: 18% auto;
   background-image: url(img/n4.png);
 }
@@ -288,12 +291,14 @@ body {
 }
 
 /* 1/8 */
-.keyImg.eighth.note.nobeam {
+.keyImg.eighth.note.nobeam,
+.keyImg.eighth.chord.nobeam {
   background-size: auto 70%;
   background-image: url(img/n8.png);
 }
 
-.keyImg.eighth.note.beam {
+.keyImg.eighth.note.beam,
+.keyImg.eighth.chord.beam {
   background-size: auto 70%;
   background-image: url(img/beam8.svg);
 }
@@ -304,12 +309,14 @@ body {
 }
 
 /* 1/16 */
-.keyImg.sixteenth.note.nobeam {
+.keyImg.sixteenth.note.nobeam,
+.keyImg.sixteenth.chord.nobeam {
   background-size: auto 70%;
   background-image: url(img/n16.png);
 }
 
-.keyImg.sixteenth.note.beam {
+.keyImg.sixteenth.note.beam,
+.keyImg.sixteenth.chord.beam {
   background-size: auto 70%;
   background-image: url(img/beam16.svg);
 }
@@ -320,12 +327,14 @@ body {
 }
 
 /* 1/32 */
-.keyImg.thirtySecond.note.nobeam {
+.keyImg.thirtySecond.note.nobeam,
+.keyImg.thirtySecond.chord.nobeam {
   background-size: auto 70%;
   background-image: url(img/n32.png);
 }
 
-.keyImg.thirtySecond.note.beam {
+.keyImg.thirtySecond.note.beam,
+.keyImg.thirtySecond.chord.beam {
   background-size: auto 70%;
   background-image: url(img/beam32.svg);
 }
