@@ -331,7 +331,9 @@ const WholeChord: FC = () => {
   return (
     <WhiteKey
       isActive={!!rootSelector}
-      onClick={() => setRootSelector({ duration: 1 })}
+      onClick={() =>
+        setRootSelector(rootSelector ? undefined : { duration: 1 })
+      }
     >
       <div className={`keyImg whole chord ${rootSelector ? "active" : ""}`} />
     </WhiteKey>

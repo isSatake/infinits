@@ -54,11 +54,11 @@ body {
 } */
 
 .keyHeader {
-  display: grid;
+  /* display: grid; */
   width: 98vw;
   height: 94px;
   padding: 16px 0;
-  grid-template-columns: repeat(5, 1fr);
+  /* grid-template-columns: repeat(5, 1fr);
   grid-template-rows: 1fr;
   gap: 16px;
 
@@ -69,7 +69,7 @@ body {
     background-repeat: no-repeat;
     background-position: center;
     border-radius: 12px;
-  }
+  } */
 }
 
 /* .desktop > .keyContainer {
@@ -585,26 +585,14 @@ body {
   }
 }
 
-.chordRootSelectorDialog {
-  padding: 0;
-  border: none;
-  margin: 0;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.chordRootSelectorDialog::backdrop {
-  background: transparent;
-}
-
 .chordRootSelector {
-  background: gray;
   display: flex;
-  width: 80vw;
-  height: 120px;
+  width: 100%;
+  height: 100%;
   justify-content: space-between;
   align-items: center;
-  border-radius: var(--key-border-radius);
+  gap: 20px;
+  font-size: 25px;
 }
 
 .chordRoot {
