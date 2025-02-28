@@ -5,7 +5,7 @@ import { PreviewCanvas } from "./PreviewCanvas";
 import { useAtomValue } from "jotai";
 import { previewAtom } from "./atom";
 import { ContextMenu } from "./ContextMenu";
-import { Dialog } from "./Dialog";
+import { MainDialog } from "./MainDialog";
 
 export const App: FC = () => {
   const preview = useAtomValue(previewAtom);
@@ -18,7 +18,7 @@ export const App: FC = () => {
       <Keyboard />
       {preview && <PreviewCanvas preview={preview} />}
       <ContextMenu />
-      <Dialog />
+      <MainDialog />
     </div>
   );
 };

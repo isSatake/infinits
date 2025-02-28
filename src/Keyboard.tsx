@@ -25,6 +25,7 @@ import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
 import { start, Sampler, Part, Transport } from "tone";
 import { Time, Frequency } from "tone/build/esm/core/type/Units";
+import { Dialog } from "./Dialog";
 
 export const Keyboard = () => {
   const inputMode = useAtomValue(noteInputModeAtom);
@@ -345,33 +346,15 @@ const Whole: FC = () => {
 
 const WholeChord: FC = () => {
   const [rootSelector, setRootSelector] = useState<boolean>(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const onToggle = (ev: Event) => {
-      // @ts-ignore
-      setRootSelector(ev.newState === "open");
-    };
-    popoverRef.current?.addEventListener("toggle", onToggle);
-    return () => {
-      popoverRef.current?.removeEventListener("hide", onToggle);
-    };
-  }, []);
   return (
     <WhiteKey
       isActive={rootSelector}
       onClick={() => setRootSelector(!rootSelector)}
-      // @ts-ignore
-      popovertarget="chordRootSelectorPopover"
     >
       <div className={`keyImg whole chord ${rootSelector ? "active" : ""}`} />
-      <div
-        id="chordRootSelectorPopover"
-        // @ts-ignore
-        popover="auto"
-        ref={popoverRef}
-      >
+      <Dialog open={rootSelector} onClose={() => setRootSelector(false)}>
         <ChordRootSelector duration={1} />
-      </div>
+      </Dialog>
     </WhiteKey>
   );
 };

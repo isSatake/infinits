@@ -1,23 +1,23 @@
-import { useAtomValue } from "jotai";
-import React, { useRef, useEffect } from "react";
-import { showDialogAtom } from "./atom";
+import React, { FC, useEffect, useRef } from "react";
 
-export const Dialog = () => {
+export const Dialog: FC<
+  { open: boolean; onClose: () => void } & React.ComponentProps<"dialog">
+> = ({ open, onClose, children, ...rest }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const dialog = useAtomValue(showDialogAtom);
   useEffect(() => {
-    dialog ? dialogRef.current?.showModal() : dialogRef.current?.close();
-  }, [dialog]);
+    open ? dialogRef.current?.showModal() : dialogRef.current?.close();
+  }, [open]);
+  useEffect(() => {
+    const dialog = dialogRef.current!;
+    const close = () => {
+      onClose();
+    };
+    dialog.addEventListener("close", close);
+    return () => dialog.removeEventListener("close", close);
+  }, [onClose]);
   return (
-    <dialog ref={dialogRef}>
-      <div className="title">{dialog?.title}</div>
-      <div className="buttons">
-        {dialog?.buttons?.map((button, i) => (
-          <button key={i} onClick={button.onClick}>
-            {button.label}
-          </button>
-        ))}
-      </div>
+    <dialog ref={dialogRef} {...rest}>
+      {children}
     </dialog>
   );
 };
