@@ -1,6 +1,5 @@
 import { Size, magnitude } from "@/org/geometry";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CanvasHandler } from "./pointer-state";
+import { useEffect, useRef, useState } from "react";
 
 const kLongDownThresholdMs = 300;
 export const kDoubleClickThresholdMs = 300;

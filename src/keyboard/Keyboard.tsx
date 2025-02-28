@@ -18,20 +18,23 @@ import {
   previewAtom,
   PreviewState,
   useStaffs,
-} from "./atom";
-import { usePointerHandler } from "./hooks";
+} from "../atom";
+import { usePointerHandler } from "../hooks/hooks";
 import { FC, useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
-import { start, Sampler, Part, Transport } from "tone";
-import { Time, Frequency } from "tone/build/esm/core/type/Units";
-import { Dialog } from "./Dialog";
+import { Dialog } from "../Dialog";
+import { PlayButton } from "./PlayButton";
+import * as tone from "@/tone";
 
 export const Keyboard = () => {
   const inputMode = useAtomValue(noteInputModeAtom);
+  const chordRootSelector = useAtomValue(chordRootSelectorAtom);
   return (
     <Root>
-      <Header />
+      <Header>
+        {chordRootSelector ? <ChordRootSelector /> : <PlayButton />}
+      </Header>
       <Container>
         <KeyRow>
           <InputModeSwitcher />
@@ -277,7 +280,7 @@ const usePreviewHandlers = (duration: Duration) => {
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
       // 入力時のプレビューは8分音符固定
-      play([elements[insertedIndex]], 8);
+      tone.play([elements[insertedIndex]], 8);
     },
     onDrag: (ev, down) => {
       if (!preview || !staff) {
@@ -307,33 +310,6 @@ const usePreviewHandlers = (duration: Duration) => {
   });
 };
 
-const play = async (elements: MusicalElement[], duration?: Duration) => {
-  const arr: ({ time: Time } & MusicalElement)[] = [];
-  let currentPPQ = 0;
-  elements
-    .filter((el): el is Note | Rest => el.type !== "bar")
-    .forEach((el) => {
-      arr.push({
-        time: `${currentPPQ}i`,
-        ...el,
-        ...(duration ? { duration } : {}),
-      });
-      currentPPQ += (Transport.PPQ * 4) / el.duration;
-    });
-  const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
-    if (value.type === "note") {
-      sampler.triggerAttackRelease(
-        value.pitches.map(convert),
-        `${value.duration}n`,
-        time
-      );
-    }
-  }, arr);
-  await start();
-  part.start();
-  Transport.start();
-};
-
 const Whole: FC = () => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const previewHandlers = usePreviewHandlers(1);
@@ -344,28 +320,27 @@ const Whole: FC = () => {
   );
 };
 
+type ChordInputSelection = {
+  duration: Duration;
+  root?: RootNote;
+};
+const chordRootSelectorAtom = atom<ChordInputSelection | undefined>(undefined);
+
 const WholeChord: FC = () => {
-  const [rootSelector, setRootSelector] = useState<boolean>(false);
+  const [rootSelector, setRootSelector] = useAtom(chordRootSelectorAtom);
   return (
     <WhiteKey
-      isActive={rootSelector}
-      onClick={() => setRootSelector(!rootSelector)}
+      isActive={!!rootSelector}
+      onClick={() => setRootSelector({ duration: 1 })}
     >
       <div className={`keyImg whole chord ${rootSelector ? "active" : ""}`} />
-      <Dialog
-        className="chordRootSelectorDialog"
-        open={rootSelector}
-        onClose={() => setRootSelector(false)}
-      >
-        <ChordRootSelector duration={1} />
-      </Dialog>
     </WhiteKey>
   );
 };
 
 // RootNoteを選択する
 // 親要素の真上にRootNoteを横並びに表示する
-const ChordRootSelector: FC<{ duration: Duration }> = ({ duration }) => {
+const ChordRootSelector = () => {
   return (
     <div className="chordRootSelector">
       {rootNotes.map((root) => (
@@ -669,16 +644,10 @@ const Root = ({ children }: { children: React.ReactNode }) => {
   return <div className="keyboard">{children}</div>;
 };
 
-const Header = () => {
-  const elements = useAtomValue(elementsAtom);
-  const { staffId } = useAtomValue(focusAtom);
-  const onClick = useCallback(
-    () => play(elements.get(staffId) ?? []),
-    [elements, staffId]
-  );
+const Header: FC<React.ComponentProps<"div">> = ({ children, ...rest }) => {
   return (
-    <div className="keyHeader">
-      <button className="play" onClick={onClick}></button>
+    <div className="keyHeader" {...rest}>
+      {children}
     </div>
   );
 };
@@ -728,55 +697,5 @@ const GrayKey = ({
 //   );
 // };
 
-const sampler = new Sampler({
-  urls: {
-    A0: "A0.mp3",
-    C1: "C1.mp3",
-    "D#1": "Ds1.mp3",
-    "F#1": "Fs1.mp3",
-    A1: "A1.mp3",
-    C2: "C2.mp3",
-    "D#2": "Ds2.mp3",
-    "F#2": "Fs2.mp3",
-    A2: "A2.mp3",
-    C3: "C3.mp3",
-    "D#3": "Ds3.mp3",
-    "F#3": "Fs3.mp3",
-    A3: "A3.mp3",
-    C4: "C4.mp3",
-    "D#4": "Ds4.mp3",
-    "F#4": "Fs4.mp3",
-    A4: "A4.mp3",
-    C5: "C5.mp3",
-    "D#5": "Ds5.mp3",
-    "F#5": "Fs5.mp3",
-    A5: "A5.mp3",
-    C6: "C6.mp3",
-    "D#6": "Ds6.mp3",
-    "F#6": "Fs6.mp3",
-    A6: "A6.mp3",
-    C7: "C7.mp3",
-    "D#7": "Ds7.mp3",
-    "F#7": "Fs7.mp3",
-    A7: "A7.mp3",
-    C8: "C8.mp3",
-  },
-  release: 1,
-  baseUrl: "https://tonejs.github.io/audio/salamander/",
-}).toDestination();
-
-const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
+export const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
 type RootNote = (typeof rootNotes)[number];
-const accs = { sharp: "#", natural: "", flat: "b" };
-const convert = (pa: PitchAcc): Frequency => {
-  const { pitch, accidental } = pa;
-  const oct = Math.floor(pitch / 7) + 4;
-  const mod = pitch % rootNotes.length;
-  const note =
-    mod < 0 ? rootNotes.at(rootNotes.length + mod) : rootNotes.at(mod);
-  if (!note) {
-    throw new Error("invalid pitch");
-  }
-  const acc = accs[accidental ?? "natural"];
-  return `${note}${acc}${oct}`;
-};

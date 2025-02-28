@@ -30,7 +30,7 @@ import {
   useStaffs,
   useFocusHighlighted,
 } from "./atom";
-import { useResizeHandler } from "./hooks";
+import { useResizeHandler } from "./hooks/hooks";
 import { StaffStyle } from "./org/style/types";
 import { PointerEventStateMachine } from "./pointer-state";
 import { determineCanvasScale, resizeCanvas } from "./util";

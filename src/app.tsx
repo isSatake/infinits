@@ -1,5 +1,5 @@
 import React, { FC, useEffect } from "react";
-import { Keyboard } from "./Keyboard";
+import { Keyboard } from "./keyboard/Keyboard";
 import { MainCanvas } from "./MainCanvas";
 import { PreviewCanvas } from "./PreviewCanvas";
 import { useAtomValue } from "jotai";
