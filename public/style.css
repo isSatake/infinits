@@ -1,3 +1,7 @@
+:root {
+  --key-border-radius: 12px;
+}
+
 html,
 body {
   width: 100%;
@@ -110,7 +114,7 @@ body {
 
 /* .keyRow > div { */
 .key {
-  border-radius: 12px;
+  border-radius: var(--key-border-radius);
   box-shadow: #8d9095 0 3px;
   align-items: center;
   justify-content: center;
@@ -554,7 +558,7 @@ body {
   -webkit-user-select: none;
 }
 
-dialog {
+.mainDialog {
   width: 80vw;
   padding: 0;
   box-shadow: 5px 5px;
@@ -580,18 +584,27 @@ dialog {
     }
   }
 }
-dialog::backdrop {
-  pointer-events: none;
+
+.chordRootSelectorDialog {
+  padding: 0;
+  border: none;
+  margin: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.chordRootSelectorDialog::backdrop {
+  background: transparent;
 }
 
 .chordRootSelector {
+  background: gray;
   display: flex;
-  width: 80%;
+  width: 80vw;
   height: 120px;
-  /* 均等に配置 */
   justify-content: space-between;
-  /* テキストは中央揃え */
   align-items: center;
+  border-radius: var(--key-border-radius);
 }
 
 .chordRoot {
