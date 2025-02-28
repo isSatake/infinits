@@ -352,7 +352,11 @@ const WholeChord: FC = () => {
       onClick={() => setRootSelector(!rootSelector)}
     >
       <div className={`keyImg whole chord ${rootSelector ? "active" : ""}`} />
-      <Dialog open={rootSelector} onClose={() => setRootSelector(false)}>
+      <Dialog
+        className="chordRootSelectorDialog"
+        open={rootSelector}
+        onClose={() => setRootSelector(false)}
+      >
         <ChordRootSelector duration={1} />
       </Dialog>
     </WhiteKey>
