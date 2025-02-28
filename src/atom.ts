@@ -1,9 +1,10 @@
 import { Point } from "@/org/geometry";
-import { MusicalElement } from "@/org/notation/types";
+import { Accidental, Duration, MusicalElement } from "@/org/notation/types";
 import { CaretStyle } from "@/org/style/types";
 import { atom, useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StaffStyle } from "./org/style/types";
+import { RootNote } from "./keyboard/Keyboard";
 
 // PreviewCanvasの表示
 export type PreviewState = {
@@ -90,3 +91,13 @@ export const showDialogAtom = atom<
     }
   | undefined
 >(undefined);
+
+export const accidentalModeIdxAtom = atom<number>(0);
+
+export type ChordInputSelection = {
+  duration: Duration;
+  root?: { note: RootNote; accidental?: Accidental };
+};
+export const chordRootSelectorAtom = atom<ChordInputSelection | undefined>(
+  undefined
+);

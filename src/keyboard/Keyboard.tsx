@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { pitchByDistance } from "@/org/callbacks/note-input";
 import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
 import {
+  Accidental,
   BarTypes,
   Duration,
   MusicalElement,
@@ -18,14 +19,17 @@ import {
   previewAtom,
   PreviewState,
   useStaffs,
+  accidentalModeIdxAtom,
+  chordRootSelectorAtom,
 } from "../atom";
 import { usePointerHandler } from "../hooks/hooks";
 import { FC, useCallback, useMemo, useState } from "react";
 import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
-import { Dialog } from "../Dialog";
 import { PlayButton } from "./PlayButton";
 import * as tone from "@/tone";
+import { ChordRootSelector } from "./chord";
+import { useAccidentalMode } from "@/hooks/accidental";
 
 export const Keyboard = () => {
   const inputMode = useAtomValue(noteInputModeAtom);
@@ -320,12 +324,6 @@ const Whole: FC = () => {
   );
 };
 
-type ChordInputSelection = {
-  duration: Duration;
-  root?: RootNote;
-};
-const chordRootSelectorAtom = atom<ChordInputSelection | undefined>(undefined);
-
 const WholeChord: FC = () => {
   const [rootSelector, setRootSelector] = useAtom(chordRootSelectorAtom);
   return (
@@ -337,20 +335,6 @@ const WholeChord: FC = () => {
     >
       <div className={`keyImg whole chord ${rootSelector ? "active" : ""}`} />
     </WhiteKey>
-  );
-};
-
-// RootNoteを選択する
-// 親要素の真上にRootNoteを横並びに表示する
-const ChordRootSelector = () => {
-  return (
-    <div className="chordRootSelector">
-      {rootNotes.map((root) => (
-        <div className="chordRoot" key={root}>
-          {root}
-        </div>
-      ))}
-    </div>
   );
 };
 
@@ -579,20 +563,6 @@ const Return = () => (
   </GrayKey>
 );
 
-const accidentalModeIdxAtom = atom<number>(0);
-const baseClassName = "relative w-1/5 h-2/5";
-const disabledClassName = "opacity-30";
-const useAccidentalMode = () => {
-  const [idx, setIdx] = useAtom(accidentalModeIdxAtom);
-  return {
-    accidentalMode: kAccidentalModes[idx],
-    changeAccidentalMode: () => {
-      const nextIdx = (idx + 1) % 4;
-      setIdx(nextIdx);
-    },
-  };
-};
-
 const Accidentals = () => {
   const { accidentalMode, changeAccidentalMode } = useAccidentalMode();
   return (
@@ -700,4 +670,4 @@ const GrayKey = ({
 // };
 
 export const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
-type RootNote = (typeof rootNotes)[number];
+export type RootNote = (typeof rootNotes)[number];
