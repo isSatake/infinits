@@ -13,4 +13,26 @@ import { Chord, KeySignature, PitchAcc } from "@/org/notation/types";
 export const chordToPitchAcc = (
   chord: Chord,
   key: KeySignature
-): PitchAcc[] => {};
+): PitchAcc[] => {
+  if (chord.type === "") {
+    return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }];
+  }
+  if (chord.type === "maj7") {
+    return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }, { pitch: 6 }];
+  }
+  if (chord.type === "m") {
+    return [{ pitch: 0 }, { pitch: 2, accidental: "flat" }, { pitch: 4 }];
+  }
+  if (chord.type === "m7") {
+    return [
+      { pitch: 0 },
+      { pitch: 2, accidental: "flat" },
+      { pitch: 4 },
+      { pitch: 6 },
+    ];
+  }
+  if (chord.type === "7") {
+    return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }, { pitch: 6 }];
+  }
+  return [];
+};

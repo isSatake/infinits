@@ -5,7 +5,13 @@ export type Duration = (typeof durations)[number];
 // C4 (middleC) = 0
 export type Pitch = number;
 
-export const kAccidentals = ["sharp", "natural", "flat", "dSharp", "dFlat"] as const;
+export const kAccidentals = [
+  "sharp",
+  "natural",
+  "flat",
+  "dSharp",
+  "dFlat",
+] as const;
 export type Accidental = (typeof kAccidentals)[number];
 
 export type PitchAcc = {
@@ -54,21 +60,39 @@ export type Staff = {
 };
 
 export type KeySignature = {
-  type:
-    | "C"
-    | "G"
-    | "D"
-    | "A"
-    | "E"
-    | "B"
-    | "F"
-    | "Bb"
-    | "Eb"
-    | "Ab"
-    | "Db"
-    | "Gb";
-  sign: "sharp" | "flat";
-  count: number;
+  root: {
+    pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    accidental?: Accidental;
+  };
+  acc: "sharp" | "flat";
+  notes?: number[];
+};
+
+const keySignatures = {
+  C: { root: { pitch: 0 }, acc: "sharp" },
+  G: { root: { pitch: 4 }, acc: "sharp", notes: [3] },
+  D: { root: { pitch: 1 }, acc: "sharp", notes: [0, 3] },
+  A: { root: { pitch: 5 }, acc: "sharp", notes: [0, 3, 4] },
+  E: { root: { pitch: 2 }, acc: "sharp", notes: [0, 1, 3, 4] },
+  B: { root: { pitch: 6 }, acc: "sharp", notes: [0, 1, 3, 4, 6] },
+  "F#": {
+    root: { pitch: 3, accidental: "sharp" },
+    acc: "sharp",
+    notes: [0, 1, 2, 3, 4, 6],
+  },
+  F: { root: { pitch: 3 }, acc: "flat", notes: [6] },
+  Bb: { root: { pitch: 6, accidental: "flat" }, acc: "flat", notes: [2, 6] },
+  Eb: { root: { pitch: 2, accidental: "flat" }, acc: "flat", notes: [2, 5, 6] },
+  Ab: {
+    root: { pitch: 5, accidental: "flat" },
+    acc: "flat",
+    notes: [1, 2, 5, 6],
+  },
+  Db: {
+    root: { pitch: 1, accidental: "flat" },
+    acc: "flat",
+    notes: [1, 2, 4, 5, 6],
+  },
 };
 
 export const chordTypes = [
@@ -77,14 +101,6 @@ export const chordTypes = [
   "m", // minor
   "m7", // minor 7th
   "7", // dominant 7th
-  "6", // major 6th
-  "m6", // minor 6th
-  "m(maj7)", // minor major 7th
-  "dim", // diminished
-  "°7", // diminished 7th
-  "sus2", // suspended 2nd
-  "sus4", // suspended 4th
-  "aug", // augmented
 ] as const;
 export type ChordType = (typeof chordTypes)[number];
 
