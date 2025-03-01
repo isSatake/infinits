@@ -1,10 +1,11 @@
 export const durations = [1, 2, 4, 8, 16, 32] as const;
 export type Duration = (typeof durations)[number];
 
+// 全音
 // C4 (middleC) = 0
 export type Pitch = number;
 
-export const kAccidentals = ["sharp", "natural", "flat"] as const;
+export const kAccidentals = ["sharp", "natural", "flat", "dSharp", "dFlat"] as const;
 export type Accidental = (typeof kAccidentals)[number];
 
 export type PitchAcc = {
@@ -52,6 +53,24 @@ export type Staff = {
   lineCount: number;
 };
 
+export type KeySignature = {
+  type:
+    | "C"
+    | "G"
+    | "D"
+    | "A"
+    | "E"
+    | "B"
+    | "F"
+    | "Bb"
+    | "Eb"
+    | "Ab"
+    | "Db"
+    | "Gb";
+  sign: "sharp" | "flat";
+  count: number;
+};
+
 export const chordTypes = [
   "", // major
   "maj7", // major 7th
@@ -68,3 +87,9 @@ export const chordTypes = [
   "aug", // augmented
 ] as const;
 export type ChordType = (typeof chordTypes)[number];
+
+export const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
+export type RootNote = (typeof rootNotes)[number];
+
+export type ChordRoot = { note: RootNote; accidental?: Accidental };
+export type Chord = { root: ChordRoot; type: ChordType };

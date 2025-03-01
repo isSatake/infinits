@@ -43,6 +43,8 @@ export const Keyboard = () => {
           {inputMode === "chord" ? (
             <>
               <WholeChord />
+              <WholeChord />
+              <WholeChord />
             </>
           ) : (
             <>
@@ -56,7 +58,11 @@ export const Keyboard = () => {
         <KeyRow>
           <ArrowLeft />
           {inputMode === "chord" ? (
-            <></>
+            <>
+              <WholeChord />
+              <WholeChord />
+              <WholeChord />
+            </>
           ) : (
             <>
               <Eighth />
@@ -111,22 +117,15 @@ const InputModeSwitcher = () => {
   );
 };
 
-const getNewElement = (p: {
+const composeNewElement = (p: {
   mode: NoteInputMode;
   duration: Duration;
-  pitch: PitchAcc;
+  pitches: PitchAcc[];
 }): MusicalElement => {
-  const { mode, pitch, duration } = p;
+  const { mode, pitches, duration } = p;
   return mode === "note"
-    ? {
-        type: "note",
-        pitches: [pitch],
-        duration,
-      }
-    : {
-        type: "rest",
-        duration,
-      };
+    ? { type: "note", pitches, duration }
+    : { type: "rest", duration };
 };
 
 const tieAtom = atom<TieModes>(undefined);
@@ -194,8 +193,8 @@ const useBaseElements = () => {
   );
 };
 
-const useInputElements: (duration: Duration) => (
-  newPitch: PitchAcc,
+export const useElementsComposer: (duration: Duration) => (
+  newPitches: PitchAcc[],
   position?: "left" | "right"
 ) => Pick<PreviewState, "elements" | "insertedIndex" | "offsetted"> & {
   caretAdvance: number;
@@ -205,14 +204,13 @@ const useInputElements: (duration: Duration) => (
   const baseElements = useBaseElements();
   const inputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const tietie = useTie();
   const sortChord = useSortChord();
   return useCallback(
-    (newPitch: PitchAcc, position?: "left" | "right") => {
-      const _ne = getNewElement({
+    (newPitches: PitchAcc[], position?: "left" | "right") => {
+      const _ne = composeNewElement({
         mode: inputMode,
-        pitch: newPitch,
+        pitches: newPitches,
         duration,
       });
       const ne = tietie(_ne);
@@ -240,14 +238,14 @@ const useInputElements: (duration: Duration) => (
         offsetted: offset !== 0,
       };
     },
-    [caret.idx, baseElements, inputMode, beamMode, duration, accidental]
+    [caret.idx, baseElements, inputMode, beamMode, duration]
   );
 };
 
 const usePreviewHandlers = (duration: Duration) => {
   const [preview, setPreview] = useAtom(previewAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
-  const genPreviewElements = useInputElements(duration);
+  const composeElements = useElementsComposer(duration);
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   const staff = useStaffs().get(caret.staffId);
@@ -265,7 +263,7 @@ const usePreviewHandlers = (duration: Duration) => {
       setPreview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         staff: { ...staff, position: { x: 0, y: 0 } },
-        ...genPreviewElements(newPitch),
+        ...composeElements([newPitch]),
       });
     },
     onUp: (ev, down) => {
@@ -275,8 +273,8 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const { elements, insertedIndex, caretAdvance } = genPreviewElements(
-        newPitch,
+      const { elements, insertedIndex, caretAdvance } = composeElements(
+        [newPitch],
         positionRef.current
       );
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
@@ -306,7 +304,7 @@ const usePreviewHandlers = (duration: Duration) => {
       }
       setPreview({
         ...preview,
-        ...genPreviewElements(newPitch, positionRef.current),
+        ...composeElements([newPitch], positionRef.current),
       });
     },
   });
@@ -667,5 +665,3 @@ const GrayKey = ({
 //   );
 // };
 
-export const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
-export type RootNote = (typeof rootNotes)[number];

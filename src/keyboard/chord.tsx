@@ -1,9 +1,15 @@
 import { useAtom } from "jotai";
-import { RootNote, rootNotes } from "./Keyboard";
-import { ChordSelection, chordSelectionAtom } from "@/atom";
+import {  useElementsComposer } from "./Keyboard";
+import {
+  chordSelectionAtom,
+  elementsAtom,
+  focusAtom,
+  useStaffs,
+} from "@/atom";
 import { useAccidentalMode } from "@/hooks/accidental";
 import React, { FC } from "react";
-import { ChordType, chordTypes } from "@/org/notation/types";
+import { chordTypes, Duration, ChordType, ChordRoot, RootNote, rootNotes } from "@/org/notation/types";
+import { usePointerHandler } from "@/hooks/hooks";
 
 export const ChordSelector = () => {
   const [chordSelection, setChordSelection] = useAtom(chordSelectionAtom);
@@ -14,17 +20,11 @@ export const ChordSelector = () => {
       root: { note, accidental: accidentalMode.accidentalMode },
     });
   };
-  const onSelectType = (root: ChordSelection["root"]) => (type: ChordType) => {
-    console.log(
-      "chord selection",
-      `${root?.accidental ?? ""}${root?.note}${type}`
-    );
-  };
   if (chordSelection?.root) {
     return (
       <TypeSelector
+        duration={chordSelection.duration}
         root={chordSelection.root}
-        onSelect={onSelectType(chordSelection.root)}
       />
     );
   } else {
@@ -46,17 +46,35 @@ const RootSelector: FC<{ onSelect: (note: RootNote) => void }> = ({
   );
 };
 
-const TypeSelector: FC<{
-  root: ChordSelection["root"];
-  onSelect: (type: ChordType) => void;
-}> = ({ root, onSelect }) => {
+const TypeSelector: FC<{ duration: Duration; root: ChordRoot }> = (props) => {
   return (
     <div className="chordTypeSelector">
       {chordTypes.map((type: ChordType) => (
-        <div className="chordType" key={type} onClick={() => onSelect(type)}>
-          {`${root?.accidental ?? ""}${root?.note}${type}`}
-        </div>
+        <Type type={type} key={type} {...props} />
       ))}
+    </div>
+  );
+};
+
+const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
+  type,
+  duration,
+  root,
+}) => {
+  const [caret, setCaret] = useAtom(focusAtom);
+  const [elMap, setElements] = useAtom(elementsAtom);
+  const composeElements = useElementsComposer(duration);
+  const staff = useStaffs().get(caret.staffId);
+  const handlers = usePointerHandler({
+    onUp: (ev, down) => {
+      if (!staff) return;
+      console.log(`${root.note}${root?.accidental ?? ""}${type}`);
+      // composeElements
+    },
+  });
+  return (
+    <div className="chordType" key={type} {...handlers}>
+      {`${root?.accidental ?? ""}${root?.note}${type}`}
     </div>
   );
 };
