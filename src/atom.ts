@@ -94,10 +94,10 @@ export const showDialogAtom = atom<
 
 export const accidentalModeIdxAtom = atom<number>(0);
 
-export type ChordInputSelection = {
+export type ChordSelection = {
   duration: Duration;
   root?: { note: RootNote; accidental?: Accidental };
 };
-export const chordRootSelectorAtom = atom<ChordInputSelection | undefined>(
+export const chordSelectionAtom = atom<ChordSelection | undefined>(
   undefined
 );

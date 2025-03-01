@@ -51,3 +51,20 @@ export type Staff = {
   clef: Clef;
   lineCount: number;
 };
+
+export const chordTypes = [
+  "", // major
+  "maj7", // major 7th
+  "m", // minor
+  "m7", // minor 7th
+  "7", // dominant 7th
+  "6", // major 6th
+  "m6", // minor 6th
+  "m(maj7)", // minor major 7th
+  "dim", // diminished
+  "°7", // diminished 7th
+  "sus2", // suspended 2nd
+  "sus4", // suspended 4th
+  "aug", // augmented
+] as const;
+export type ChordType = (typeof chordTypes)[number];

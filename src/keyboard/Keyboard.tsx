@@ -20,7 +20,7 @@ import {
   PreviewState,
   useStaffs,
   accidentalModeIdxAtom,
-  chordRootSelectorAtom,
+  chordSelectionAtom,
 } from "../atom";
 import { usePointerHandler } from "../hooks/hooks";
 import { FC, useCallback, useMemo, useState } from "react";
@@ -28,17 +28,15 @@ import { sortPitches } from "@/org/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
 import { PlayButton } from "./PlayButton";
 import * as tone from "@/tone";
-import { ChordRootSelector } from "./chord";
+import { ChordSelector } from "./chord";
 import { useAccidentalMode } from "@/hooks/accidental";
 
 export const Keyboard = () => {
   const inputMode = useAtomValue(noteInputModeAtom);
-  const chordRootSelector = useAtomValue(chordRootSelectorAtom);
+  const chordSelection = useAtomValue(chordSelectionAtom);
   return (
     <Root>
-      <Header>
-        {chordRootSelector ? <ChordRootSelector /> : <PlayButton />}
-      </Header>
+      <Header>{chordSelection ? <ChordSelector /> : <PlayButton />}</Header>
       <Container>
         <KeyRow>
           <InputModeSwitcher />
@@ -325,7 +323,7 @@ const Whole: FC = () => {
 };
 
 const WholeChord: FC = () => {
-  const [rootSelector, setRootSelector] = useAtom(chordRootSelectorAtom);
+  const [rootSelector, setRootSelector] = useAtom(chordSelectionAtom);
   return (
     <WhiteKey
       isActive={!!rootSelector}
