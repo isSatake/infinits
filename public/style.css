@@ -642,6 +642,10 @@ body {
   align-items: center;
 }
 
+.backToRoot:active {
+  background: white;
+}
+
 .typeDivider {
   height: 100%;
   border-left: 1px solid black;
