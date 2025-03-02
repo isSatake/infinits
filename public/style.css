@@ -54,17 +54,17 @@ body {
 } */
 
 .keyHeader {
-  /* display: grid; */
   display: flex;
   width: 98vw;
   height: 94px;
   padding: 16px 0;
+  justify-content: center;
 
   .play {
-    width: 100%;
+    width: 100px;
     height: 100%;
     background-image: url("./img/play_24.svg");
-    background-size: 10%;
+    background-size: 80px;
     background-repeat: no-repeat;
     background-position: center;
     border-radius: 12px;
