@@ -35,9 +35,11 @@ export const Keyboard = () => {
   const inputMode = useAtomValue(noteInputModeAtom);
   const chordSelection = useAtomValue(chordSelectionAtom);
   return (
-    <Root>
-      <Header>{chordSelection ? <ChordSelector /> : <PlayButton />}</Header>
-      <Container>
+    <div className="keyboard">
+      <div className="keyHeader">
+        {chordSelection ? <ChordSelector /> : <PlayButton />}
+      </div>
+      <div className="keyContainer">
         <KeyRow>
           <InputModeSwitcher />
           {inputMode === "chord" ? (
@@ -86,12 +88,8 @@ export const Keyboard = () => {
           <Fermata />
           <Tie />
         </KeyRow>
-      </Container>
-      {/* <Footer> */}
-      {/* desktop only */}
-      {/* <Handle /> */}
-      {/* </Footer> */}
-    </Root>
+      </div>
+    </div>
   );
 };
 
@@ -579,22 +577,6 @@ const Tie = () => (
   </GrayKey>
 );
 
-const Root = ({ children }: { children: React.ReactNode }) => {
-  return <div className="keyboard">{children}</div>;
-};
-
-const Header: FC<React.ComponentProps<"div">> = ({ children, ...rest }) => {
-  return (
-    <div className="keyHeader" {...rest}>
-      {children}
-    </div>
-  );
-};
-
-const Container = ({ children }: { children: React.ReactNode }) => {
-  return <div className="keyContainer">{children}</div>;
-};
-
 const KeyRow = ({ children }: { children: React.ReactNode }) => {
   return <div className="keyRow">{children}</div>;
 };
@@ -624,14 +606,3 @@ const GrayKey = ({
     </div>
   );
 };
-
-// const Footer = ({ children }: { children: React.ReactNode }) => {
-//   return <div className="flex w-full h-[15px] bottom-0">{children}</div>;
-// };
-
-// タブレット用
-// const Handle = () => {
-//   return (
-//     <div className="mt-[18px] mr-auto mb-0 ml-auto bg-[#aaa] w-[40px] h-[5px] rounded-[2px]"></div>
-//   );
-// };
