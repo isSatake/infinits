@@ -42,15 +42,15 @@ export const Keyboard = () => {
           <InputModeSwitcher />
           {inputMode === "chord" ? (
             <>
-              <WholeChord />
-              <WholeChord />
-              <WholeChord />
+              <ChordKey duration={1} />
+              <ChordKey duration={2} />
+              <ChordKey duration={4} />
             </>
           ) : (
             <>
-              <Whole />
-              <Half />
-              <Quarter />
+              <NoteKey duration={1} />
+              <NoteKey duration={2} />
+              <NoteKey duration={4} />
             </>
           )}
           <Backspace />
@@ -59,15 +59,15 @@ export const Keyboard = () => {
           <ArrowLeft />
           {inputMode === "chord" ? (
             <>
-              <WholeChord />
-              <WholeChord />
-              <WholeChord />
+              <FlagChordKey duration={8} />
+              <FlagChordKey duration={16} />
+              <FlagChordKey duration={32} />
             </>
           ) : (
             <>
-              <Eighth />
-              <Sixteenth />
-              <ThirtySecond />
+              <FlagNoteKey duration={8} />
+              <FlagNoteKey duration={16} />
+              <FlagNoteKey duration={32} />
             </>
           )}
           <ArrowRight />
@@ -124,7 +124,7 @@ const composeNewElement = (p: {
 }): MusicalElement => {
   const { mode, pitches, duration } = p;
   return mode === "rest"
-   ? { type: "rest", duration }
+    ? { type: "rest", duration }
     : { type: "note", pitches, duration };
 };
 
@@ -310,79 +310,50 @@ const usePreviewHandlers = (duration: Duration) => {
   });
 };
 
-const Whole: FC = () => {
+const NoteKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreviewHandlers(1);
+  const previewHandlers = usePreviewHandlers(duration);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`keyImg whole ${noteInputMode}`} />
+      <div className={`keyImg d${duration} ${noteInputMode}`} />
     </WhiteKey>
   );
 };
 
-const WholeChord: FC = () => {
+const ChordKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
   const [rootSelector, setRootSelector] = useAtom(chordSelectionAtom);
   return (
     <WhiteKey
-      isActive={!!rootSelector}
-      onClick={() =>
-        setRootSelector(rootSelector ? undefined : { duration: 1 })
-      }
+      isActive={rootSelector?.duration === duration}
+      onClick={() => setRootSelector(rootSelector ? undefined : { duration })}
     >
-      <div className={`keyImg whole chord ${rootSelector ? "active" : ""}`} />
+      <div
+        className={`keyImg d${duration} chord ${rootSelector ? "active" : ""}`}
+      />
     </WhiteKey>
   );
 };
 
-const Half = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreviewHandlers(2);
-  return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg half ${noteInputMode}`} />
-    </WhiteKey>
-  );
-};
-
-const Quarter = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreviewHandlers(4);
-  return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg quater ${noteInputMode}`} />
-    </WhiteKey>
-  );
-};
-
-const Eighth = () => {
+const FlagNoteKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreviewHandlers(8);
+  const previewHandlers = usePreviewHandlers(duration);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`keyImg eighth ${noteInputMode} ${beamMode}`} />
+      <div className={`keyImg d${duration} ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
 
-const Sixteenth = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
+const FlagChordKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
+  const [rootSelector, setRootSelector] = useAtom(chordSelectionAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreviewHandlers(16);
   return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg sixteenth ${noteInputMode} ${beamMode}`} />
-    </WhiteKey>
-  );
-};
-
-const ThirtySecond = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreviewHandlers(32);
-  return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg thirtySecond ${noteInputMode} ${beamMode}`} />
+    <WhiteKey
+      isActive={rootSelector?.duration === duration}
+      onClick={() => setRootSelector(rootSelector ? undefined : { duration })}
+    >
+      <div className={`keyImg d${duration} chord ${beamMode}`} />
     </WhiteKey>
   );
 };

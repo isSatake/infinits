@@ -260,92 +260,105 @@ body {
 }
 
 /* whole */
-.keyImg.whole.note,
-.keyImg.whole.chord {
+.keyImg.d1.note {
   background-position-y: 65%;
   background-size: 25% auto;
   background-image: url(img/n1.png);
 }
 
-.keyImg.whole.rest {
+.keyImg.d1.chord {
+  background-position-y: 65%;
+  background-size: 22% auto;
+  background-image: url(img/chord1.png);
+}
+
+.keyImg.d1.rest {
   background-size: 40% auto;
   background-image: url(img/r1.png);
 }
 
 /* 1/2 */
-.keyImg.half.note,
-.keyImg.half.chord {
+.keyImg.d2.note {
   background-size: 18% auto;
   background-image: url(img/n2.png);
 }
 
-.keyImg.half.rest {
+.keyImg.d2.chord {
+  background-size: 16% auto;
+  background-image: url(img/chord2.png);
+}
+
+.keyImg.d2.rest {
   background-size: 40% auto;
   background-image: url(img/r2.png);
 }
 
 /* 1/4 */
-.keyImg.quater.note,
-.keyImg.quater.chord {
+.keyImg.d4.note {
   background-size: 18% auto;
   background-image: url(img/n4.png);
 }
 
-.keyImg.quater.rest {
+.keyImg.d4.chord {
+  background-size: 16% auto;
+  background-image: url(img/chord4.png);
+}
+
+.keyImg.d4.rest {
   background-image: url(./img/r4.png);
   background-size: auto 60%;
 }
 
 /* 1/8 */
-.keyImg.eighth.note.nobeam,
-.keyImg.eighth.chord.nobeam {
+.keyImg.d8.note.nobeam,
+.keyImg.d8.chord.nobeam {
   background-size: auto 70%;
   background-image: url(img/n8.png);
 }
 
-.keyImg.eighth.note.beam,
-.keyImg.eighth.chord.beam {
+.keyImg.d8.note.beam,
+.keyImg.d8.chord.beam {
   background-size: auto 70%;
   background-image: url(img/beam8.svg);
 }
 
-.keyImg.eighth.rest {
+.keyImg.d8.rest {
   background-size: 20% auto;
   background-image: url(img/r8.png);
 }
 
 /* 1/16 */
-.keyImg.sixteenth.note.nobeam,
-.keyImg.sixteenth.chord.nobeam {
+.keyImg.d16.note.nobeam,
+.keyImg.d16.chord.nobeam {
   background-size: auto 70%;
   background-image: url(img/n16.png);
 }
 
-.keyImg.sixteenth.note.beam,
-.keyImg.sixteenth.chord.beam {
+.keyImg.d16.note.beam,
+.keyImg.d16.chord.beam {
   background-size: auto 70%;
   background-image: url(img/beam16.svg);
 }
 
-.keyImg.sixteenth.rest {
+.keyImg.d16.rest {
   background-size: 20% auto;
   background-image: url(img/r16.png);
 }
 
 /* 1/32 */
-.keyImg.thirtySecond.note.nobeam,
-.keyImg.thirtySecond.chord.nobeam {
+.keyImg.d32.note.nobeam,
+.keyImg.d32.chord.nobeam {
   background-size: auto 70%;
   background-image: url(img/n32.png);
 }
 
-.keyImg.thirtySecond.note.beam,
-.keyImg.thirtySecond.chord.beam {
+.keyImg.d32.note.beam,
+.keyImg.d32.chord.beam {
   background-size: auto 70%;
   background-image: url(img/beam32.svg);
 }
 
-.keyImg.thirtySecond.rest {
+.keyImg.d32.rest {
   background-size: 20% auto;
   background-image: url(img/r32.png);
 }
