@@ -100,6 +100,7 @@ export const chordTypes = [
   "maj7", // major 7th
   "m", // minor
   "m7", // minor 7th
+  "m7b5", // minor 7th flat 5th
   "7", // dominant 7th
 ] as const;
 export type ChordType = (typeof chordTypes)[number];
