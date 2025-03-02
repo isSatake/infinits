@@ -55,6 +55,7 @@ body {
 
 .keyHeader {
   /* display: grid; */
+  display: flex;
   width: 98vw;
   height: 94px;
   padding: 16px 0;
@@ -624,11 +625,25 @@ body {
   display: flex;
   height: 100%;
   padding: 0 10px;
-  justify-content: center;
   align-items: center;
   border-radius: var(--key-border-radius);
 }
 
 .chordType:active {
   background: white;
+}
+
+.backToRoot {
+  display: flex;
+  height: 100%;
+  padding: 0 20px;
+  border-radius: var(--key-border-radius);
+  font-size: 50px;
+  align-items: center;
+}
+
+.typeDivider {
+  height: 100%;
+  border-left: 1px solid black;
+  box-shadow: 2px 0 4px 0 black;
 }

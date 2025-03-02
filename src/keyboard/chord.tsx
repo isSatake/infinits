@@ -34,6 +34,7 @@ export const ChordSelector = () => {
       <TypeSelector
         duration={chordSelection.duration}
         root={chordSelection.root}
+        onBack={() => setChordSelection({ duration: chordSelection.duration })}
       />
     );
   } else {
@@ -55,13 +56,23 @@ const RootSelector: FC<{ onSelect: (note: RootNote) => void }> = ({
   );
 };
 
-const TypeSelector: FC<{ duration: Duration; root: ChordRoot }> = (props) => {
+const TypeSelector: FC<{
+  duration: Duration;
+  root: ChordRoot;
+  onBack: () => void;
+}> = ({ onBack, ...rest }) => {
   return (
-    <div className="chordTypeSelector">
-      {chordTypes.map((type: ChordType) => (
-        <Type type={type} key={type} {...props} />
-      ))}
-    </div>
+    <>
+      <div className="backToRoot" onClick={onBack}>
+        {"<"}
+      </div>
+      <div className="typeDivider" />
+      <div className="chordTypeSelector">
+        {chordTypes.map((type: ChordType) => (
+          <Type type={type} key={type} {...rest} />
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -76,7 +87,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
   const composeElements = useElementsComposer(duration);
   const staff = useStaffs().get(caret.staffId);
   const handlers = usePointerHandler({
-    onUp: (ev, down) => {
+    onUp: () => {
       if (!staff) return;
       console.log(`${rootName}${root.accidental ?? ""}${type}`);
       // composeElements
