@@ -1,10 +1,10 @@
-import { rootNotes } from "@/keyboard/Keyboard";
 import {
   MusicalElement,
   Duration,
   Note,
   Rest,
   PitchAcc,
+  rootNotes,
 } from "@/org/notation/types";
 import { Transport, Part, Sampler, start } from "tone";
 import { Time, Frequency } from "tone/build/esm/core/type/Units";
@@ -73,7 +73,7 @@ const sampler = new Sampler({
   baseUrl: "https://tonejs.github.io/audio/salamander/",
 }).toDestination();
 
-const accs = { sharp: "#", natural: "", flat: "b" };
+const accs = { sharp: "#", dSharp: "##", natural: "", flat: "b", dFlat: "bb" };
 const convert = (pa: PitchAcc): Frequency => {
   const { pitch, accidental } = pa;
   const oct = Math.floor(pitch / 7) + 4;

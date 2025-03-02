@@ -14,25 +14,101 @@ export const chordToPitchAcc = (
   chord: Chord,
   key: KeySignature
 ): PitchAcc[] => {
-  if (chord.type === "") {
-    return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }];
+  const { pitch } = chord.root;
+  const degree = (pitch - key.root.pitch + 7) % 7;
+  // I
+  if (degree === 0) {
+    if (chord.type === "") {
+      return [{ pitch }, { pitch: pitch + 2 }, { pitch: pitch + 4 }];
+    }
+    if (chord.type === "maj7") {
+      return [
+        { pitch },
+        { pitch: pitch + 2 },
+        { pitch: pitch + 4 },
+        { pitch: pitch + 6 },
+      ];
+    }
+    if (chord.type === "m") {
+      return [
+        { pitch },
+        { pitch: pitch + 2, accidental: "flat" },
+        { pitch: pitch + 4 },
+      ];
+    }
+    if (chord.type === "m7") {
+      return [
+        { pitch },
+        { pitch: pitch + 2, accidental: "flat" },
+        { pitch: pitch + 4 },
+        { pitch: pitch + 6 },
+      ];
+    }
+    if (chord.type === "7") {
+      return [
+        { pitch },
+        { pitch: pitch + 2 },
+        { pitch: pitch + 4 },
+        { pitch: pitch + 6, accidental: "flat" },
+      ];
+    }
   }
-  if (chord.type === "maj7") {
-    return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }, { pitch: 6 }];
+  // II
+  if (degree === 1) {
+    if (chord.type === "") {
+      return [
+        { pitch },
+        { pitch: pitch + 2, accidental: "sharp" },
+        { pitch: pitch + 4 },
+      ];
+    }
+    if (chord.type === "maj7") {
+      return [
+        { pitch },
+        { pitch: pitch + 2, accidental: "sharp" },
+        { pitch: pitch + 4 },
+        { pitch: pitch + 6, accidental: "sharp" },
+      ];
+    }
+    if (chord.type === "m") {
+      return [{ pitch }, { pitch: pitch + 2 }, { pitch: pitch + 4 }];
+    }
+    if (chord.type === "m7") {
+      return [
+        { pitch },
+        { pitch: pitch + 2 },
+        { pitch: pitch + 4 },
+        { pitch: pitch + 6 },
+      ];
+    }
+    if (chord.type === "7") {
+      return [
+        { pitch },
+        { pitch: pitch + 2, accidental: "sharp" },
+        { pitch: pitch + 4 },
+        { pitch: pitch + 6 },
+      ];
+    }
   }
-  if (chord.type === "m") {
-    return [{ pitch: 0 }, { pitch: 2, accidental: "flat" }, { pitch: 4 }];
-  }
-  if (chord.type === "m7") {
-    return [
-      { pitch: 0 },
-      { pitch: 2, accidental: "flat" },
-      { pitch: 4 },
-      { pitch: 6 },
-    ];
-  }
-  if (chord.type === "7") {
-    return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }, { pitch: 6 }];
-  }
+  // if (chord.type === "") {
+  //   return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }];
+  // }
+  // if (chord.type === "maj7") {
+  //   return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }, { pitch: 6 }];
+  // }
+  // if (chord.type === "m") {
+  //   return [{ pitch: 0 }, { pitch: 2, accidental: "flat" }, { pitch: 4 }];
+  // }
+  // if (chord.type === "m7") {
+  //   return [
+  //     { pitch: 0 },
+  //     { pitch: 2, accidental: "flat" },
+  //     { pitch: 4 },
+  //     { pitch: 6 },
+  //   ];
+  // }
+  // if (chord.type === "7") {
+  //   return [{ pitch: 0 }, { pitch: 2 }, { pitch: 4 }, { pitch: 6 }];
+  // }
   return [];
 };

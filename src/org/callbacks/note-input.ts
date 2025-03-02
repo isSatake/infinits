@@ -10,7 +10,7 @@ import {
   Tie,
 } from "../notation/types";
 import { initCanvas, paintStaff, paintStyle, resetCanvas } from "../paint";
-import { sortPitches } from "../pitch";
+import { sortPitches } from "../../core/pitch";
 import {
   getPreviewHeight,
   getPreviewScale,
@@ -272,7 +272,11 @@ export class NoteInputCallback implements INoteInputCallback {
   }
 }
 
-export const pitchByDistance = (scale: number, dy: number, origin: Pitch): Pitch => {
+export const pitchByDistance = (
+  scale: number,
+  dy: number,
+  origin: Pitch
+): Pitch => {
   const unitY = (UNIT / 2) * scale;
   return Math.round(dy / unitY + origin);
 };

@@ -24,7 +24,7 @@ import {
 } from "../atom";
 import { usePointerHandler } from "../hooks/hooks";
 import { FC, useCallback, useMemo, useState } from "react";
-import { sortPitches } from "@/org/pitch";
+import { sortPitches } from "@/core/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
 import { PlayButton } from "./PlayButton";
 import * as tone from "@/tone";
@@ -664,4 +664,3 @@ const GrayKey = ({
 //     <div className="mt-[18px] mr-auto mb-0 ml-auto bg-[#aaa] w-[40px] h-[5px] rounded-[2px]"></div>
 //   );
 // };
-

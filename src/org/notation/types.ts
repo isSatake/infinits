@@ -107,5 +107,5 @@ export type ChordType = (typeof chordTypes)[number];
 export const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
 export type RootNote = (typeof rootNotes)[number];
 
-export type ChordRoot = { note: RootNote; accidental?: Accidental };
+export type ChordRoot = PitchAcc;
 export type Chord = { root: ChordRoot; type: ChordType };
