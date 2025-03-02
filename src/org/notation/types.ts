@@ -1,10 +1,17 @@
 export const durations = [1, 2, 4, 8, 16, 32] as const;
 export type Duration = (typeof durations)[number];
 
+// 全音
 // C4 (middleC) = 0
 export type Pitch = number;
 
-export const kAccidentals = ["sharp", "natural", "flat"] as const;
+export const kAccidentals = [
+  "sharp",
+  "natural",
+  "flat",
+  "dSharp",
+  "dFlat",
+] as const;
 export type Accidental = (typeof kAccidentals)[number];
 
 export type PitchAcc = {
@@ -51,3 +58,78 @@ export type Staff = {
   clef: Clef;
   lineCount: number;
 };
+
+export type KeySignature = {
+  root: {
+    pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    accidental?: Accidental;
+  };
+  acc: "sharp" | "flat";
+  notes?: number[];
+};
+
+const keys = [
+  "C",
+  "G",
+  "D",
+  "A",
+  "E",
+  "B",
+  "F#",
+  "F",
+  "Bb",
+  "Eb",
+  "Ab",
+  "Db",
+] as const;
+export type Key = (typeof keys)[number];
+
+export const keySignatures: Record<
+  Key,
+  {
+    root: { pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6; accidental?: Accidental };
+    acc: "sharp" | "flat";
+    notes?: number[];
+  }
+> = {
+  C: { root: { pitch: 0 }, acc: "sharp" },
+  G: { root: { pitch: 4 }, acc: "sharp", notes: [3] },
+  D: { root: { pitch: 1 }, acc: "sharp", notes: [0, 3] },
+  A: { root: { pitch: 5 }, acc: "sharp", notes: [0, 3, 4] },
+  E: { root: { pitch: 2 }, acc: "sharp", notes: [0, 1, 3, 4] },
+  B: { root: { pitch: 6 }, acc: "sharp", notes: [0, 1, 3, 4, 6] },
+  "F#": {
+    root: { pitch: 3, accidental: "sharp" },
+    acc: "sharp",
+    notes: [0, 1, 2, 3, 4, 6],
+  },
+  F: { root: { pitch: 3 }, acc: "flat", notes: [6] },
+  Bb: { root: { pitch: 6, accidental: "flat" }, acc: "flat", notes: [2, 6] },
+  Eb: { root: { pitch: 2, accidental: "flat" }, acc: "flat", notes: [2, 5, 6] },
+  Ab: {
+    root: { pitch: 5, accidental: "flat" },
+    acc: "flat",
+    notes: [1, 2, 5, 6],
+  },
+  Db: {
+    root: { pitch: 1, accidental: "flat" },
+    acc: "flat",
+    notes: [1, 2, 4, 5, 6],
+  },
+};
+
+export const chordTypes = [
+  "", // major
+  "maj7", // major 7th
+  "m", // minor
+  "m7", // minor 7th
+  "m7b5", // minor 7th flat 5th
+  "7", // dominant 7th
+] as const;
+export type ChordType = (typeof chordTypes)[number];
+
+export const rootNotes = ["C", "D", "E", "F", "G", "A", "B"] as const;
+export type RootNote = (typeof rootNotes)[number];
+
+export type ChordRoot = PitchAcc;
+export type Chord = { root: ChordRoot; type: ChordType };

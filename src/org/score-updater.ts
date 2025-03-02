@@ -1,5 +1,5 @@
 import { MusicalElement } from "./notation/types";
-import { sortPitches } from "./pitch";
+import { sortPitches } from "../core/pitch";
 import { BeamModes } from "./input-modes";
 
 // 直接score-stateを更新していいと思ったが、previewでも使ってるのでむずい

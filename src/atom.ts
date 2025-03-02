@@ -1,8 +1,8 @@
 import { Point } from "@/org/geometry";
-import { MusicalElement } from "@/org/notation/types";
+import {  ChordRoot, Duration, MusicalElement } from "@/org/notation/types";
 import { CaretStyle } from "@/org/style/types";
 import { atom, useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StaffStyle } from "./org/style/types";
 
 // PreviewCanvasの表示
@@ -90,3 +90,8 @@ export const showDialogAtom = atom<
     }
   | undefined
 >(undefined);
+
+export const accidentalModeIdxAtom = atom<number>(0);
+
+export type ChordSelection = { duration: Duration; root?: ChordRoot };
+export const chordSelectionAtom = atom<ChordSelection | undefined>(undefined);

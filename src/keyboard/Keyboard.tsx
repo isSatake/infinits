@@ -1,7 +1,8 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { pitchByDistance } from "@/org/callbacks/note-input";
 import { BeamModes, TieModes, kAccidentalModes } from "@/org/input-modes";
 import {
+  Accidental,
   BarTypes,
   Duration,
   MusicalElement,
@@ -18,31 +19,59 @@ import {
   previewAtom,
   PreviewState,
   useStaffs,
-} from "./atom";
-import { usePointerHandler } from "./hooks";
+  accidentalModeIdxAtom,
+  chordSelectionAtom,
+} from "../atom";
+import { usePointerHandler } from "../hooks/hooks";
 import { FC, useCallback, useMemo, useState } from "react";
-import { sortPitches } from "@/org/pitch";
+import { sortPitches } from "@/core/pitch";
 import { inputMusicalElement } from "@/org/score-updater";
-import { start, Sampler, Part, Transport } from "tone";
-import { Time, Frequency } from "tone/build/esm/core/type/Units";
+import { PlayButton } from "./PlayButton";
+import * as tone from "@/tone";
+import { ChordSelector } from "./chord";
+import { useAccidentalMode } from "@/hooks/accidental";
 
 export const Keyboard = () => {
+  const inputMode = useAtomValue(noteInputModeAtom);
+  const chordSelection = useAtomValue(chordSelectionAtom);
   return (
-    <Root>
-      <Header />
-      <Container>
+    <div className="keyboard">
+      <div className="keyHeader">
+        {chordSelection ? <ChordSelector /> : <PlayButton />}
+      </div>
+      <div className="keyContainer">
         <KeyRow>
-          <NoteRestToggle />
-          <Whole />
-          <Half />
-          <Quarter />
+          <InputModeSwitcher />
+          {inputMode === "chord" ? (
+            <>
+              <ChordKey duration={1} />
+              <ChordKey duration={2} />
+              <ChordKey duration={4} />
+            </>
+          ) : (
+            <>
+              <NoteKey duration={1} />
+              <NoteKey duration={2} />
+              <NoteKey duration={4} />
+            </>
+          )}
           <Backspace />
         </KeyRow>
         <KeyRow>
           <ArrowLeft />
-          <Eighth />
-          <Sixteenth />
-          <ThirtySecond />
+          {inputMode === "chord" ? (
+            <>
+              <FlagChordKey duration={8} />
+              <FlagChordKey duration={16} />
+              <FlagChordKey duration={32} />
+            </>
+          ) : (
+            <>
+              <FlagNoteKey duration={8} />
+              <FlagNoteKey duration={16} />
+              <FlagNoteKey duration={32} />
+            </>
+          )}
           <ArrowRight />
         </KeyRow>
         <KeyRow>
@@ -59,52 +88,42 @@ export const Keyboard = () => {
           <Fermata />
           <Tie />
         </KeyRow>
-      </Container>
-      {/* <Footer> */}
-      {/* desktop only */}
-      {/* <Handle /> */}
-      {/* </Footer> */}
-    </Root>
+      </div>
+    </div>
   );
 };
 
-const noteInputModeAtom = atom<"note" | "rest">("note");
+type NoteInputMode = "note" | "rest" | "chord";
+const noteInputModeAtom = atom<NoteInputMode>("note");
 
-const NoteRestToggle = () => {
+const InputModeSwitcher = () => {
   const [noteInputMode, setNoteInputMode] = useAtom(noteInputModeAtom);
+  const modes: NoteInputMode[] = ["note", "rest", "chord"];
+
+  const toggleNoteInputMode = () => {
+    const currentIndex = modes.indexOf(noteInputMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setNoteInputMode(modes[nextIndex]);
+  };
+
   return (
     <>
-      <GrayKey
-        onClick={() =>
-          setNoteInputMode(noteInputMode === "note" ? "rest" : "note")
-        }
-      >
-        <div
-          className={`keyImg changeNoteRest ${
-            noteInputMode === "note" ? "note" : "rest"
-          }`}
-        />
+      <GrayKey onClick={toggleNoteInputMode}>
+        <div className={`keyImg changeInputMode ${noteInputMode}`} />
       </GrayKey>
     </>
   );
 };
 
-const getNewElement = (p: {
-  mode: "note" | "rest";
+const composeNewElement = (p: {
+  mode: NoteInputMode;
   duration: Duration;
-  pitch: PitchAcc;
+  pitches: PitchAcc[];
 }): MusicalElement => {
-  const { mode, pitch, duration } = p;
-  return mode === "note"
-    ? {
-        type: "note",
-        pitches: [pitch],
-        duration,
-      }
-    : {
-        type: "rest",
-        duration,
-      };
+  const { mode, pitches, duration } = p;
+  return mode === "rest"
+    ? { type: "rest", duration }
+    : { type: "note", pitches, duration };
 };
 
 const tieAtom = atom<TieModes>(undefined);
@@ -172,8 +191,8 @@ const useBaseElements = () => {
   );
 };
 
-const useInputElements: (duration: Duration) => (
-  newPitch: PitchAcc,
+export const useElementsComposer: (duration: Duration) => (
+  newPitches: PitchAcc[],
   position?: "left" | "right"
 ) => Pick<PreviewState, "elements" | "insertedIndex" | "offsetted"> & {
   caretAdvance: number;
@@ -183,14 +202,13 @@ const useInputElements: (duration: Duration) => (
   const baseElements = useBaseElements();
   const inputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const tietie = useTie();
   const sortChord = useSortChord();
   return useCallback(
-    (newPitch: PitchAcc, position?: "left" | "right") => {
-      const _ne = getNewElement({
+    (newPitches: PitchAcc[], position?: "left" | "right") => {
+      const _ne = composeNewElement({
         mode: inputMode,
-        pitch: newPitch,
+        pitches: newPitches,
         duration,
       });
       const ne = tietie(_ne);
@@ -218,14 +236,14 @@ const useInputElements: (duration: Duration) => (
         offsetted: offset !== 0,
       };
     },
-    [caret.idx, baseElements, inputMode, beamMode, duration, accidental]
+    [caret.idx, baseElements, inputMode, beamMode, duration]
   );
 };
 
 const usePreviewHandlers = (duration: Duration) => {
   const [preview, setPreview] = useAtom(previewAtom);
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
-  const genPreviewElements = useInputElements(duration);
+  const composeElements = useElementsComposer(duration);
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   const staff = useStaffs().get(caret.staffId);
@@ -243,7 +261,7 @@ const usePreviewHandlers = (duration: Duration) => {
       setPreview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
         staff: { ...staff, position: { x: 0, y: 0 } },
-        ...genPreviewElements(newPitch),
+        ...composeElements([newPitch]),
       });
     },
     onUp: (ev, down) => {
@@ -253,14 +271,14 @@ const usePreviewHandlers = (duration: Duration) => {
         pitch: pitchByDistance(getPreviewScale(), dy, 6),
         accidental,
       };
-      const { elements, insertedIndex, caretAdvance } = genPreviewElements(
-        newPitch,
+      const { elements, insertedIndex, caretAdvance } = composeElements(
+        [newPitch],
         positionRef.current
       );
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.staffId, elements));
       // 入力時のプレビューは8分音符固定
-      play([elements[insertedIndex]], 8);
+      tone.play([elements[insertedIndex]], 8);
     },
     onDrag: (ev, down) => {
       if (!preview || !staff) {
@@ -284,98 +302,56 @@ const usePreviewHandlers = (duration: Duration) => {
       }
       setPreview({
         ...preview,
-        ...genPreviewElements(newPitch, positionRef.current),
+        ...composeElements([newPitch], positionRef.current),
       });
     },
   });
 };
 
-const play = async (elements: MusicalElement[], duration?: Duration) => {
-  const arr: ({ time: Time } & MusicalElement)[] = [];
-  let currentPPQ = 0;
-  elements
-    .filter((el): el is Note | Rest => el.type !== "bar")
-    .forEach((el) => {
-      arr.push({
-        time: `${currentPPQ}i`,
-        ...el,
-        ...(duration ? { duration } : {}),
-      });
-      currentPPQ += (Transport.PPQ * 4) / el.duration;
-    });
-  const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
-    if (value.type === "note") {
-      sampler.triggerAttackRelease(
-        value.pitches.map(convert),
-        `${value.duration}n`,
-        time
-      );
-    }
-  }, arr);
-  await start();
-  part.start();
-  Transport.start();
-};
-
-const Whole: FC = () => {
+const NoteKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreviewHandlers(1);
+  const previewHandlers = usePreviewHandlers(duration);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`keyImg whole ${noteInputMode}`} />
+      <div className={`keyImg d${duration} ${noteInputMode}`} />
     </WhiteKey>
   );
 };
 
-const Half = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreviewHandlers(2);
+const ChordKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
+  const [rootSelector, setRootSelector] = useAtom(chordSelectionAtom);
   return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg half ${noteInputMode}`} />
+    <WhiteKey
+      isActive={rootSelector?.duration === duration}
+      onClick={() => setRootSelector(rootSelector ? undefined : { duration })}
+    >
+      <div
+        className={`keyImg d${duration} chord ${rootSelector ? "active" : ""}`}
+      />
     </WhiteKey>
   );
 };
 
-const Quarter = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const previewHandlers = usePreviewHandlers(4);
-  return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg quater ${noteInputMode}`} />
-    </WhiteKey>
-  );
-};
-
-const Eighth = () => {
+const FlagNoteKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
   const noteInputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreviewHandlers(8);
+  const previewHandlers = usePreviewHandlers(duration);
   return (
     <WhiteKey {...previewHandlers}>
-      <div className={`keyImg eighth ${noteInputMode} ${beamMode}`} />
+      <div className={`keyImg d${duration} ${noteInputMode} ${beamMode}`} />
     </WhiteKey>
   );
 };
 
-const Sixteenth = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
+const FlagChordKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
+  const [rootSelector, setRootSelector] = useAtom(chordSelectionAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreviewHandlers(16);
   return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg sixteenth ${noteInputMode} ${beamMode}`} />
-    </WhiteKey>
-  );
-};
-
-const ThirtySecond = () => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const beamMode = useAtomValue(beamModeAtom);
-  const previewHandlers = usePreviewHandlers(32);
-  return (
-    <WhiteKey {...previewHandlers}>
-      <div className={`keyImg thirtySecond ${noteInputMode} ${beamMode}`} />
+    <WhiteKey
+      isActive={rootSelector?.duration === duration}
+      onClick={() => setRootSelector(rootSelector ? undefined : { duration })}
+    >
+      <div className={`keyImg d${duration} chord ${beamMode}`} />
     </WhiteKey>
   );
 };
@@ -552,20 +528,6 @@ const Return = () => (
   </GrayKey>
 );
 
-const accidentalModeIdxAtom = atom<number>(0);
-const baseClassName = "relative w-1/5 h-2/5";
-const disabledClassName = "opacity-30";
-const useAccidentalMode = () => {
-  const [idx, setIdx] = useAtom(accidentalModeIdxAtom);
-  return {
-    accidentalMode: kAccidentalModes[idx],
-    changeAccidentalMode: () => {
-      const nextIdx = (idx + 1) % 4;
-      setIdx(nextIdx);
-    },
-  };
-};
-
 const Accidentals = () => {
   const { accidentalMode, changeAccidentalMode } = useAccidentalMode();
   return (
@@ -615,37 +577,19 @@ const Tie = () => (
   </GrayKey>
 );
 
-const Root = ({ children }: { children: React.ReactNode }) => {
-  return <div className="keyboard">{children}</div>;
-};
-
-const Header = () => {
-  const elements = useAtomValue(elementsAtom);
-  const { staffId } = useAtomValue(focusAtom);
-  const onClick = useCallback(
-    () => play(elements.get(staffId) ?? []),
-    [elements, staffId]
-  );
-  return (
-    <div className="keyHeader">
-      <button className="play" onClick={onClick}></button>
-    </div>
-  );
-};
-
-const Container = ({ children }: { children: React.ReactNode }) => {
-  return <div className="keyContainer">{children}</div>;
-};
-
 const KeyRow = ({ children }: { children: React.ReactNode }) => {
   return <div className="keyRow">{children}</div>;
 };
 
-const WhiteKey = ({ children, ...rest }: React.ComponentProps<"div">) => {
+const WhiteKey = ({
+  isActive,
+  children,
+  ...rest
+}: { isActive?: boolean } & React.ComponentProps<"button">) => {
   return (
-    <div className="key white" {...rest}>
+    <button className={`key white ${isActive ? "active" : ""}`} {...rest}>
       {children}
-    </div>
+    </button>
   );
 };
 
@@ -661,66 +605,4 @@ const GrayKey = ({
       {children}
     </div>
   );
-};
-
-// const Footer = ({ children }: { children: React.ReactNode }) => {
-//   return <div className="flex w-full h-[15px] bottom-0">{children}</div>;
-// };
-
-// タブレット用
-// const Handle = () => {
-//   return (
-//     <div className="mt-[18px] mr-auto mb-0 ml-auto bg-[#aaa] w-[40px] h-[5px] rounded-[2px]"></div>
-//   );
-// };
-
-const sampler = new Sampler({
-  urls: {
-    A0: "A0.mp3",
-    C1: "C1.mp3",
-    "D#1": "Ds1.mp3",
-    "F#1": "Fs1.mp3",
-    A1: "A1.mp3",
-    C2: "C2.mp3",
-    "D#2": "Ds2.mp3",
-    "F#2": "Fs2.mp3",
-    A2: "A2.mp3",
-    C3: "C3.mp3",
-    "D#3": "Ds3.mp3",
-    "F#3": "Fs3.mp3",
-    A3: "A3.mp3",
-    C4: "C4.mp3",
-    "D#4": "Ds4.mp3",
-    "F#4": "Fs4.mp3",
-    A4: "A4.mp3",
-    C5: "C5.mp3",
-    "D#5": "Ds5.mp3",
-    "F#5": "Fs5.mp3",
-    A5: "A5.mp3",
-    C6: "C6.mp3",
-    "D#6": "Ds6.mp3",
-    "F#6": "Fs6.mp3",
-    A6: "A6.mp3",
-    C7: "C7.mp3",
-    "D#7": "Ds7.mp3",
-    "F#7": "Fs7.mp3",
-    A7: "A7.mp3",
-    C8: "C8.mp3",
-  },
-  release: 1,
-  baseUrl: "https://tonejs.github.io/audio/salamander/",
-}).toDestination();
-
-const keys = ["C", "D", "E", "F", "G", "A", "B"];
-const accs = { sharp: "#", natural: "", flat: "b" };
-const convert = (pa: PitchAcc): Frequency => {
-  const { pitch, accidental } = pa;
-  const oct = Math.floor(pitch / 7) + 4;
-  const mod = pitch % keys.length;
-  const note = mod < 0 ? keys.at(keys.length + mod) : keys.at(mod);
-  if (!note) {
-    throw new Error("invalid pitch");
-  }
-  const acc = accs[accidental ?? "natural"];
-  return `${note}${acc}${oct}`;
 };
