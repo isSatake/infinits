@@ -123,9 +123,9 @@ const composeNewElement = (p: {
   pitches: PitchAcc[];
 }): MusicalElement => {
   const { mode, pitches, duration } = p;
-  return mode === "note"
-    ? { type: "note", pitches, duration }
-    : { type: "rest", duration };
+  return mode === "rest"
+   ? { type: "rest", duration }
+    : { type: "note", pitches, duration };
 };
 
 const tieAtom = atom<TieModes>(undefined);

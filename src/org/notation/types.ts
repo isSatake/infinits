@@ -68,7 +68,30 @@ export type KeySignature = {
   notes?: number[];
 };
 
-const keySignatures = {
+const keys = [
+  "C",
+  "G",
+  "D",
+  "A",
+  "E",
+  "B",
+  "F#",
+  "F",
+  "Bb",
+  "Eb",
+  "Ab",
+  "Db",
+] as const;
+export type Key = (typeof keys)[number];
+
+export const keySignatures: Record<
+  Key,
+  {
+    root: { pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6; accidental?: Accidental };
+    acc: "sharp" | "flat";
+    notes?: number[];
+  }
+> = {
   C: { root: { pitch: 0 }, acc: "sharp" },
   G: { root: { pitch: 4 }, acc: "sharp", notes: [3] },
   D: { root: { pitch: 1 }, acc: "sharp", notes: [0, 3] },
