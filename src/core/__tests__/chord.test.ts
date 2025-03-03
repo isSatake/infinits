@@ -1,5 +1,5 @@
 import { chordToPitchAcc } from "../chord";
-import { Chord, KeySignature, PitchAcc } from "@/org/notation/types";
+import { Chord, KeySignature, PitchAcc } from "@/core/types";
 import * as vi from "vitest";
 
 vi.describe("chordToPitchAcc", () => {

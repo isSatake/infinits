@@ -1,4 +1,4 @@
-import { Size, magnitude } from "@/org/geometry";
+import { Size, magnitude } from "@/lib/geometry";
 import { useEffect, useRef, useState } from "react";
 
 const kLongDownThresholdMs = 300;

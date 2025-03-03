@@ -1,4 +1,4 @@
-import { Chord, KeySignature, PitchAcc } from "@/org/notation/types";
+import { Chord, KeySignature, PitchAcc } from "@/core/types";
 
 /**
  * convert chord to pitchAcc

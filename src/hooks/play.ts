@@ -1,4 +1,4 @@
-import { elementsAtom, focusAtom } from "@/atom";
+import { elementsAtom, focusAtom } from "@/state/atom";
 import * as tone from "@/tone";
 
 import { useAtomValue } from "jotai";

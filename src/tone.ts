@@ -5,7 +5,7 @@ import {
   Rest,
   PitchAcc,
   rootNotes,
-} from "@/org/notation/types";
+} from "@/core/types";
 import { Transport, Part, Sampler, start } from "tone";
 import { Time, Frequency } from "tone/build/esm/core/type/Units";
 
