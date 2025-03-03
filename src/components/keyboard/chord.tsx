@@ -1,5 +1,4 @@
 import { useAtom } from "jotai";
-import { useElementsComposer } from "./Keyboard";
 import {
   chordSelectionAtom,
   elementsAtom,
@@ -21,6 +20,7 @@ import { usePointerHandler } from "@/hooks/hooks";
 import { convertPitchToRoot } from "@/core/pitch";
 import { chordToPitchAcc } from "@/core/chord";
 import * as tone from "@/tone";
+import { useElementsComposer } from "@/hooks/input";
 
 export const ChordSelector = () => {
   const [chordSelection, setChordSelection] = useAtom(chordSelectionAtom);

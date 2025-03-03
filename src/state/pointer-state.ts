@@ -1,4 +1,4 @@
-import { Point, magnitude } from "./lib/geometry";
+import { Point, magnitude } from "@/lib/geometry";
 
 export type PointerState =
   | { type: "idle" }

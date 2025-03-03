@@ -4,6 +4,7 @@ import { CaretStyle } from "@/style/types";
 import { atom, useAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StaffStyle } from "../style/types";
+import { BeamModes } from "@/input";
 
 // PreviewCanvasの表示
 export type PreviewState = {
@@ -95,3 +96,8 @@ export const accidentalModeIdxAtom = atom<number>(0);
 
 export type ChordSelection = { duration: Duration; root?: ChordRoot };
 export const chordSelectionAtom = atom<ChordSelection | undefined>(undefined);
+
+export type NoteInputMode = "note" | "rest" | "chord";
+export const noteInputModeAtom = atom<NoteInputMode>("note");
+
+export const beamModeAtom = atom<BeamModes>("nobeam");
