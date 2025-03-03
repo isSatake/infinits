@@ -1,5 +1,5 @@
-import { accidentalModeIdxAtom } from "@/atom";
-import { kAccidentalModes } from "@/org/input-modes";
+import { accidentalModeIdxAtom } from "@/state/atom";
+import { kAccidentalModes } from "@/input";
 import { atom, useAtom } from "jotai";
 
 export const useAccidentalMode = () => {

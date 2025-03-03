@@ -1,6 +1,6 @@
 import * as vi from "vitest";
 import { convertPitchToRoot } from "../pitch";
-import { RootNote } from "@/org/notation/types";
+import { RootNote } from "@/core/types";
 
 vi.describe("convertPitchToRoot", () => {
   vi.test.each<{

@@ -1,4 +1,4 @@
-import { Pitch, PitchAcc, RootNote } from "../org/notation/types";
+import { Pitch, PitchAcc, RootNote } from "./types";
 
 export const sortPitches = (pitches: PitchAcc[]): PitchAcc[] => {
   return pitches.sort((pa0, pa1) => {
