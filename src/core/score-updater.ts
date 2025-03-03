@@ -126,8 +126,8 @@ function applyBeam(
 }
 
 export const connectTie = (p: {
-  newElement: MusicalElement;
   elements: MusicalElement[];
+  newElement: MusicalElement;
 }) => {
   const elements = [...p.elements];
   const newElement = { ...p.newElement };
@@ -138,8 +138,8 @@ export const connectTie = (p: {
     lastEl.pitches[0].pitch === newElement.pitches[0].pitch &&
     lastEl.pitches[0].accidental === newElement.pitches[0].accidental
   ) {
-    lastEl.tie = "start";
-    newElement.tie = "stop";
+    lastEl.tie = "begin";
+    newElement.tie = "end";
   }
   return { elements, newElement };
 };

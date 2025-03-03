@@ -1152,13 +1152,13 @@ export const determinePaintElementStyle = (p: {
   for (let _i in styles) {
     const i = Number(_i);
     const style = styles[i];
-    if (style.element.type === "note" && style.element.note.tie === "start") {
+    if (style.element.type === "note" && style.element.note.tie === "begin") {
       let distance = style.width;
       for (let j = i + 1; j < styles.length; j++) {
         const _style = styles[j];
         if (
           _style.element.type === "note" &&
-          _style.element.note.tie === "stop"
+          _style.element.note.tie === "end"
         ) {
           ties.push({
             index: i,
