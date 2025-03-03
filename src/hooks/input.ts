@@ -1,7 +1,7 @@
 import { sortPitches } from "@/core/pitch";
-import { inputMusicalElement } from "@/core/score-updater";
+import { connectTie, inputMusicalElement } from "@/core/score-updater";
 import { Duration, PitchAcc, MusicalElement, Pitch } from "@/core/types";
-import { TieModes, kAccidentalModes } from "@/input";
+import { kAccidentalModes } from "@/input";
 import {
   focusAtom,
   elementsAtom,
@@ -13,9 +13,12 @@ import {
   NoteInputMode,
   noteInputModeAtom,
   beamModeAtom,
+  tieModeAtom,
+  TieModes,
+  FocusState,
 } from "@/state/atom";
 import { getPreviewScale, getPreviewWidth } from "@/style/score-preferences";
-import { atom, useAtomValue, useAtom } from "jotai";
+import { useAtomValue, useAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
@@ -30,38 +33,6 @@ const composeNewElement = (p: {
   return mode === "rest"
     ? { type: "rest", duration }
     : { type: "note", pitches, duration };
-};
-
-const tieAtom = atom<TieModes>(undefined);
-
-// タイの整合を取る
-const useTie: () => (newEl: MusicalElement) => MusicalElement = () => {
-  const tieMode = useAtomValue(tieAtom);
-  const caret = useAtomValue(focusAtom);
-  const baseElements = useBaseElements();
-  return useCallback(
-    (newEl: MusicalElement) => {
-      const ret = { ...newEl };
-      if (
-        ret.type === "note" &&
-        !!tieMode &&
-        caret.idx > 0 &&
-        caret.idx % 2 === 0
-      ) {
-        const prevEl = baseElements[caret.idx / 2 - 1];
-        if (
-          prevEl.type === "note" &&
-          prevEl.pitches[0].pitch === ret.pitches[0].pitch &&
-          prevEl.pitches[0].accidental === ret.pitches[0].accidental
-        ) {
-          prevEl.tie = "start";
-          ret.tie = "stop";
-        }
-      }
-      return ret;
-    },
-    [tieMode, caret.idx, baseElements]
-  );
 };
 
 // 和音をソート
@@ -97,6 +68,19 @@ export const useBaseElements = () => {
   );
 };
 
+const tiee = (
+  tieMode: TieModes,
+  p: {
+    newElement: MusicalElement;
+    elements: MusicalElement[];
+  }
+) => {
+  if (tieMode === "tie") {
+    return connectTie(p);
+  }
+  return p;
+};
+
 export const useElementsComposer: (duration: Duration) => (
   newPitches: PitchAcc[],
   position?: "left" | "right"
@@ -108,31 +92,34 @@ export const useElementsComposer: (duration: Duration) => (
   const baseElements = useBaseElements();
   const inputMode = useAtomValue(noteInputModeAtom);
   const beamMode = useAtomValue(beamModeAtom);
-  const tietie = useTie();
+  const tieMode = useAtomValue(tieModeAtom);
   const sortChord = useSortChord();
   return useCallback(
     (newPitches: PitchAcc[], position?: "left" | "right") => {
-      const _ne = composeNewElement({
+      const newEl = composeNewElement({
         mode: inputMode,
         pitches: newPitches,
         duration,
       });
-      const ne = tietie(_ne);
-      const newElement = sortChord(ne);
+      const { newElement: _newEl, elements } = tiee(tieMode, {
+        newElement: newEl,
+        elements: baseElements,
+      });
+      const newElement = sortChord(_newEl);
       let offset = 0;
       if (position) {
         if (position === "left" && caret.idx > 0) {
           offset = -1;
         } else if (
           position === "right" &&
-          caretStyle[caret.idx].elIdx < baseElements.length
+          caretStyle[caret.idx].elIdx < elements.length
         ) {
           offset = 1;
         }
       }
       const ret = inputMusicalElement({
         caretIndex: caret.idx + offset,
-        elements: baseElements,
+        elements,
         newElement,
         beamMode,
       });

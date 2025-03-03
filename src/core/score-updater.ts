@@ -1,6 +1,6 @@
 import { MusicalElement } from "./types";
 import { sortPitches } from "./pitch";
-import { BeamModes } from "../input";
+import { BeamModes } from "@/state/atom";
 
 // 直接score-stateを更新していいと思ったが、previewでも使ってるのでむずい
 // reducerみたいな人になるべきかな
@@ -124,3 +124,22 @@ function applyBeam(
     }
   }
 }
+
+export const connectTie = (p: {
+  newElement: MusicalElement;
+  elements: MusicalElement[];
+}) => {
+  const elements = [...p.elements];
+  const newElement = { ...p.newElement };
+  const lastEl = elements.at(-1);
+  if (
+    lastEl?.type === "note" &&
+    newElement.type === "note" &&
+    lastEl.pitches[0].pitch === newElement.pitches[0].pitch &&
+    lastEl.pitches[0].accidental === newElement.pitches[0].accidental
+  ) {
+    lastEl.tie = "start";
+    newElement.tie = "stop";
+  }
+  return { elements, newElement };
+};

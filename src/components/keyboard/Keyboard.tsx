@@ -1,10 +1,8 @@
 import { inputMusicalElement } from "@/core/score-updater";
-import { BarTypes, Pitch } from "@/core/types";
-import * as bravura from "@/font/bravura";
+import { BarTypes } from "@/core/types";
 import { useAccidentalMode } from "@/hooks/accidental";
 import { useBaseElements, usePreviewHandlers } from "@/hooks/input";
-import { BeamModes } from "@/input";
-import { atom, useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import React, { FC, useCallback, useState } from "react";
 import { usePointerHandler } from "../../hooks/hooks";
 import {
@@ -15,6 +13,7 @@ import {
   focusAtom,
   NoteInputMode,
   noteInputModeAtom,
+  tieModeAtom,
 } from "../../state/atom";
 import { ChordSelector } from "./chord";
 import { PlayButton } from "./PlayButton";
@@ -359,13 +358,16 @@ const Fermata = () => (
   </WhiteKey>
 );
 
-const Tie = () => (
-  <GrayKey>
-    <div className="keyImg changeTie notie">
-      <div className="buttonImage"></div>
-    </div>
-  </GrayKey>
-);
+const Tie = () => {
+  const [tieMode, setTieMode] = useAtom(tieModeAtom);
+  return (
+    <GrayKey onClick={() => setTieMode(tieMode === "tie" ? "notie" : "tie")}>
+      <div className={`keyImg changeTie ${tieMode}`}>
+        <div className="buttonImage" />
+      </div>
+    </GrayKey>
+  );
+};
 
 const KeyRow = ({ children }: { children: React.ReactNode }) => {
   return <div className="keyRow">{children}</div>;
