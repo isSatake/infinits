@@ -138,7 +138,11 @@ export const connectTie = (p: {
     lastEl.pitches[0].pitch === newElement.pitches[0].pitch &&
     lastEl.pitches[0].accidental === newElement.pitches[0].accidental
   ) {
-    lastEl.tie = "begin";
+    if (lastEl.tie === "end") {
+      lastEl.tie = "continue";
+    } else {
+      lastEl.tie = "begin";
+    }
     newElement.tie = "end";
   }
   return { elements, newElement };

@@ -19,8 +19,14 @@ vi.describe("connectTie", () => {
     duration: 1,
   };
   const rest: MusicalElement = { type: "rest", duration: 1 };
-  vi.describe("should connect", () => {
-    vi.test.each([
+  type Test = {
+    title: string;
+    elements: MusicalElement[];
+    newElement: MusicalElement;
+    expected: { elements: MusicalElement[]; newElement: MusicalElement };
+  };
+  vi.describe("should connect: tail", () => {
+    vi.test.each<Test>([
       {
         title: "same pitch",
         elements: [c],
@@ -39,11 +45,21 @@ vi.describe("connectTie", () => {
           newElement: { ...csharp, tie: "end" },
         },
       },
+      {
+        title: "continue: last note is end",
+        elements: [{ ...c, tie: "end" }],
+        newElement: c,
+        expected: {
+          elements: [{ ...c, tie: "continue" }],
+          newElement: { ...c, tie: "end" },
+        },
+      },
     ])("$title", (p) => {
       const ret = connectTie(p);
       vi.expect(ret).toEqual(p.expected);
     });
   });
+  vi.describe("should connect: insert", () => {});
   vi.describe("should not connect", () => {
     vi.test.each([
       { title: "no elements", newElement: c, elements: [] },
