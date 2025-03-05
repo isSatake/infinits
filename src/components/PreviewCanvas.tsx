@@ -1,5 +1,5 @@
 import { UNIT, bStaffHeight } from "@/font/bravura";
-import { paintStyle, resetCanvas2 } from "@/paint/paint";
+import { paintBBox, paintStyle, resetCanvas2 } from "@/paint/paint";
 import {
   getPreviewHeight,
   getPreviewScale,
@@ -88,7 +88,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     ctx.translate(htmlWidth / 2 / a - init.centerX, 0);
     for (const style of styles) {
       paintStyle(ctx, style);
-      // paintBBox(ctx, style.bbox); // debug
+      paintBBox(ctx, style.bbox); // debug
       if (
         style.element.type !== "staff" &&
         style.element.type !== "beam" &&
