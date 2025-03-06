@@ -143,13 +143,11 @@ export const MainCanvas = () => {
     for (const [id, staff] of staffs.map) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
-      // paintStaff(ctx, staff);
       for (const style of styleMap.get(id) ?? []) {
         const { type } = style.element;
         paintStyle(ctx, style);
         paintBBox(ctx, style.bbox);
         if (type !== "staff" && type !== "beam" && type !== "tie") {
-          console.log("translate", style.width);
           ctx.translate(style.width, 0);
         }
       }

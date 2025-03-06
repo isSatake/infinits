@@ -53,6 +53,7 @@ import {
   RestStyle,
   TieStyle,
 } from "./types";
+import { insertTieStyles } from "./tie";
 
 const kPointingColor = "#FF0000";
 
@@ -64,7 +65,7 @@ const tiePosition = (noteHeadPos: Point, noteHeadBBox: BBox): Point => {
   };
 };
 
-const determineNoteStyle = ({
+export const determineNoteStyle = ({
   note,
   stemDirection,
   beamed = false,
@@ -257,7 +258,6 @@ const determineNoteStyle = ({
     });
     bboxes.push(bbox);
   }
-  console.log("note bboxes", bboxes);
   const bbox = mergeBBoxes(bboxes);
   return {
     element: {
@@ -1002,27 +1002,7 @@ const determineBeamedNotesStyle = (
   return [...beams, ...elements];
 };
 
-const determineTieStyle = (
-  start: PaintElementStyle<NoteStyle>,
-  width: number
-): PaintElementStyle<TieStyle> => {
-  const startHead = start.element.elements.find(
-    (e) => e.type === "head"
-  ) as NoteHeadElement;
-  return {
-    element: {
-      type: "tie",
-      position: { ...startHead.tie, y: startHead.tie.y - 70 },
-      cpLow: { x: width / 2, y: 120 },
-      cpHigh: { x: width / 2, y: 180 },
-      end: { x: width, y: 0 },
-    },
-    width,
-    bbox: { left: 0, top: 0, right: 0, bottom: 0 },
-  };
-};
-
-const gapElementStyle = ({
+export const gapElementStyle = ({
   width,
   height,
   caretOption,
@@ -1066,7 +1046,7 @@ export const determinePaintElementStyle = (p: {
   gap?: { idx: number; width: number };
 }): PaintElementStyle<PaintElement>[] => {
   const { elements, gapWidth, staffStyle, pointing, gap } = p;
-  const styles: PaintElementStyle<PaintElement>[] = [];
+  let styles: PaintElementStyle<PaintElement>[] = [];
   const gapEl = gapElementStyle({
     width: gapWidth,
     height: bStaffHeight,
@@ -1147,41 +1127,7 @@ export const determinePaintElementStyle = (p: {
       index++;
     }
   }
-  // elementにまたがるstyleを決定する
-  const ties: { index: number; style: PaintElementStyle<TieStyle> }[] = [];
-  for (let _i in styles) {
-    const i = Number(_i);
-    const style = styles[i];
-    if (
-      style.element.type === "note" &&
-      (style.element.note.tie === "begin" ||
-        style.element.note.tie === "continue")
-    ) {
-      let distance = style.width;
-      for (let j = i + 1; j < styles.length; j++) {
-        const _style = styles[j];
-        if (
-          _style.element.type === "note" &&
-          (_style.element.note.tie === "end" ||
-            _style.element.note.tie === "continue")
-        ) {
-          ties.push({
-            index: i,
-            style: determineTieStyle(
-              style as PaintElementStyle<NoteStyle>,
-              distance
-            ),
-          });
-          break;
-        } else {
-          distance += _style.width;
-        }
-      }
-    }
-  }
-  for (let { index, style } of ties) {
-    styles.splice(index, 0, style);
-  }
+  styles = insertTieStyles(styles);
   if (staffStyle) {
     const width =
       staffStyle.width.type === "auto" ? left : staffStyle.width.value;
