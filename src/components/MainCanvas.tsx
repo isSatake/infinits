@@ -7,7 +7,7 @@ import {
   offsetBBox,
   scaleSize,
 } from "@/lib/geometry";
-import { paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
+import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
 import { getInitScale } from "@/style/score-preferences";
 import {
   determineCaretStyle,
@@ -143,10 +143,10 @@ export const MainCanvas = () => {
     for (const [id, staff] of staffs.map) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
-      // paintStaff(ctx, staff);
       for (const style of styleMap.get(id) ?? []) {
         const { type } = style.element;
         paintStyle(ctx, style);
+        paintBBox(ctx, style.bbox);
         if (type !== "staff" && type !== "beam" && type !== "tie") {
           ctx.translate(style.width, 0);
         }

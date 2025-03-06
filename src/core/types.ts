@@ -20,7 +20,7 @@ export type PitchAcc = {
 };
 
 export type Beam = "begin" | "continue" | "end";
-export type Tie = "start" | "stop";
+export type Tie = "begin" | "continue" | "end";
 
 export type Note = {
   type: "note";

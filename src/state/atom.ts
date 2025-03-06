@@ -15,7 +15,7 @@ export type PreviewState = {
 };
 export const previewAtom = atom<PreviewState | undefined>(undefined);
 
-type FocusState = { staffId: number; idx: number };
+export type FocusState = { staffId: number; idx: number };
 export const focusAtom = atom<FocusState>({ staffId: 0, idx: 0 });
 export const useFocusHighlighted = (focus: FocusState): boolean => {
   const [highlighted, setHighlighted] = useState<boolean>(true);
@@ -95,3 +95,12 @@ export const accidentalModeIdxAtom = atom<number>(0);
 
 export type ChordSelection = { duration: Duration; root?: ChordRoot };
 export const chordSelectionAtom = atom<ChordSelection | undefined>(undefined);
+
+export type NoteInputMode = "note" | "rest" | "chord";
+export const noteInputModeAtom = atom<NoteInputMode>("note");
+
+export type BeamModes = "beam" | "nobeam";
+export const beamModeAtom = atom<BeamModes>("nobeam");
+
+export type TieModes = "tie" | "notie";
+export const tieModeAtom = atom<TieModes>("notie");
