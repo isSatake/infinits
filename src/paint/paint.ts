@@ -15,7 +15,7 @@ import {
   restPathMap,
   upFlagMap,
 } from "../core/constants";
-import { StaffStyle } from "../style/types";
+import { StaffConnectionStyle, StaffStyle } from "../style/types";
 import { pitchToY } from "../style/style";
 import {
   BarStyle,
@@ -94,6 +94,23 @@ export const paintStaff = (
     ctx.beginPath();
     ctx.moveTo(0, line.y);
     ctx.lineTo(computedWidth, line.y);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+const paintStaffConnection = (
+  ctx: CanvasRenderingContext2D,
+  style: StaffConnectionStyle
+) => {
+  for (const line of style.lines) {
+    ctx.save();
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = line.width;
+    ctx.beginPath();
+    ctx.moveTo(0, line.y);
+    ctx.lineTo(style.to.x, style.to.y + line.y);
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
@@ -238,6 +255,8 @@ export const paintStyle = (
   const { type } = element;
   if (element.type === "staff") {
     paintStaff(ctx, element, style.width);
+  } else if (type === "staffConnection") {
+    paintStaffConnection(ctx, element);
   } else if (type === "clef") {
     paintGClef(ctx, element, 0, 0);
   } else if (type === "note") {

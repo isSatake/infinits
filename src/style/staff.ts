@@ -14,13 +14,17 @@ export const buildConnectionStyle: (
   to
 ) => {
   const toPos = to.position;
+  const toPoint: Point = {
+    x: toPos.x - fromPos.x - fromStyle.width,
+    y: toPos.y - fromPos.y,
+  };
   const connectionStyle: PaintElementStyle<StaffConnectionStyle> = {
-    element: { type: "staffConnection", to: toPos, lines: from.lines },
+    element: { type: "staffConnection", to: toPoint, lines: from.lines },
     width: 0, // 現状connectionの右に何か描画することはないので0にしておく
     bbox: {
       left: 0,
-      top: Math.min(0, toPos.y - fromPos.y),
-      right: toPos.x - fromPos.x - fromStyle.width,
+      top: Math.min(0, toPoint.y),
+      right: toPoint.x,
       bottom: Math.max(
         (from.lines.length - 1) * UNIT,
         toPos.y - fromPos.y + (to.lines.length - 1) * UNIT
