@@ -9,7 +9,6 @@ import {
   caretStyleAtom,
   previewAtom,
   accidentalModeIdxAtom,
-  useStaffs,
   NoteInputMode,
   noteInputModeAtom,
   beamModeAtom,
@@ -23,6 +22,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
 import * as tone from "@/tone";
+import { useStaffs } from "./staff";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;

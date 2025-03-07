@@ -1,6 +1,7 @@
 import { useAtom, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef } from "react";
-import { contextMenuAtom, showDialogAtom, useStaffs } from "@/state/atom";
+import { contextMenuAtom, showDialogAtom } from "@/state/atom";
+import { useStaffs } from "@/hooks/staff";
 
 export const ContextMenu = () => {
   const popoverRef = useRef<HTMLDivElement>(null);

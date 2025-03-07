@@ -13,6 +13,7 @@ export type CaretStyle = { x: number; y: number; width: number; elIdx: number };
 type OptionalColor = { color?: string };
 export type PaintElement =
   | StaffStyle
+  | StaffConnectionStyle
   | NoteStyle
   | RestStyle
   | BeamStyle
@@ -85,9 +86,14 @@ export type TieStyle = {
 export type StaffStyle = {
   type: "staff";
   staff: Staff;
-  position: Point;
+  position: Point; // 左上
   lines: { y: number; width: number }[];
   width: { type: "auto" } | { type: "fixed"; value: number };
+};
+export type StaffConnectionStyle = {
+  type: "staffConnection";
+  to: Point;
+  lines: { y: number; width: number }[];
 };
 export type Pointing = { index: number; type: PointingType };
 type PointingType = "note" | "rest" | "bar" | "clef";
