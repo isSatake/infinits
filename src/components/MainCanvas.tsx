@@ -29,6 +29,7 @@ import {
   elementsAtom,
   focusAtom,
   staffConnectionAtom,
+  uncommitedStaffConnectionAtom,
   useFocusHighlighted,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
@@ -205,6 +206,10 @@ const useMainPointerHandler = () => {
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
   const staffs = useStaffs();
+  const [connections, setConnections] = useAtom(staffConnectionAtom);
+  const [uncommitedConnection, setUncommitedConnection] = useAtom(
+    uncommitedStaffConnectionAtom
+  );
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
   const desktopState = useRef(new DesktopStateMachine());
   const canvasHandler = useRef(
@@ -238,6 +243,7 @@ const useMainPointerHandler = () => {
   const onIdle = useCallback(() => {
     console.log("CanvasState", "idle");
     setPopover(undefined);
+    setUncommitedConnection(undefined);
   }, []);
 
   const onMoveStaff = useCallback(
@@ -248,6 +254,14 @@ const useMainPointerHandler = () => {
     },
     [staffs]
   );
+
+  const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
+    const { staffId, point, offset } = args;
+    const position = { x: point.x - offset.x, y: point.y - offset.y };
+    connections.delete(staffId);
+    setConnections(connections);
+    setUncommitedConnection({ from: staffId, position });
+  };
 
   const onCtxMenuStaff = useCallback(
     ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
@@ -304,6 +318,9 @@ const useMainPointerHandler = () => {
         case "moveStaff":
           onMoveStaff(state);
           break;
+        case "moveConnection":
+          onMoveConnection(state);
+          break;
         case "ctxMenuStaff":
           onCtxMenuStaff(state);
           break;
@@ -358,4 +375,38 @@ const usePointingStaffId = (
     },
     [styleMap]
   );
+};
+
+const getStaffElementAtPoint = (
+  staffId: number,
+  styles: PaintElementStyle<PaintElement>[],
+  desktopPoint: Point
+): number => {
+  const staff = styles.find(
+    (style): style is PaintElementStyle<StaffStyle> =>
+      style.element.type === "staff"
+  );
+  if (!staff) {
+    return -1;
+  }
+  const bb = offsetBBox(staff.bbox, staff.element.position);
+  if (!isPointInBBox(desktopPoint, bb)) {
+    return -1;
+  }
+  let cursor = 0;
+  for (let i in styles) {
+    const style = styles[i];
+    const { width, element } = style;
+    if (
+      element.type !== "staff" &&
+      element.type !== "beam" &&
+      element.type !== "tie"
+    ) {
+      cursor += width;
+    }
+    if (isPointInBBox(desktopPoint, offsetBBox(style.bbox, { x: cursor }))) {
+      return Number(i);
+    }
+  }
+  return -1;
 };

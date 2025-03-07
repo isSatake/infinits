@@ -10,7 +10,8 @@ type DesktopState =
   | ({ type: "addStaff" } & DesktopStateProps["addStaff"])
   | ({ type: "ctxMenuStaff" } & DesktopStateProps["ctxMenuStaff"])
   | ({ type: "moveStaff" } & DesktopStateProps["moveStaff"])
-  | ({ type: "focusStaff" } & DesktopStateProps["focusStaff"]);
+  | ({ type: "focusStaff" } & DesktopStateProps["focusStaff"])
+  | ({ type: "moveConnection" } & DesktopStateProps["moveConnection"]);
 
 export type DesktopStateProps = {
   idle: {};
@@ -22,6 +23,7 @@ export type DesktopStateProps = {
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveStaff: { staffId: number; offset: Point; point: Point };
   focusStaff: { staffId: number };
+  moveConnection: { staffId: number; offset: Point; point: Point };
 };
 
 export class DesktopStateMachine {
@@ -44,6 +46,14 @@ export class DesktopStateMachine {
     fn: (point: Point) => { staffId: number; offset: Point } | void
   ) {
     this._getStaffOnPoint = fn;
+  }
+
+  private _isPointingStaffTail: (
+    point: Point,
+    staffId: number
+  ) => boolean | void = () => {};
+  set isPointingStaffTail(fn: (point: Point, staffId: number) => boolean) {
+    this._isPointingStaffTail = fn;
   }
 
   private _onState = (state: DesktopState) => {};
@@ -85,6 +95,9 @@ export class DesktopStateMachine {
       case "focusStaff":
         this.focusStaffHandler(state);
         break;
+      case "moveConnection":
+        this.moveConnectionHandler(state);
+        break;
     }
   };
 
@@ -97,9 +110,23 @@ export class DesktopStateMachine {
         };
         const point = this._mtx.inverse().transformPoint(htmlPoint);
         const ret = this._getStaffOnPoint(point);
-        this.state = ret
-          ? { type: "downStaff", point, ...ret }
-          : { type: "downCanvas", downMtx: DOMMatrix.fromMatrix(this._mtx) };
+        if (!ret) {
+          this.state = {
+            type: "downCanvas",
+            downMtx: DOMMatrix.fromMatrix(this._mtx),
+          };
+        } else {
+          if (this._isPointingStaffTail(point, ret?.staffId)) {
+            this.state = {
+              type: "moveConnection",
+              staffId: ret.staffId,
+              offset: ret.offset,
+              point,
+            };
+          } else {
+            this.state = { type: "downStaff", point, ...ret };
+          }
+        }
       }
     }
   };
@@ -332,6 +359,23 @@ export class DesktopStateMachine {
 
   private focusStaffHandler = (state: PointerState) => {
     switch (state.type) {
+      case "idle":
+        this.state = { type: "idle" };
+        break;
+    }
+  };
+
+  private moveConnectionHandler = (state: PointerState) => {
+    switch (state.type) {
+      case "move":
+        if (this.state.type !== "moveConnection") {
+          return;
+        }
+        this.state = {
+          ...this.state,
+          point: this._mtx.inverse().transformPoint(state.point),
+        };
+        break;
       case "idle":
         this.state = { type: "idle" };
         break;
