@@ -19,6 +19,7 @@ import {
   PaintElement,
   PaintElementStyle,
   Pointing,
+  StaffConnectionStyle,
 } from "@/style/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -27,14 +28,16 @@ import {
   contextMenuAtom,
   elementsAtom,
   focusAtom,
+  staffConnectionAtom,
   useFocusHighlighted,
-  useStaffs,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { StaffStyle } from "@/style/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
+import { useStaffs } from "@/hooks/staff";
+import { buildConnectionStyle } from "@/style/staff";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -54,6 +57,7 @@ export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
+  const staffConnection = useAtomValue(staffConnectionAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
@@ -96,9 +100,30 @@ export const MainCanvas = () => {
       });
       map.set(id, styles);
     }
+    for (const [fromId, from] of staffs.map) {
+      const toId = staffConnection.get(fromId);
+      if (toId === undefined) {
+        continue;
+      }
+      const to = staffs.get(toId);
+      if (!to) {
+        continue;
+      }
+      const fromPos = from.position;
+      const fromStyle = map
+        .get(fromId)
+        ?.find(
+          (style): style is PaintElementStyle<StaffStyle> =>
+            style.element.type === "staff"
+        );
+      if (!fromStyle) {
+        continue;
+      }
+      map.get(fromId)?.push(buildConnectionStyle(from, fromPos, fromStyle, to));
+    }
     console.log("new style map", map);
     setStyleMap(map);
-  }, [staffs.map, elements, pointing]);
+  }, [staffs.map, staffConnection, elements, pointing]);
 
   // caret style
   useEffect(() => {

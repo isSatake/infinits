@@ -3,7 +3,6 @@ import {
   chordSelectionAtom,
   elementsAtom,
   focusAtom,
-  useStaffs,
 } from "@/state/atom";
 import { useAccidentalMode } from "@/hooks/accidental";
 import React, { FC } from "react";
@@ -21,6 +20,7 @@ import { convertPitchToRoot } from "@/core/pitch";
 import { chordToPitchAcc } from "@/core/chord";
 import * as tone from "@/tone";
 import { useElementsComposer } from "@/hooks/input";
+import { useStaffs } from "@/hooks/staff";
 
 export const ChordSelector = () => {
   const [chordSelection, setChordSelection] = useAtom(chordSelectionAtom);
