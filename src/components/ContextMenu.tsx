@@ -2,31 +2,25 @@ import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback, useEffect, useRef } from "react";
 import { contextMenuAtom, showDialogAtom } from "@/state/atom";
 import { useStaffs } from "@/hooks/staff";
+import { Dialog } from "./Dialog";
 
 export const ContextMenu = () => {
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [popover, setPopover] = useAtom(contextMenuAtom);
   const onClose = useCallback(() => setPopover(undefined), []);
 
-  useEffect(() => {
-    const el = popoverRef.current!;
-    if (popover) {
-      el.style.left = `${popover.htmlPoint.x}px`;
-      el.style.top = `${popover.htmlPoint.y}px`;
-      el.showPopover();
-    } else {
-      el.hidePopover();
-    }
-  }, [popover]);
-
   return (
-    // @ts-ignore
-    <div id="contextMenu" popover="manual" ref={popoverRef}>
+    <Dialog
+      open={!!popover}
+      position={popover?.htmlPoint}
+      onClose={onClose}
+      ref={dialogRef}
+    >
       {popover?.type === "staff" && (
         <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
       )}
       {popover?.type === "canvas" && <CanvasContextMenu />}
-    </div>
+    </Dialog>
   );
 };
 
