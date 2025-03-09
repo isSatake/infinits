@@ -19,7 +19,6 @@ import {
   PaintElement,
   PaintElementStyle,
   Pointing,
-  StaffConnectionStyle,
 } from "@/style/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -29,6 +28,7 @@ import {
   elementsAtom,
   focusAtom,
   staffConnectionAtom,
+  uncommitedStaffConnectionAtom,
   useFocusHighlighted,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
@@ -58,6 +58,8 @@ export const MainCanvas = () => {
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
   const staffConnection = useAtomValue(staffConnectionAtom);
+  const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
+  console.log("uncommitedConnection", uncommitedConnection);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
@@ -100,18 +102,23 @@ export const MainCanvas = () => {
       });
       map.set(id, styles);
     }
-    for (const [fromId, from] of staffs.map) {
-      const toId = staffConnection.get(fromId);
-      if (toId === undefined) {
+    // connection
+    for (const [id, _] of staffs.map) {
+      let toPos;
+      if (uncommitedConnection?.from === id) {
+        toPos = uncommitedConnection.position;
+      } else {
+        const toId = staffConnection.get(id);
+        if (toId === undefined) {
+          continue;
+        }
+        toPos = staffs.get(toId)?.position;
+      }
+      if (!toPos) {
         continue;
       }
-      const to = staffs.get(toId);
-      if (!to) {
-        continue;
-      }
-      const fromPos = from.position;
       const fromStyle = map
-        .get(fromId)
+        .get(id)
         ?.find(
           (style): style is PaintElementStyle<StaffStyle> =>
             style.element.type === "staff"
@@ -119,11 +126,11 @@ export const MainCanvas = () => {
       if (!fromStyle) {
         continue;
       }
-      map.get(fromId)?.push(buildConnectionStyle(from, fromPos, fromStyle, to));
+      map.get(id)?.push(buildConnectionStyle(fromStyle, toPos));
     }
     console.log("new style map", map);
     setStyleMap(map);
-  }, [staffs.map, staffConnection, elements, pointing]);
+  }, [staffs.map, staffConnection, uncommitedConnection, elements, pointing]);
 
   // caret style
   useEffect(() => {
@@ -205,6 +212,8 @@ const useMainPointerHandler = () => {
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
   const staffs = useStaffs();
+  const [connections, setConnections] = useAtom(staffConnectionAtom);
+  const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
   const desktopState = useRef(new DesktopStateMachine());
   const canvasHandler = useRef(
@@ -215,29 +224,54 @@ const useMainPointerHandler = () => {
     desktopState.current.mtx = mtx;
   }, [mtx]);
 
-  const dndStaff = useCallback(
-    (desktopPoint: Point) => {
-      const staffId = getStaffIdOnPoint(desktopPoint);
-      const staffStyle = staffs.get(staffId);
-      if (!staffStyle) {
-        return;
-      }
-      const offset = {
-        x: desktopPoint.x - staffStyle.position.x,
-        y: desktopPoint.y - staffStyle.position.y,
-      };
-      return { staffId, offset };
-    },
-    [getStaffIdOnPoint, staffs]
-  );
+  const dndStaff = (desktopPoint: Point) => {
+    const staffId = getStaffIdOnPoint(desktopPoint);
+    const staffStyle = staffs.get(staffId);
+    if (!staffStyle) {
+      return;
+    }
+    const offset = {
+      x: desktopPoint.x - staffStyle.position.x,
+      y: desktopPoint.y - staffStyle.position.y,
+    };
+    return { staffId, offset };
+  };
 
-  useEffect(() => {
-    desktopState.current.getStaffOnPoint = dndStaff;
-  }, [dndStaff]);
+  desktopState.current.getStaffOnPoint = dndStaff;
+  desktopState.current.isPointingStaffTail = (
+    desktopPoint: Point,
+    staffId: number
+  ) => {
+    const staffStyle = staffs.get(staffId);
+    if (!staffStyle) {
+      return false;
+    }
+    const staffWidth =
+      styleMap.get(staffId)?.reduce((acc, style) => {
+        return style.element.type !== "staff" &&
+          style.element.type !== "beam" &&
+          style.element.type !== "tie"
+          ? (acc += style.width)
+          : 0;
+      }, 0) ?? 0;
+    return isPointInBBox(
+      desktopPoint,
+      offsetBBox(
+        {
+          left: staffWidth * 0.7,
+          right: staffWidth,
+          top: 0,
+          bottom: staffStyle.lines.length * UNIT,
+        },
+        staffStyle.position
+      )
+    );
+  };
 
   const onIdle = useCallback(() => {
     console.log("CanvasState", "idle");
     setPopover(undefined);
+    setUncommitedConnection(undefined);
   }, []);
 
   const onMoveStaff = useCallback(
@@ -248,6 +282,20 @@ const useMainPointerHandler = () => {
     },
     [staffs]
   );
+
+  const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
+    const { staffId, point: position } = args;
+    connections.delete(staffId);
+    setConnections(connections);
+    setUncommitedConnection({ from: staffId, position });
+  };
+
+  const onConnectStaff = (args: DesktopStateProps["connectStaff"]) => {
+    const { from, to } = args;
+    connections.set(from, to);
+    setConnections(connections);
+    setUncommitedConnection(undefined);
+  };
 
   const onCtxMenuStaff = useCallback(
     ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
@@ -304,6 +352,12 @@ const useMainPointerHandler = () => {
         case "moveStaff":
           onMoveStaff(state);
           break;
+        case "moveConnection":
+          onMoveConnection(state);
+          break;
+        case "connectStaff":
+          onConnectStaff(state);
+          break;
         case "ctxMenuStaff":
           onCtxMenuStaff(state);
           break;
@@ -358,4 +412,38 @@ const usePointingStaffId = (
     },
     [styleMap]
   );
+};
+
+const getStaffElementAtPoint = (
+  staffId: number,
+  styles: PaintElementStyle<PaintElement>[],
+  desktopPoint: Point
+): number => {
+  const staff = styles.find(
+    (style): style is PaintElementStyle<StaffStyle> =>
+      style.element.type === "staff"
+  );
+  if (!staff) {
+    return -1;
+  }
+  const bb = offsetBBox(staff.bbox, staff.element.position);
+  if (!isPointInBBox(desktopPoint, bb)) {
+    return -1;
+  }
+  let cursor = 0;
+  for (let i in styles) {
+    const style = styles[i];
+    const { width, element } = style;
+    if (
+      element.type !== "staff" &&
+      element.type !== "beam" &&
+      element.type !== "tie"
+    ) {
+      cursor += width;
+    }
+    if (isPointInBBox(desktopPoint, offsetBBox(style.bbox, { x: cursor }))) {
+      return Number(i);
+    }
+  }
+  return -1;
 };

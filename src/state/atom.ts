@@ -42,6 +42,10 @@ export const staffMapAtom = atom<Map<number, StaffStyle>>(new Map());
 
 export const staffConnectionAtom = atom<Map<number, number>>(new Map([[0, 1]]));
 
+export const uncommitedStaffConnectionAtom = atom<
+  { from: number; position: Point } | undefined
+>(undefined);
+
 export const contextMenuAtom = atom<
   | {
       htmlPoint: Point;
