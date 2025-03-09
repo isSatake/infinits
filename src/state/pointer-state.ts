@@ -1,7 +1,7 @@
 import { Point, magnitude } from "@/lib/geometry";
 
 export type PointerState =
-  | { type: "idle" }
+  | { type: "idle"; point?: Point }
   | { type: "down"; down: React.PointerEvent }
   | { type: "longDown"; down: React.PointerEvent }
   | {
@@ -110,7 +110,7 @@ export class PointerEventStateMachine {
       (ev: React.PointerEvent) => {
         const point = { x: ev.clientX, y: ev.clientY };
         this.state = { type: "singleTap", point };
-        this.setIdle(true, () => {
+        this.setIdle(point, true, () => {
           this.state = { type: "click", point };
         });
         window.clearTimeout(this.longDownTimer);
@@ -138,7 +138,11 @@ export class PointerEventStateMachine {
   ]);
 
   private longDownHandler = new Map([
-    ["up", () => this.setIdle(false)],
+    [
+      "up",
+      (ev: React.PointerEvent) =>
+        this.setIdle({ x: ev.clientX, y: ev.clientY }, false),
+    ],
     [
       "down",
       (ev: React.PointerEvent) => {
@@ -206,7 +210,11 @@ export class PointerEventStateMachine {
   ]);
 
   private keepDownHandler = new Map([
-    ["up", () => this.setIdle(false)],
+    [
+      "up",
+      (ev: React.PointerEvent) =>
+        this.setIdle({ x: ev.clientX, y: ev.clientY }, false),
+    ],
     [
       "move",
       (ev: React.PointerEvent, down: React.PointerEvent) => {
@@ -233,7 +241,11 @@ export class PointerEventStateMachine {
         this.state = { type: "move", diff, point, down };
       },
     ],
-    ["up", () => this.setIdle(false)],
+    [
+      "up",
+      (ev: React.PointerEvent) =>
+        this.setIdle({ x: ev.clientX, y: ev.clientY }, false),
+    ],
     [
       "down",
       (ev: React.PointerEvent) => {
@@ -278,11 +290,9 @@ export class PointerEventStateMachine {
     [
       "up",
       (ev: React.PointerEvent) => {
-        this.state = {
-          type: "doubleClick",
-          point: { x: ev.clientX, y: ev.clientY },
-        };
-        this.setIdle(false);
+        const point = { x: ev.clientX, y: ev.clientY };
+        this.state = { type: "doubleClick", point };
+        this.setIdle(point, false);
       },
     ],
   ]);
@@ -298,7 +308,11 @@ export class PointerEventStateMachine {
         };
       },
     ],
-    ["up", () => this.setIdle(false)],
+    [
+      "up",
+      (ev: React.PointerEvent) =>
+        this.setIdle({ x: ev.clientX, y: ev.clientY }, false),
+    ],
   ]);
 
   private pinchHandler = new Map([
@@ -335,10 +349,10 @@ export class PointerEventStateMachine {
     ],
   ]);
 
-  private setIdle = (shouldDelay: boolean, fn?: () => void) => {
+  private setIdle = (point: Point, shouldDelay: boolean, fn?: () => void) => {
     const callback = () => {
       fn?.();
-      this.state = { type: "idle" };
+      this.state = { type: "idle", point };
       this.clearIdleTimer();
     };
     if (shouldDelay) {

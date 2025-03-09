@@ -290,6 +290,13 @@ const useMainPointerHandler = () => {
     setUncommitedConnection({ from: staffId, position });
   };
 
+  const onConnectStaff = (args: DesktopStateProps["connectStaff"]) => {
+    const { from, to } = args;
+    connections.set(from, to);
+    setConnections(connections);
+    setUncommitedConnection(undefined);
+  };
+
   const onCtxMenuStaff = useCallback(
     ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
       setPopover({ htmlPoint, staffId });
@@ -347,6 +354,9 @@ const useMainPointerHandler = () => {
           break;
         case "moveConnection":
           onMoveConnection(state);
+          break;
+        case "connectStaff":
+          onConnectStaff(state);
           break;
         case "ctxMenuStaff":
           onCtxMenuStaff(state);

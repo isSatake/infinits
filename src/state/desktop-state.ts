@@ -11,7 +11,8 @@ type DesktopState =
   | ({ type: "ctxMenuStaff" } & DesktopStateProps["ctxMenuStaff"])
   | ({ type: "moveStaff" } & DesktopStateProps["moveStaff"])
   | ({ type: "focusStaff" } & DesktopStateProps["focusStaff"])
-  | ({ type: "moveConnection" } & DesktopStateProps["moveConnection"]);
+  | ({ type: "moveConnection" } & DesktopStateProps["moveConnection"])
+  | ({ type: "connectStaff" } & DesktopStateProps["connectStaff"]);
 
 export type DesktopStateProps = {
   idle: {};
@@ -24,6 +25,7 @@ export type DesktopStateProps = {
   moveStaff: { staffId: number; offset: Point; point: Point };
   focusStaff: { staffId: number };
   moveConnection: { staffId: number; point: Point };
+  connectStaff: { from: number; to: number };
 };
 
 export class DesktopStateMachine {
@@ -117,7 +119,11 @@ export class DesktopStateMachine {
           };
         } else {
           if (this._isPointingStaffTail(point, ret?.staffId)) {
-          this.state = { type: "moveConnection", staffId: ret.staffId, point };
+            this.state = {
+              type: "moveConnection",
+              staffId: ret.staffId,
+              point,
+            };
           } else {
             this.state = { type: "downStaff", point, ...ret };
           }
@@ -372,6 +378,18 @@ export class DesktopStateMachine {
         };
         break;
       case "idle":
+        if (this.state.type !== "moveConnection") {
+          return;
+        }
+        const point = this._mtx.inverse().transformPoint(state.point);
+        const ret = this._getStaffOnPoint(point);
+        if (ret) {
+          this.state = {
+            type: "connectStaff",
+            from: this.state.staffId,
+            to: ret.staffId,
+          };
+        }
         this.state = { type: "idle" };
         break;
     }
