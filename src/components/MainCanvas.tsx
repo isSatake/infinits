@@ -238,8 +238,34 @@ const useMainPointerHandler = () => {
   };
 
   desktopState.current.getStaffOnPoint = dndStaff;
-  desktopState.current.isPointingStaffTail = (desktopPoint: Point) => {
-    return false;
+  desktopState.current.isPointingStaffTail = (
+    desktopPoint: Point,
+    staffId: number
+  ) => {
+    const staffStyle = staffs.get(staffId);
+    if (!staffStyle) {
+      return false;
+    }
+    const staffWidth =
+      styleMap.get(staffId)?.reduce((acc, style) => {
+        return style.element.type !== "staff" &&
+          style.element.type !== "beam" &&
+          style.element.type !== "tie"
+          ? (acc += style.width)
+          : 0;
+      }, 0) ?? 0;
+    return isPointInBBox(
+      desktopPoint,
+      offsetBBox(
+        {
+          left: staffWidth * 0.7,
+          right: staffWidth,
+          top: 0,
+          bottom: staffStyle.lines.length * UNIT,
+        },
+        staffStyle.position
+      )
+    );
   };
 
   const onIdle = useCallback(() => {
@@ -258,8 +284,7 @@ const useMainPointerHandler = () => {
   );
 
   const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
-    const { staffId, point, offset } = args;
-    const position = { x: point.x - offset.x, y: point.y - offset.y };
+    const { staffId, point: position } = args;
     connections.delete(staffId);
     setConnections(connections);
     setUncommitedConnection({ from: staffId, position });

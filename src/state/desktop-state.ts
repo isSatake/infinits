@@ -23,7 +23,7 @@ export type DesktopStateProps = {
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveStaff: { staffId: number; offset: Point; point: Point };
   focusStaff: { staffId: number };
-  moveConnection: { staffId: number; offset: Point; point: Point };
+  moveConnection: { staffId: number; point: Point };
 };
 
 export class DesktopStateMachine {
@@ -117,12 +117,7 @@ export class DesktopStateMachine {
           };
         } else {
           if (this._isPointingStaffTail(point, ret?.staffId)) {
-            this.state = {
-              type: "moveConnection",
-              staffId: ret.staffId,
-              offset: ret.offset,
-              point,
-            };
+          this.state = { type: "moveConnection", staffId: ret.staffId, point };
           } else {
             this.state = { type: "downStaff", point, ...ret };
           }
