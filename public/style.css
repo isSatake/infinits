@@ -551,7 +551,7 @@ body {
   pointer-events: none;
 }
 
-#contextMenu {
+.contextMenu {
   box-shadow: 5px 5px;
   border: black 1px solid;
 
@@ -564,9 +564,7 @@ body {
   button:active {
     background: #aaa;
   }
-}
 
-#contextMenu > * {
   font-size: 4em;
   padding: 20px;
   user-select: none;

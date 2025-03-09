@@ -5,17 +5,11 @@ import { useStaffs } from "@/hooks/staff";
 import { Dialog } from "./Dialog";
 
 export const ContextMenu = () => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const [popover, setPopover] = useAtom(contextMenuAtom);
   const onClose = useCallback(() => setPopover(undefined), []);
 
   return (
-    <Dialog
-      open={!!popover}
-      position={popover?.htmlPoint}
-      onClose={onClose}
-      ref={dialogRef}
-    >
+    <Dialog className={"contextMenu"} open={!!popover} position={popover?.htmlPoint} onClose={onClose}>
       {popover?.type === "staff" && (
         <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
       )}
