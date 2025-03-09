@@ -8,6 +8,7 @@ type DesktopState =
   | ({ type: "pan" } & DesktopStateProps["pan"])
   | ({ type: "zoom" } & DesktopStateProps["zoom"])
   | ({ type: "addStaff" } & DesktopStateProps["addStaff"])
+  | ({ type: "ctxMenu" } & DesktopStateProps["ctxMenu"])
   | ({ type: "ctxMenuStaff" } & DesktopStateProps["ctxMenuStaff"])
   | ({ type: "moveStaff" } & DesktopStateProps["moveStaff"])
   | ({ type: "focusStaff" } & DesktopStateProps["focusStaff"])
@@ -21,6 +22,7 @@ export type DesktopStateProps = {
   pan: { downMtx: DOMMatrix; translated: DOMMatrix };
   zoom: { downMtx: DOMMatrix; translated: DOMMatrix };
   addStaff: { point: Point };
+  ctxMenu: { htmlPoint: Point };
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveStaff: { staffId: number; offset: Point; point: Point };
   focusStaff: { staffId: number };
@@ -198,6 +200,12 @@ export class DesktopStateMachine {
         this.state = {
           type: "addStaff",
           point: this._mtx.inverse().transformPoint(state.point),
+        };
+        break;
+      case "longDown":
+        this.state = {
+          type: "ctxMenu",
+          htmlPoint: { x: state.down.clientX, y: state.down.clientY },
         };
         break;
     }

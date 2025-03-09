@@ -1,13 +1,12 @@
 import { useAtom, useSetAtom } from "jotai";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { FC, useCallback, useEffect, useRef } from "react";
 import { contextMenuAtom, showDialogAtom } from "@/state/atom";
 import { useStaffs } from "@/hooks/staff";
 
 export const ContextMenu = () => {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [popover, setPopover] = useAtom(contextMenuAtom);
-  const setShowDialog = useSetAtom(showDialogAtom);
-  const staffs = useStaffs();
+  const onClose = useCallback(() => setPopover(undefined), []);
 
   useEffect(() => {
     const el = popoverRef.current!;
@@ -20,14 +19,36 @@ export const ContextMenu = () => {
     }
   }, [popover]);
 
-  const onClickDelete = useCallback(() => {
+  return (
+    // @ts-ignore
+    <div id="contextMenu" popover="manual" ref={popoverRef}>
+      {popover?.type === "staff" && (
+        <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
+      )}
+      {popover?.type === "canvas" && <CanvasContextMenu />}
+    </div>
+  );
+};
+
+const CanvasContextMenu = () => {
+  return <button>Add Text</button>;
+};
+
+const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
+  staffId,
+  onClose,
+}) => {
+  const setShowDialog = useSetAtom(showDialogAtom);
+  const staffs = useStaffs();
+
+  const onClickDelete = () => {
     setShowDialog({
       title: "Delete?",
       buttons: [
         {
           label: "OK",
           onClick: () => {
-            staffs.remove(popover!.staffId);
+            staffs.remove(staffId);
             setShowDialog(undefined);
           },
         },
@@ -39,13 +60,8 @@ export const ContextMenu = () => {
         },
       ],
     });
-    setPopover(undefined);
-  }, [popover, staffs]);
+    onClose();
+  };
 
-  return (
-    // @ts-ignore
-    <div id="contextMenu" popover="manual" ref={popoverRef}>
-      <button onClick={onClickDelete}>Delete</button>
-    </div>
-  );
+  return <button onClick={onClickDelete}>Delete</button>;
 };

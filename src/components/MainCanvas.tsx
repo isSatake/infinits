@@ -299,7 +299,7 @@ const useMainPointerHandler = () => {
 
   const onCtxMenuStaff = useCallback(
     ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
-      setPopover({ htmlPoint, staffId });
+      setPopover({type:"staff", htmlPoint, staffId });
     },
     []
   );
@@ -312,6 +312,10 @@ const useMainPointerHandler = () => {
     },
     []
   );
+
+  const onCtxMenu = ({ htmlPoint }: DesktopStateProps["ctxMenu"]) => {
+    setPopover({ type: "canvas", htmlPoint });
+  };
 
   const onPan = useCallback(({ translated }: DesktopStateProps["pan"]) => {
     console.log("CanvasState", "pan");
@@ -357,6 +361,9 @@ const useMainPointerHandler = () => {
           break;
         case "connectStaff":
           onConnectStaff(state);
+          break;
+        case "ctxMenu":
+          onCtxMenu(state);
           break;
         case "ctxMenuStaff":
           onCtxMenuStaff(state);

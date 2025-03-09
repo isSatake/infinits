@@ -46,13 +46,10 @@ export const uncommitedStaffConnectionAtom = atom<
   { from: number; position: Point } | undefined
 >(undefined);
 
-export const contextMenuAtom = atom<
-  | {
-      htmlPoint: Point;
-      staffId: number;
-    }
-  | undefined
->(undefined);
+export type ContextMenu = {
+  htmlPoint: Point;
+} & ({ type: "staff"; staffId: number } | { type: "canvas" });
+export const contextMenuAtom = atom<ContextMenu | undefined>(undefined);
 
 export const showDialogAtom = atom<
   | {
