@@ -600,6 +600,10 @@ body {
   }
 }
 
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .chordRootSelector {
   display: flex;
   width: 100%;
