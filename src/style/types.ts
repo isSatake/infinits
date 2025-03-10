@@ -96,6 +96,10 @@ export type StaffStyle = {
   lines: { y: number; width: number }[];
   width: { type: "auto" } | { type: "fixed"; value: number };
 };
+export type FileStyle = {
+  type: "file";
+  position: Point;
+}
 export type RootObj = StaffStyle | TextStyle;
 export type StaffConnectionStyle = {
   type: "staffConnection";
