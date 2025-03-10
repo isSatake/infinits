@@ -20,7 +20,8 @@ export type PaintElement =
   | BarStyle
   | ClefStyle
   | GapStyle
-  | TieStyle;
+  | TieStyle
+  | TextStyle;
 // 1音
 export type NoteStyle = {
   type: "note";
@@ -83,6 +84,11 @@ export type TieStyle = {
   cpHigh: Point;
   end: Point;
 } & OptionalColor;
+export type TextStyle = {
+  type: "text";
+  position: Point;
+  text: string;
+};
 export type StaffStyle = {
   type: "staff";
   staff: Staff;
@@ -90,6 +96,7 @@ export type StaffStyle = {
   lines: { y: number; width: number }[];
   width: { type: "auto" } | { type: "fixed"; value: number };
 };
+export type RootObj = StaffStyle | TextStyle;
 export type StaffConnectionStyle = {
   type: "staffConnection";
   to: Point;

@@ -8,6 +8,7 @@ type DesktopState =
   | ({ type: "pan" } & DesktopStateProps["pan"])
   | ({ type: "zoom" } & DesktopStateProps["zoom"])
   | ({ type: "addStaff" } & DesktopStateProps["addStaff"])
+  | ({ type: "ctxMenu" } & DesktopStateProps["ctxMenu"])
   | ({ type: "ctxMenuStaff" } & DesktopStateProps["ctxMenuStaff"])
   | ({ type: "moveStaff" } & DesktopStateProps["moveStaff"])
   | ({ type: "focusStaff" } & DesktopStateProps["focusStaff"])
@@ -21,6 +22,7 @@ export type DesktopStateProps = {
   pan: { downMtx: DOMMatrix; translated: DOMMatrix };
   zoom: { downMtx: DOMMatrix; translated: DOMMatrix };
   addStaff: { point: Point };
+  ctxMenu: { htmlPoint: Point; desktopPoint: Point };
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveStaff: { staffId: number; offset: Point; point: Point };
   focusStaff: { staffId: number };
@@ -87,6 +89,9 @@ export class DesktopStateMachine {
         break;
       case "downStaff":
         this.downStaffHandler(state);
+        break;
+      case "ctxMenu":
+        this.ctxMenuHandler(state);
         break;
       case "ctxMenuStaff":
         this.ctxMenuStaffHandler(state);
@@ -198,6 +203,14 @@ export class DesktopStateMachine {
         this.state = {
           type: "addStaff",
           point: this._mtx.inverse().transformPoint(state.point),
+        };
+        break;
+      case "longDown":
+        const down = { x: state.down.clientX, y: state.down.clientY };
+        this.state = {
+          type: "ctxMenu",
+          htmlPoint: down,
+          desktopPoint: this._mtx.inverse().transformPoint(down),
         };
         break;
     }
@@ -331,8 +344,11 @@ export class DesktopStateMachine {
     }
   };
 
-  // done ctx menuはPointerState関係ない。どう書く？promiseでも返す？
-  // 別のstaffでlong downしたらctx menu継続したいが、downが先に来てしまう
+  private ctxMenuHandler = (state: PointerState) => {
+    // context menuはmodal dialogなのでPointerStateを取れない。何もしない。
+    this.state = { type: "idle" };
+  };
+
   private ctxMenuStaffHandler = (state: PointerState) => {
     switch (state.type) {
       case "down":

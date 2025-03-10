@@ -1,33 +1,79 @@
-import { useAtom, useSetAtom } from "jotai";
-import React, { useCallback, useEffect, useRef } from "react";
 import { contextMenuAtom, showDialogAtom } from "@/state/atom";
-import { useStaffs } from "@/hooks/staff";
+import { useAtom, useSetAtom } from "jotai";
+import React, { FC, useCallback } from "react";
+import { Dialog } from "./Dialog";
+import { useObjects } from "@/hooks/object";
+import { Point } from "@/lib/geometry";
 
 export const ContextMenu = () => {
-  const popoverRef = useRef<HTMLDivElement>(null);
   const [popover, setPopover] = useAtom(contextMenuAtom);
+  const onClose = useCallback(() => setPopover(undefined), []);
+
+  return (
+    <Dialog
+      className={"contextMenu"}
+      open={!!popover}
+      position={popover?.htmlPoint}
+      onClose={onClose}
+    >
+      {popover?.type === "staff" && (
+        <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
+      )}
+      {popover?.type === "canvas" && (
+        <CanvasContextMenu
+          desktopPoint={popover.desktopPoint}
+          onClose={onClose}
+        />
+      )}
+    </Dialog>
+  );
+};
+
+const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
+  desktopPoint,
+  onClose,
+}) => {
   const setShowDialog = useSetAtom(showDialogAtom);
-  const staffs = useStaffs();
-
-  useEffect(() => {
-    const el = popoverRef.current!;
-    if (popover) {
-      el.style.left = `${popover.htmlPoint.x}px`;
-      el.style.top = `${popover.htmlPoint.y}px`;
-      el.showPopover();
-    } else {
-      el.hidePopover();
-    }
-  }, [popover]);
-
-  const onClickDelete = useCallback(() => {
+  const rootObjs = useObjects();
+  const onClick = () => {
     setShowDialog({
+      type: "input",
+      placeholder: "Add Text",
+      buttons: [
+        {
+          label: "OK",
+          onClick: (text: string) => {
+            rootObjs.add({ type: "text", position: desktopPoint, text });
+            setShowDialog(undefined);
+          },
+        },
+        {
+          label: "Cancel",
+          onClick: () => setShowDialog(undefined),
+        },
+      ],
+    });
+    onClose();
+  };
+  return <button onClick={onClick}>Add Text</button>;
+};
+
+const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
+  staffId,
+  onClose,
+}) => {
+  const setShowDialog = useSetAtom(showDialogAtom);
+  const rootObjs = useObjects();
+
+  const onClickDelete = () => {
+    setShowDialog({
+      type: "message",
       title: "Delete?",
       buttons: [
         {
           label: "OK",
           onClick: () => {
-            staffs.remove(popover!.staffId);
+            rootObjs.remove(staffId);
             setShowDialog(undefined);
           },
         },
@@ -39,13 +85,8 @@ export const ContextMenu = () => {
         },
       ],
     });
-    setPopover(undefined);
-  }, [popover, staffs]);
+    onClose();
+  };
 
-  return (
-    // @ts-ignore
-    <div id="contextMenu" popover="manual" ref={popoverRef}>
-      <button onClick={onClickDelete}>Delete</button>
-    </div>
-  );
+  return <button onClick={onClickDelete}>Delete</button>;
 };

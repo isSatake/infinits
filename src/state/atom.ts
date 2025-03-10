@@ -1,6 +1,6 @@
 import { Point } from "@/lib/geometry";
 import { ChordRoot, Duration, MusicalElement } from "@/core/types";
-import { CaretStyle } from "@/style/types";
+import { CaretStyle, RootObj, TextStyle } from "@/style/types";
 import { atom, useAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StaffStyle } from "../style/types";
@@ -37,30 +37,32 @@ export const elementsAtom = atom<Map<number, MusicalElement[]>>(
   new Map([[0, []]])
 );
 
-// staff id -> staff style
-export const staffMapAtom = atom<Map<number, StaffStyle>>(new Map());
-
 export const staffConnectionAtom = atom<Map<number, number>>(new Map([[0, 1]]));
 
 export const uncommitedStaffConnectionAtom = atom<
   { from: number; position: Point } | undefined
 >(undefined);
 
-export const contextMenuAtom = atom<
-  | {
-      htmlPoint: Point;
-      staffId: number;
-    }
-  | undefined
->(undefined);
+export type ContextMenu = {
+  htmlPoint: Point;
+} & (
+  | { type: "staff"; staffId: number }
+  | { type: "canvas"; desktopPoint: Point }
+);
+export const contextMenuAtom = atom<ContextMenu | undefined>(undefined);
 
-export const showDialogAtom = atom<
+export type DialogState =
   | {
+      type: "message";
       title: string;
-      buttons?: { label: string; onClick: () => void }[];
+      buttons: { label: string; onClick: () => void }[];
     }
-  | undefined
->(undefined);
+  | {
+      type: "input";
+      placeholder: string;
+      buttons: { label: string; onClick: (value: string) => void }[];
+    };
+export const showDialogAtom = atom<DialogState | undefined>(undefined);
 
 export const accidentalModeIdxAtom = atom<number>(0);
 
@@ -75,3 +77,5 @@ export const beamModeAtom = atom<BeamModes>("nobeam");
 
 export type TieModes = "tie" | "notie";
 export const tieModeAtom = atom<TieModes>("notie");
+
+export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());

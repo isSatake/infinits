@@ -36,8 +36,8 @@ import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { StaffStyle } from "@/style/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import { useStaffs } from "@/hooks/staff";
 import { buildConnectionStyle } from "@/style/staff";
+import { useObjects } from "@/hooks/object";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -59,7 +59,6 @@ export const MainCanvas = () => {
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
   const staffConnection = useAtomValue(staffConnectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
-  console.log("uncommitedConnection", uncommitedConnection);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
@@ -72,7 +71,7 @@ export const MainCanvas = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const staffs = useStaffs();
+  const rootObjs = useObjects();
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -93,17 +92,27 @@ export const MainCanvas = () => {
   // element style
   useEffect(() => {
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
-    for (const [id, staff] of staffs.map) {
-      const styles = determinePaintElementStyle({
-        elements: elements.get(id) ?? [],
-        gapWidth: UNIT,
-        staffStyle: staff,
-        pointing,
-      });
-      map.set(id, styles);
+    for (const [id, obj] of rootObjs.map) {
+      if (obj.type === "staff") {
+        const styles = determinePaintElementStyle({
+          elements: elements.get(id) ?? [],
+          gapWidth: UNIT,
+          staffStyle: obj,
+          pointing,
+        });
+        map.set(id, styles);
+      } else {
+        map.set(id, [
+          {
+            element: obj,
+            width: 0,
+            bbox: { left: 0, right: 0, top: 0, bottom: 0 },
+          },
+        ]);
+      }
     }
     // connection
-    for (const [id, _] of staffs.map) {
+    for (const [id, _] of rootObjs.map) {
       let toPos;
       if (uncommitedConnection?.from === id) {
         toPos = uncommitedConnection.position;
@@ -112,7 +121,7 @@ export const MainCanvas = () => {
         if (toId === undefined) {
           continue;
         }
-        toPos = staffs.get(toId)?.position;
+        toPos = rootObjs.get(toId)?.position;
       }
       if (!toPos) {
         continue;
@@ -128,9 +137,10 @@ export const MainCanvas = () => {
       }
       map.get(id)?.push(buildConnectionStyle(fromStyle, toPos));
     }
+
     console.log("new style map", map);
     setStyleMap(map);
-  }, [staffs.map, staffConnection, uncommitedConnection, elements, pointing]);
+  }, [rootObjs.map, staffConnection, uncommitedConnection, elements, pointing]);
 
   // caret style
   useEffect(() => {
@@ -172,9 +182,9 @@ export const MainCanvas = () => {
     ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    for (const [id, staff] of staffs.map) {
+    for (const [id, obj] of rootObjs.map) {
       ctx.save();
-      ctx.translate(staff.position.x, staff.position.y);
+      ctx.translate(obj.position.x, obj.position.y);
       for (const style of styleMap.get(id) ?? []) {
         const { type } = style.element;
         paintStyle(ctx, style);
@@ -185,7 +195,7 @@ export const MainCanvas = () => {
       }
       ctx.restore();
     }
-    const currentStaff = staffs.get(focus.staffId);
+    const currentStaff = rootObjs.get(focus.staffId);
     const caret = caretStyle.at(focus.idx);
     if (currentStaff && caret) {
       ctx.save();
@@ -194,7 +204,15 @@ export const MainCanvas = () => {
       ctx.restore();
     }
     ctx.restore();
-  }, [mtx, staffs, styleMap, caretStyle, focus, focusHighlighted, canvasSize]);
+  }, [
+    mtx,
+    rootObjs,
+    styleMap,
+    caretStyle,
+    focus,
+    focusHighlighted,
+    canvasSize,
+  ]);
 
   return (
     <canvas
@@ -211,7 +229,7 @@ const useMainPointerHandler = () => {
   const styleMap = useAtomValue(elementMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
-  const staffs = useStaffs();
+  const rootObjs = useObjects();
   const [connections, setConnections] = useAtom(staffConnectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
@@ -226,13 +244,13 @@ const useMainPointerHandler = () => {
 
   const dndStaff = (desktopPoint: Point) => {
     const staffId = getStaffIdOnPoint(desktopPoint);
-    const staffStyle = staffs.get(staffId);
-    if (!staffStyle) {
+    const style = rootObjs.get(staffId);
+    if (!style || style.type !== "staff") {
       return;
     }
     const offset = {
-      x: desktopPoint.x - staffStyle.position.x,
-      y: desktopPoint.y - staffStyle.position.y,
+      x: desktopPoint.x - style.position.x,
+      y: desktopPoint.y - style.position.y,
     };
     return { staffId, offset };
   };
@@ -242,8 +260,8 @@ const useMainPointerHandler = () => {
     desktopPoint: Point,
     staffId: number
   ) => {
-    const staffStyle = staffs.get(staffId);
-    if (!staffStyle) {
+    const style = rootObjs.get(staffId);
+    if (!style || style.type !== "staff") {
       return false;
     }
     const staffWidth =
@@ -261,16 +279,14 @@ const useMainPointerHandler = () => {
           left: staffWidth * 0.7,
           right: staffWidth,
           top: 0,
-          bottom: staffStyle.lines.length * UNIT,
+          bottom: style.lines.length * UNIT,
         },
-        staffStyle.position
+        style.position
       )
     );
   };
 
   const onIdle = useCallback(() => {
-    console.log("CanvasState", "idle");
-    setPopover(undefined);
     setUncommitedConnection(undefined);
   }, []);
 
@@ -278,9 +294,9 @@ const useMainPointerHandler = () => {
     (args: DesktopStateProps["moveStaff"]) => {
       const { staffId, point, offset } = args;
       const position = { x: point.x - offset.x, y: point.y - offset.y };
-      staffs.update(staffId, (style) => ({ ...style, position }));
+      rootObjs.update(staffId, (style) => ({ ...style, position }));
     },
-    [staffs]
+    [rootObjs]
   );
 
   const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
@@ -299,7 +315,7 @@ const useMainPointerHandler = () => {
 
   const onCtxMenuStaff = useCallback(
     ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
-      setPopover({ htmlPoint, staffId });
+      setPopover({ type: "staff", htmlPoint, staffId });
     },
     []
   );
@@ -313,6 +329,14 @@ const useMainPointerHandler = () => {
     []
   );
 
+  const onCtxMenu = (props: DesktopStateProps["ctxMenu"]) => {
+    setPopover({
+      type: "canvas",
+      htmlPoint: props.htmlPoint,
+      desktopPoint: props.desktopPoint,
+    });
+  };
+
   const onPan = useCallback(({ translated }: DesktopStateProps["pan"]) => {
     console.log("CanvasState", "pan");
     setMtx(translated);
@@ -325,51 +349,52 @@ const useMainPointerHandler = () => {
 
   const onAddStaff = useCallback(
     ({ point }: DesktopStateProps["addStaff"]) => {
-      staffs.add(
+      rootObjs.add(
         genStaffStyle(
           { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
           point
         )
       );
     },
-    [staffs]
+    [rootObjs]
   );
 
-  useEffect(() => {
-    desktopState.current.onState = (state) => {
-      switch (state.type) {
-        case "idle":
-          onIdle();
-          break;
-        case "downCanvas":
-          break;
-        case "addStaff":
-          onAddStaff(state);
-          break;
-        case "focusStaff":
-          onFocusStaff(state);
-          break;
-        case "moveStaff":
-          onMoveStaff(state);
-          break;
-        case "moveConnection":
-          onMoveConnection(state);
-          break;
-        case "connectStaff":
-          onConnectStaff(state);
-          break;
-        case "ctxMenuStaff":
-          onCtxMenuStaff(state);
-          break;
-        case "pan":
-          onPan(state);
-          break;
-        case "zoom":
-          onZoom(state);
-          break;
-      }
-    };
-  }, [onAddStaff, onMoveStaff]);
+  desktopState.current.onState = (state) => {
+    switch (state.type) {
+      case "idle":
+        onIdle();
+        break;
+      case "downCanvas":
+        break;
+      case "addStaff":
+        onAddStaff(state);
+        break;
+      case "focusStaff":
+        onFocusStaff(state);
+        break;
+      case "moveStaff":
+        onMoveStaff(state);
+        break;
+      case "moveConnection":
+        onMoveConnection(state);
+        break;
+      case "connectStaff":
+        onConnectStaff(state);
+        break;
+      case "ctxMenu":
+        onCtxMenu(state);
+        break;
+      case "ctxMenuStaff":
+        onCtxMenuStaff(state);
+        break;
+      case "pan":
+        onPan(state);
+        break;
+      case "zoom":
+        onZoom(state);
+        break;
+    }
+  };
 
   return {
     onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {
