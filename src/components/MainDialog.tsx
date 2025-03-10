@@ -9,6 +9,7 @@ export const MainDialog = () => {
     <Dialog
       className="mainDialog"
       open={!!dialog}
+      closeOnOuterClick={false}
       onClose={() => setDialog(undefined)}
     >
       <div className="title">{dialog?.title}</div>

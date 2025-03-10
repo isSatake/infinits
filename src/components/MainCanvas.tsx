@@ -59,7 +59,6 @@ export const MainCanvas = () => {
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
   const staffConnection = useAtomValue(staffConnectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
-  console.log("uncommitedConnection", uncommitedConnection);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
@@ -269,8 +268,6 @@ const useMainPointerHandler = () => {
   };
 
   const onIdle = useCallback(() => {
-    console.log("CanvasState", "idle");
-    setPopover(undefined);
     setUncommitedConnection(undefined);
   }, []);
 
@@ -299,7 +296,7 @@ const useMainPointerHandler = () => {
 
   const onCtxMenuStaff = useCallback(
     ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
-      setPopover({type:"staff", htmlPoint, staffId });
+      setPopover({ type: "staff", htmlPoint, staffId });
     },
     []
   );
@@ -339,44 +336,42 @@ const useMainPointerHandler = () => {
     [staffs]
   );
 
-  useEffect(() => {
-    desktopState.current.onState = (state) => {
-      switch (state.type) {
-        case "idle":
-          onIdle();
-          break;
-        case "downCanvas":
-          break;
-        case "addStaff":
-          onAddStaff(state);
-          break;
-        case "focusStaff":
-          onFocusStaff(state);
-          break;
-        case "moveStaff":
-          onMoveStaff(state);
-          break;
-        case "moveConnection":
-          onMoveConnection(state);
-          break;
-        case "connectStaff":
-          onConnectStaff(state);
-          break;
-        case "ctxMenu":
-          onCtxMenu(state);
-          break;
-        case "ctxMenuStaff":
-          onCtxMenuStaff(state);
-          break;
-        case "pan":
-          onPan(state);
-          break;
-        case "zoom":
-          onZoom(state);
-          break;
-      }
-    };
-  }, [onAddStaff, onMoveStaff]);
+  desktopState.current.onState = (state) => {
+    switch (state.type) {
+      case "idle":
+        onIdle();
+        break;
+      case "downCanvas":
+        break;
+      case "addStaff":
+        onAddStaff(state);
+        break;
+      case "focusStaff":
+        onFocusStaff(state);
+        break;
+      case "moveStaff":
+        onMoveStaff(state);
+        break;
+      case "moveConnection":
+        onMoveConnection(state);
+        break;
+      case "connectStaff":
+        onConnectStaff(state);
+        break;
+      case "ctxMenu":
+        onCtxMenu(state);
+        break;
+      case "ctxMenuStaff":
+        onCtxMenuStaff(state);
+        break;
+      case "pan":
+        onPan(state);
+        break;
+      case "zoom":
+        onZoom(state);
+        break;
+    }
+  };
 
   return {
     onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {

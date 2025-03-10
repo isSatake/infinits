@@ -90,6 +90,9 @@ export class DesktopStateMachine {
       case "downStaff":
         this.downStaffHandler(state);
         break;
+      case "ctxMenu":
+        this.ctxMenuHandler(state);
+        break;
       case "ctxMenuStaff":
         this.ctxMenuStaffHandler(state);
         break;
@@ -339,8 +342,11 @@ export class DesktopStateMachine {
     }
   };
 
-  // done ctx menuはPointerState関係ない。どう書く？promiseでも返す？
-  // 別のstaffでlong downしたらctx menu継続したいが、downが先に来てしまう
+  private ctxMenuHandler = (state: PointerState) => {
+    // context menuはmodal dialogなのでPointerStateを取れない。何もしない。
+    this.state = { type: "idle" };
+  };
+
   private ctxMenuStaffHandler = (state: PointerState) => {
     switch (state.type) {
       case "down":

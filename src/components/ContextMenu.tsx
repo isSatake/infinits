@@ -1,7 +1,7 @@
-import { useAtom, useSetAtom } from "jotai";
-import React, { FC, useCallback, useEffect, useRef } from "react";
-import { contextMenuAtom, showDialogAtom } from "@/state/atom";
 import { useStaffs } from "@/hooks/staff";
+import { contextMenuAtom, showDialogAtom } from "@/state/atom";
+import { useAtom, useSetAtom } from "jotai";
+import React, { FC, useCallback } from "react";
 import { Dialog } from "./Dialog";
 
 export const ContextMenu = () => {
@@ -9,7 +9,12 @@ export const ContextMenu = () => {
   const onClose = useCallback(() => setPopover(undefined), []);
 
   return (
-    <Dialog className={"contextMenu"} open={!!popover} position={popover?.htmlPoint} onClose={onClose}>
+    <Dialog
+      className={"contextMenu"}
+      open={!!popover}
+      position={popover?.htmlPoint}
+      onClose={onClose}
+    >
       {popover?.type === "staff" && (
         <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
       )}
