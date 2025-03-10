@@ -51,13 +51,18 @@ export type ContextMenu = {
 );
 export const contextMenuAtom = atom<ContextMenu | undefined>(undefined);
 
-export const showDialogAtom = atom<
+export type DialogState =
   | {
+      type: "message";
       title: string;
-      buttons?: { label: string; onClick: () => void }[];
+      buttons: { label: string; onClick: () => void }[];
     }
-  | undefined
->(undefined);
+  | {
+      type: "input";
+      placeholder: string;
+      buttons: { label: string; onClick: (value: string) => void }[];
+    };
+export const showDialogAtom = atom<DialogState | undefined>(undefined);
 
 export const accidentalModeIdxAtom = atom<number>(0);
 

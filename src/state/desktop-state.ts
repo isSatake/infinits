@@ -207,7 +207,6 @@ export class DesktopStateMachine {
         break;
       case "longDown":
         const down = { x: state.down.clientX, y: state.down.clientY };
-        console.log("2025/03/10", "longDown", down);
         this.state = {
           type: "ctxMenu",
           htmlPoint: down,

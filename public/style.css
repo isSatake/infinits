@@ -584,6 +584,13 @@ body {
     text-align: center;
     padding: 40px;
   }
+  .inputContainer {
+    padding: 50px;
+    input {
+      font-size: 3em;
+      width: 100%;
+    }
+  }
   .buttons {
     display: flex;
     font-size: 3em;

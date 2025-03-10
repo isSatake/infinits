@@ -37,17 +37,13 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   const rootObjs = useObjects();
   const onClick = () => {
     setShowDialog({
-      title: "Add Text",
+      type: "input",
+      placeholder: "Add Text",
       buttons: [
         {
           label: "OK",
-          onClick: () => {
-            console.log("2025/03/10", desktopPoint);
-            rootObjs.add({
-              type: "text",
-              position: desktopPoint,
-              text: "Hello",
-            });
+          onClick: (text: string) => {
+            rootObjs.add({ type: "text", position: desktopPoint, text });
             setShowDialog(undefined);
           },
         },
@@ -71,6 +67,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
 
   const onClickDelete = () => {
     setShowDialog({
+      type: "message",
       title: "Delete?",
       buttons: [
         {
