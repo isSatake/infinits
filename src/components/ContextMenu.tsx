@@ -58,6 +58,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   const onAddFile = () => {
     const input = document.createElement("input");
     input.type = "file";
+    input.accept = ".mp3,.mp4";
     input.onchange = (event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
       if (file) {
