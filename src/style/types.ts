@@ -98,9 +98,10 @@ export type StaffStyle = {
 };
 export type FileStyle = {
   type: "file";
+  file: File;
   position: Point;
 }
-export type RootObj = StaffStyle | TextStyle;
+export type RootObj = StaffStyle | TextStyle | FileStyle;
 export type StaffConnectionStyle = {
   type: "staffConnection";
   to: Point;
