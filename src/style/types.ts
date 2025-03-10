@@ -21,7 +21,8 @@ export type PaintElement =
   | ClefStyle
   | GapStyle
   | TieStyle
-  | TextStyle;
+  | TextStyle
+  | FileStyle;
 // 1音
 export type NoteStyle = {
   type: "note";
@@ -100,7 +101,7 @@ export type FileStyle = {
   type: "file";
   file: File;
   position: Point;
-}
+};
 export type RootObj = StaffStyle | TextStyle | FileStyle;
 export type StaffConnectionStyle = {
   type: "staffConnection";

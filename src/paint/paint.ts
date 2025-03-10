@@ -15,7 +15,12 @@ import {
   restPathMap,
   upFlagMap,
 } from "../core/constants";
-import { StaffConnectionStyle, StaffStyle, TextStyle } from "../style/types";
+import {
+  FileStyle,
+  StaffConnectionStyle,
+  StaffStyle,
+  TextStyle,
+} from "../style/types";
 import { pitchToY } from "../style/style";
 import {
   BarStyle,
@@ -273,6 +278,8 @@ export const paintStyle = (
     // no-op
   } else if (type === "text") {
     paintText(ctx, element);
+  } else if (type === "file") {
+    paintFile(ctx);
   }
 };
 
@@ -317,6 +324,24 @@ const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
   ctx.fillStyle = "#000";
   ctx.font = "500px sans-serif";
   ctx.fillText(element.text, 0, 0);
+  ctx.restore();
+};
+
+const paintFile = (ctx: CanvasRenderingContext2D) => {
+  ctx.save();
+  // 灰色の背景を描画
+  ctx.fillStyle = "#E0E0E0";
+  ctx.fillRect(0, 0, 1000, 1000);
+
+  // 黒い再生ボタン（三角形）を描画
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.moveTo(375, 300);
+  ctx.lineTo(750, 500);
+  ctx.lineTo(375, 700);
+  ctx.closePath();
+  ctx.fill();
+
   ctx.restore();
 };
 
