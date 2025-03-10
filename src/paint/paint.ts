@@ -316,7 +316,7 @@ const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
   ctx.save();
   ctx.fillStyle = "#000";
   ctx.font = "500px sans-serif";
-  ctx.fillText(element.text, element.position.x, element.position.y);
+  ctx.fillText(element.text, 0, 0);
   ctx.restore();
 };
 

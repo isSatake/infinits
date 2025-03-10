@@ -42,6 +42,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
         {
           label: "OK",
           onClick: () => {
+            console.log("2025/03/10", desktopPoint);
             rootObjs.add({
               type: "text",
               position: desktopPoint,
