@@ -1,7 +1,9 @@
 import { rootObjMapAtom } from "@/state/atom";
 import { RootObj } from "@/style/types";
 import { useAtom } from "jotai";
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
+
+let id = 0;
 
 export const useObjects = (): {
   map: Map<number, RootObj>;
@@ -11,14 +13,11 @@ export const useObjects = (): {
   remove: (id: number) => void;
 } => {
   const [map, setMap] = useAtom(rootObjMapAtom);
-  const idRef = useRef(0);
-  const add = useCallback(
-    (obj: RootObj) => {
-      map.set(idRef.current++, obj);
-      setMap(new Map(map));
-    },
-    [map]
-  );
+  const add = (obj: RootObj) => {
+    map.set(id++, obj);
+    console.log("new obj", map);
+    setMap(new Map(map));
+  };
   const get = useCallback((id: number) => map.get(id), [map]);
   const update = useCallback(
     (id: number, fn: (obj: RootObj) => RootObj) => {

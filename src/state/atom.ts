@@ -45,7 +45,10 @@ export const uncommitedStaffConnectionAtom = atom<
 
 export type ContextMenu = {
   htmlPoint: Point;
-} & ({ type: "staff"; staffId: number } | { type: "canvas" });
+} & (
+  | { type: "staff"; staffId: number }
+  | { type: "canvas"; desktopPoint: Point }
+);
 export const contextMenuAtom = atom<ContextMenu | undefined>(undefined);
 
 export const showDialogAtom = atom<
@@ -70,8 +73,4 @@ export const beamModeAtom = atom<BeamModes>("nobeam");
 export type TieModes = "tie" | "notie";
 export const tieModeAtom = atom<TieModes>("notie");
 
-export const rootObjMapAtom = atom<Map<number, RootObj>>(
-  new Map([
-    [0, { type: "text" as const, position: { x: 0, y: 0 }, text: "Hello, World!" }],
-  ])
-);
+export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());

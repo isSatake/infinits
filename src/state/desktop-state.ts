@@ -22,7 +22,7 @@ export type DesktopStateProps = {
   pan: { downMtx: DOMMatrix; translated: DOMMatrix };
   zoom: { downMtx: DOMMatrix; translated: DOMMatrix };
   addStaff: { point: Point };
-  ctxMenu: { htmlPoint: Point };
+  ctxMenu: { htmlPoint: Point; desktopPoint: Point };
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveStaff: { staffId: number; offset: Point; point: Point };
   focusStaff: { staffId: number };
@@ -206,9 +206,11 @@ export class DesktopStateMachine {
         };
         break;
       case "longDown":
+        const down = { x: state.down.clientX, y: state.down.clientY };
         this.state = {
           type: "ctxMenu",
-          htmlPoint: { x: state.down.clientX, y: state.down.clientY },
+          htmlPoint: down,
+          desktopPoint: this._mtx.inverse().transformPoint(down),
         };
         break;
     }

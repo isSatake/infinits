@@ -102,7 +102,6 @@ export const MainCanvas = () => {
         });
         map.set(id, styles);
       } else {
-        // text
         map.set(id, [
           {
             element: obj,
@@ -330,8 +329,12 @@ const useMainPointerHandler = () => {
     []
   );
 
-  const onCtxMenu = ({ htmlPoint }: DesktopStateProps["ctxMenu"]) => {
-    setPopover({ type: "canvas", htmlPoint });
+  const onCtxMenu = (props: DesktopStateProps["ctxMenu"]) => {
+    setPopover({
+      type: "canvas",
+      htmlPoint: props.htmlPoint,
+      desktopPoint: props.desktopPoint,
+    });
   };
 
   const onPan = useCallback(({ translated }: DesktopStateProps["pan"]) => {

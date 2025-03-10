@@ -3,6 +3,7 @@ import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback } from "react";
 import { Dialog } from "./Dialog";
 import { useObjects } from "@/hooks/object";
+import { Point } from "@/lib/geometry";
 
 export const ContextMenu = () => {
   const [popover, setPopover] = useAtom(contextMenuAtom);
@@ -18,13 +19,46 @@ export const ContextMenu = () => {
       {popover?.type === "staff" && (
         <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
       )}
-      {popover?.type === "canvas" && <CanvasContextMenu />}
+      {popover?.type === "canvas" && (
+        <CanvasContextMenu
+          desktopPoint={popover.desktopPoint}
+          onClose={onClose}
+        />
+      )}
     </Dialog>
   );
 };
 
-const CanvasContextMenu = () => {
-  return <button>Add Text</button>;
+const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
+  desktopPoint,
+  onClose,
+}) => {
+  const setShowDialog = useSetAtom(showDialogAtom);
+  const rootObjs = useObjects();
+  const onClick = () => {
+    setShowDialog({
+      title: "Add Text",
+      buttons: [
+        {
+          label: "OK",
+          onClick: () => {
+            rootObjs.add({
+              type: "text",
+              position: desktopPoint,
+              text: "Hello",
+            });
+            setShowDialog(undefined);
+          },
+        },
+        {
+          label: "Cancel",
+          onClick: () => setShowDialog(undefined),
+        },
+      ],
+    });
+    onClose();
+  };
+  return <button onClick={onClick}>Add Text</button>;
 };
 
 const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
