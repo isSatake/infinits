@@ -279,7 +279,7 @@ export const paintStyle = (
   } else if (type === "text") {
     paintText(ctx, element);
   } else if (type === "file") {
-    paintFile(ctx);
+    paintFile(ctx, element);
   }
 };
 
@@ -327,20 +327,31 @@ const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
   ctx.restore();
 };
 
-const paintFile = (ctx: CanvasRenderingContext2D) => {
+const paintFile = (ctx: CanvasRenderingContext2D, element: FileStyle) => {
   ctx.save();
   // 灰色の背景を描画
   ctx.fillStyle = "#E0E0E0";
-  ctx.fillRect(0, 0, 1000, 1000);
+  ctx.fillRect(0, 0, 3000, 1000);
 
-  // 黒い再生ボタン（三角形）を描画
+  // 左端に黒い再生ボタン（三角形）を描画
   ctx.fillStyle = "#000000";
   ctx.beginPath();
-  ctx.moveTo(375, 300);
-  ctx.lineTo(750, 500);
-  ctx.lineTo(375, 700);
+  ctx.moveTo(200, 300);
+  ctx.lineTo(400, 500);
+  ctx.lineTo(200, 700);
   ctx.closePath();
   ctx.fill();
+
+  // ファイル名を表示
+  const displayName =
+    element.file.name.length > 10
+      ? element.file.name.slice(0, 10) + "..."
+      : element.file.name;
+
+  ctx.fillStyle = "#000000";
+  ctx.font = "400px sans-serif";
+  ctx.textBaseline = "middle";
+  ctx.fillText(displayName, 600, 500);
 
   ctx.restore();
 };
