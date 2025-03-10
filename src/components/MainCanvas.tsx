@@ -28,7 +28,6 @@ import {
   elementsAtom,
   focusAtom,
   staffConnectionAtom,
-  textMapAtom,
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
 } from "@/state/atom";
@@ -66,7 +65,6 @@ export const MainCanvas = () => {
   const focus = useAtomValue(focusAtom);
   const focusHighlighted = useFocusHighlighted(focus);
   const mtx = useAtomValue(mtxAtom);
-  const textMap = useAtom(textMapAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
   const [windowSize, setWindowSize] = useState<Size>({
@@ -105,6 +103,13 @@ export const MainCanvas = () => {
         map.set(id, styles);
       } else {
         // text
+        map.set(id, [
+          {
+            element: obj,
+            width: 0,
+            bbox: { left: 0, right: 0, top: 0, bottom: 0 },
+          },
+        ]);
       }
     }
     // connection
@@ -178,9 +183,9 @@ export const MainCanvas = () => {
     ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    for (const [id, staff] of rootObjs.map) {
+    for (const [id, obj] of rootObjs.map) {
       ctx.save();
-      ctx.translate(staff.position.x, staff.position.y);
+      ctx.translate(obj.position.x, obj.position.y);
       for (const style of styleMap.get(id) ?? []) {
         const { type } = style.element;
         paintStyle(ctx, style);

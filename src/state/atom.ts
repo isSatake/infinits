@@ -37,9 +37,6 @@ export const elementsAtom = atom<Map<number, MusicalElement[]>>(
   new Map([[0, []]])
 );
 
-// staff id -> staff style
-export const staffMapAtom = atom<Map<number, StaffStyle>>(new Map());
-
 export const staffConnectionAtom = atom<Map<number, number>>(new Map([[0, 1]]));
 
 export const uncommitedStaffConnectionAtom = atom<
@@ -73,13 +70,8 @@ export const beamModeAtom = atom<BeamModes>("nobeam");
 export type TieModes = "tie" | "notie";
 export const tieModeAtom = atom<TieModes>("notie");
 
-export const textMapAtom = atom<Map<number, TextStyle>>(
+export const rootObjMapAtom = atom<Map<number, RootObj>>(
   new Map([
-    [
-      0,
-      { type: "text" as const, position: { x: 0, y: 0 }, text: "{x: 0, y: 0}" },
-    ],
+    [0, { type: "text" as const, position: { x: 0, y: 0 }, text: "Hello, World!" }],
   ])
 );
-
-export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());
