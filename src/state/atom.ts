@@ -1,6 +1,6 @@
 import { Point } from "@/lib/geometry";
 import { ChordRoot, Duration, MusicalElement } from "@/core/types";
-import { CaretStyle } from "@/style/types";
+import { CaretStyle, RootObj, TextStyle } from "@/style/types";
 import { atom, useAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StaffStyle } from "../style/types";
@@ -72,3 +72,14 @@ export const beamModeAtom = atom<BeamModes>("nobeam");
 
 export type TieModes = "tie" | "notie";
 export const tieModeAtom = atom<TieModes>("notie");
+
+export const textMapAtom = atom<Map<number, TextStyle>>(
+  new Map([
+    [
+      0,
+      { type: "text" as const, position: { x: 0, y: 0 }, text: "{x: 0, y: 0}" },
+    ],
+  ])
+);
+
+export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());

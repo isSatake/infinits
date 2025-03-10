@@ -14,7 +14,6 @@ import {
   beamModeAtom,
   tieModeAtom,
   TieModes,
-  FocusState,
 } from "@/state/atom";
 import { getPreviewScale, getPreviewWidth } from "@/style/score-preferences";
 import { useAtomValue, useAtom } from "jotai";
@@ -22,7 +21,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
 import * as tone from "@/tone";
-import { useStaffs } from "./staff";
+import { useObjects } from "./object";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;
@@ -139,12 +138,12 @@ export const usePreviewHandlers = (duration: Duration) => {
   const composeElements = useElementsComposer(duration);
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
-  const staff = useStaffs().get(caret.staffId);
+  const staff = useObjects().get(caret.staffId);
   const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({
     onLongDown: (ev) => {
-      if (!staff) {
+      if (!staff || staff.type !== "staff") {
         return;
       }
       const newPitch = {

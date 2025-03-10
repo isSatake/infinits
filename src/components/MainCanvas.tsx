@@ -28,6 +28,7 @@ import {
   elementsAtom,
   focusAtom,
   staffConnectionAtom,
+  textMapAtom,
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
 } from "@/state/atom";
@@ -36,8 +37,8 @@ import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { StaffStyle } from "@/style/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import { useStaffs } from "@/hooks/staff";
 import { buildConnectionStyle } from "@/style/staff";
+import { useObjects } from "@/hooks/object";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
@@ -65,13 +66,14 @@ export const MainCanvas = () => {
   const focus = useAtomValue(focusAtom);
   const focusHighlighted = useFocusHighlighted(focus);
   const mtx = useAtomValue(mtxAtom);
+  const textMap = useAtom(textMapAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
   const [windowSize, setWindowSize] = useState<Size>({
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const staffs = useStaffs();
+  const rootObjs = useObjects();
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -92,17 +94,21 @@ export const MainCanvas = () => {
   // element style
   useEffect(() => {
     const map = new Map<number, PaintElementStyle<PaintElement>[]>();
-    for (const [id, staff] of staffs.map) {
-      const styles = determinePaintElementStyle({
-        elements: elements.get(id) ?? [],
-        gapWidth: UNIT,
-        staffStyle: staff,
-        pointing,
-      });
-      map.set(id, styles);
+    for (const [id, obj] of rootObjs.map) {
+      if (obj.type === "staff") {
+        const styles = determinePaintElementStyle({
+          elements: elements.get(id) ?? [],
+          gapWidth: UNIT,
+          staffStyle: obj,
+          pointing,
+        });
+        map.set(id, styles);
+      } else {
+        // text
+      }
     }
     // connection
-    for (const [id, _] of staffs.map) {
+    for (const [id, _] of rootObjs.map) {
       let toPos;
       if (uncommitedConnection?.from === id) {
         toPos = uncommitedConnection.position;
@@ -111,7 +117,7 @@ export const MainCanvas = () => {
         if (toId === undefined) {
           continue;
         }
-        toPos = staffs.get(toId)?.position;
+        toPos = rootObjs.get(toId)?.position;
       }
       if (!toPos) {
         continue;
@@ -127,9 +133,10 @@ export const MainCanvas = () => {
       }
       map.get(id)?.push(buildConnectionStyle(fromStyle, toPos));
     }
+
     console.log("new style map", map);
     setStyleMap(map);
-  }, [staffs.map, staffConnection, uncommitedConnection, elements, pointing]);
+  }, [rootObjs.map, staffConnection, uncommitedConnection, elements, pointing]);
 
   // caret style
   useEffect(() => {
@@ -171,7 +178,7 @@ export const MainCanvas = () => {
     ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    for (const [id, staff] of staffs.map) {
+    for (const [id, staff] of rootObjs.map) {
       ctx.save();
       ctx.translate(staff.position.x, staff.position.y);
       for (const style of styleMap.get(id) ?? []) {
@@ -184,7 +191,7 @@ export const MainCanvas = () => {
       }
       ctx.restore();
     }
-    const currentStaff = staffs.get(focus.staffId);
+    const currentStaff = rootObjs.get(focus.staffId);
     const caret = caretStyle.at(focus.idx);
     if (currentStaff && caret) {
       ctx.save();
@@ -193,7 +200,15 @@ export const MainCanvas = () => {
       ctx.restore();
     }
     ctx.restore();
-  }, [mtx, staffs, styleMap, caretStyle, focus, focusHighlighted, canvasSize]);
+  }, [
+    mtx,
+    rootObjs,
+    styleMap,
+    caretStyle,
+    focus,
+    focusHighlighted,
+    canvasSize,
+  ]);
 
   return (
     <canvas
@@ -210,7 +225,7 @@ const useMainPointerHandler = () => {
   const styleMap = useAtomValue(elementMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
-  const staffs = useStaffs();
+  const rootObjs = useObjects();
   const [connections, setConnections] = useAtom(staffConnectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getStaffIdOnPoint = usePointingStaffId(styleMap);
@@ -225,13 +240,13 @@ const useMainPointerHandler = () => {
 
   const dndStaff = (desktopPoint: Point) => {
     const staffId = getStaffIdOnPoint(desktopPoint);
-    const staffStyle = staffs.get(staffId);
-    if (!staffStyle) {
+    const style = rootObjs.get(staffId);
+    if (!style || style.type !== "staff") {
       return;
     }
     const offset = {
-      x: desktopPoint.x - staffStyle.position.x,
-      y: desktopPoint.y - staffStyle.position.y,
+      x: desktopPoint.x - style.position.x,
+      y: desktopPoint.y - style.position.y,
     };
     return { staffId, offset };
   };
@@ -241,8 +256,8 @@ const useMainPointerHandler = () => {
     desktopPoint: Point,
     staffId: number
   ) => {
-    const staffStyle = staffs.get(staffId);
-    if (!staffStyle) {
+    const style = rootObjs.get(staffId);
+    if (!style || style.type !== "staff") {
       return false;
     }
     const staffWidth =
@@ -260,9 +275,9 @@ const useMainPointerHandler = () => {
           left: staffWidth * 0.7,
           right: staffWidth,
           top: 0,
-          bottom: staffStyle.lines.length * UNIT,
+          bottom: style.lines.length * UNIT,
         },
-        staffStyle.position
+        style.position
       )
     );
   };
@@ -275,9 +290,9 @@ const useMainPointerHandler = () => {
     (args: DesktopStateProps["moveStaff"]) => {
       const { staffId, point, offset } = args;
       const position = { x: point.x - offset.x, y: point.y - offset.y };
-      staffs.update(staffId, (style) => ({ ...style, position }));
+      rootObjs.update(staffId, (style) => ({ ...style, position }));
     },
-    [staffs]
+    [rootObjs]
   );
 
   const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
@@ -326,14 +341,14 @@ const useMainPointerHandler = () => {
 
   const onAddStaff = useCallback(
     ({ point }: DesktopStateProps["addStaff"]) => {
-      staffs.add(
+      rootObjs.add(
         genStaffStyle(
           { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
           point
         )
       );
     },
-    [staffs]
+    [rootObjs]
   );
 
   desktopState.current.onState = (state) => {

@@ -15,7 +15,7 @@ import {
   restPathMap,
   upFlagMap,
 } from "../core/constants";
-import { StaffConnectionStyle, StaffStyle } from "../style/types";
+import { StaffConnectionStyle, StaffStyle, TextStyle } from "../style/types";
 import { pitchToY } from "../style/style";
 import {
   BarStyle,
@@ -271,6 +271,8 @@ export const paintStyle = (
     paintBarline(ctx, element);
   } else if (type === "gap") {
     // no-op
+  } else if (type === "text") {
+    paintText(ctx, element);
   }
 };
 
@@ -307,6 +309,14 @@ export const paintCaret = ({
   ctx.save();
   ctx.fillStyle = highlighted ? "#FF000055" : "#FF000033";
   ctx.fillRect(x, y, width, height);
+  ctx.restore();
+};
+
+const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
+  ctx.save();
+  ctx.fillStyle = "#000";
+  ctx.font = "16px sans-serif";
+  ctx.fillText(element.text, element.position.x, element.position.y);
   ctx.restore();
 };
 

@@ -1,8 +1,8 @@
-import { useStaffs } from "@/hooks/staff";
 import { contextMenuAtom, showDialogAtom } from "@/state/atom";
 import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback } from "react";
 import { Dialog } from "./Dialog";
+import { useObjects } from "@/hooks/object";
 
 export const ContextMenu = () => {
   const [popover, setPopover] = useAtom(contextMenuAtom);
@@ -32,7 +32,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   onClose,
 }) => {
   const setShowDialog = useSetAtom(showDialogAtom);
-  const staffs = useStaffs();
+  const rootObjs = useObjects();
 
   const onClickDelete = () => {
     setShowDialog({
@@ -41,7 +41,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
         {
           label: "OK",
           onClick: () => {
-            staffs.remove(staffId);
+            rootObjs.remove(staffId);
             setShowDialog(undefined);
           },
         },
