@@ -15,8 +15,8 @@ export type PreviewState = {
 };
 export const previewAtom = atom<PreviewState | undefined>(undefined);
 
-export type FocusState = { staffId: number; idx: number };
-export const focusAtom = atom<FocusState>({ staffId: 0, idx: 0 });
+export type FocusState = { rootObjId: number; idx: number };
+export const focusAtom = atom<FocusState>({ rootObjId: 0, idx: 0 });
 export const useFocusHighlighted = (focus: FocusState): boolean => {
   const [highlighted, setHighlighted] = useState<boolean>(true);
   const blinkTimerRef = useRef<number | null>(null);

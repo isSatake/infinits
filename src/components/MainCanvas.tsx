@@ -144,7 +144,7 @@ export const MainCanvas = () => {
 
   // caret style
   useEffect(() => {
-    const id = focus.staffId;
+    const id = focus.rootObjId;
     const styles = styleMap.get(id);
     if (!styles) {
       return;
@@ -195,7 +195,7 @@ export const MainCanvas = () => {
       }
       ctx.restore();
     }
-    const currentStaff = rootObjs.get(focus.staffId);
+    const currentStaff = rootObjs.get(focus.rootObjId);
     const caret = caretStyle.at(focus.idx);
     if (currentStaff && caret) {
       ctx.save();
@@ -323,7 +323,7 @@ const useMainPointerHandler = () => {
   const onFocusStaff = useCallback(
     ({ staffId }: DesktopStateProps["focusStaff"]) => {
       if (staffId > -1) {
-        setCarets({ staffId, idx: 0 });
+        setCarets({ rootObjId: staffId, idx: 0 });
       }
     },
     []
