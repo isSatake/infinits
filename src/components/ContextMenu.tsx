@@ -1,9 +1,9 @@
+import { useObjects } from "@/hooks/object";
+import { Point } from "@/lib/geometry";
 import { contextMenuAtom, showDialogAtom } from "@/state/atom";
 import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback } from "react";
 import { Dialog } from "./Dialog";
-import { useObjects } from "@/hooks/object";
-import { Point } from "@/lib/geometry";
 
 export const ContextMenu = () => {
   const [popover, setPopover] = useAtom(contextMenuAtom);
@@ -35,7 +35,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
 }) => {
   const setShowDialog = useSetAtom(showDialogAtom);
   const rootObjs = useObjects();
-  const onClick = () => {
+  const onAddText = () => {
     setShowDialog({
       type: "input",
       placeholder: "Add Text",
@@ -55,7 +55,25 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
     });
     onClose();
   };
-  return <button onClick={onClick}>Add Text</button>;
+  const onAddFile = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".mp3,.mp4";
+    input.onchange = (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) {
+        rootObjs.add({ type: "file", position: desktopPoint, file });
+      }
+    };
+    input.click();
+    onClose();
+  };
+  return (
+    <>
+      <button onClick={onAddText}>Add Text</button>
+      <button onClick={onAddFile}>Add File</button>
+    </>
+  );
 };
 
 const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({

@@ -1,8 +1,8 @@
-import { Point } from "@/lib/geometry";
 import { ChordRoot, Duration, MusicalElement } from "@/core/types";
-import { CaretStyle, RootObj, TextStyle } from "@/style/types";
-import { atom, useAtom } from "jotai";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Point } from "@/lib/geometry";
+import { CaretStyle, RootObj } from "@/style/types";
+import { atom } from "jotai";
+import { useEffect, useRef, useState } from "react";
 import { StaffStyle } from "../style/types";
 
 // PreviewCanvasの表示

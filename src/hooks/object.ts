@@ -15,7 +15,6 @@ export const useObjects = (): {
   const [map, setMap] = useAtom(rootObjMapAtom);
   const add = (obj: RootObj) => {
     map.set(id++, obj);
-    console.log("new obj", map);
     setMap(new Map(map));
   };
   const get = useCallback((id: number) => map.get(id), [map]);
