@@ -4,7 +4,7 @@
 
 import * as vi from "vitest";
 import { insertTieStyles } from "../tie";
-import { determineNoteStyle, gapElementStyle } from "../style";
+import { determineNoteStyle, gapElementStyle } from "../staff-element";
 import { Note } from "@/core/types";
 
 vi.test("insertTieStyles", () => {

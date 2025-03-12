@@ -155,7 +155,7 @@ const Backspace = () => {
     <GrayKey
       onClick={() => {
         const targetElIdx = caretStyle[caret.idx].elIdx;
-        const elements = elMap.get(caret.staffId);
+        const elements = elMap.get(caret.rootObjId);
         if (!elements || elements.length === 0) {
           return;
         }
@@ -258,7 +258,7 @@ const useInputBar: () => (subtype: BarTypes) => void = () => {
         beamMode,
       });
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
-      setElements(new Map(elMap).set(caret.staffId, elements));
+      setElements(new Map(elMap).set(caret.rootObjId, elements));
     },
     [caret, setCaret, baseElements, beamMode, elMap, setElements]
   );

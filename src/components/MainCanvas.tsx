@@ -11,14 +11,15 @@ import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
 import { getInitScale } from "@/style/score-preferences";
 import {
   determineCaretStyle,
-  determinePaintElementStyle,
+  determineStaffPaintStyle,
   genStaffStyle,
-} from "@/style/style";
+} from "@/style/staff-element";
 import {
   CaretStyle,
   PaintElement,
-  PaintElementStyle,
+  PaintStyle,
   Pointing,
+  RootObj,
 } from "@/style/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -38,11 +39,10 @@ import { StaffStyle } from "@/style/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { buildConnectionStyle } from "@/style/staff";
 import { useObjects } from "@/hooks/object";
+import { determineObjPaintStyle } from "@/style/other";
 
 // staff id -> element style
-const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
-  new Map()
-);
+const elementMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(new Map());
 
 // staff id -> element bboxes
 const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
@@ -91,10 +91,10 @@ export const MainCanvas = () => {
 
   // element style
   useEffect(() => {
-    const map = new Map<number, PaintElementStyle<PaintElement>[]>();
+    const map = new Map<number, PaintStyle<PaintElement>[]>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "staff") {
-        const styles = determinePaintElementStyle({
+        const styles = determineStaffPaintStyle({
           elements: elements.get(id) ?? [],
           gapWidth: UNIT,
           staffStyle: obj,
@@ -102,13 +102,7 @@ export const MainCanvas = () => {
         });
         map.set(id, styles);
       } else {
-        map.set(id, [
-          {
-            element: obj,
-            width: 0,
-            bbox: { left: 0, right: 0, top: 0, bottom: 0 },
-          },
-        ]);
+        map.set(id, [determineObjPaintStyle(obj)]);
       }
     }
     // connection
@@ -129,7 +123,7 @@ export const MainCanvas = () => {
       const fromStyle = map
         .get(id)
         ?.find(
-          (style): style is PaintElementStyle<StaffStyle> =>
+          (style): style is PaintStyle<StaffStyle> =>
             style.element.type === "staff"
         );
       if (!fromStyle) {
@@ -144,7 +138,7 @@ export const MainCanvas = () => {
 
   // caret style
   useEffect(() => {
-    const id = focus.staffId;
+    const id = focus.rootObjId;
     const styles = styleMap.get(id);
     if (!styles) {
       return;
@@ -195,7 +189,7 @@ export const MainCanvas = () => {
       }
       ctx.restore();
     }
-    const currentStaff = rootObjs.get(focus.staffId);
+    const currentStaff = rootObjs.get(focus.rootObjId);
     const caret = caretStyle.at(focus.idx);
     if (currentStaff && caret) {
       ctx.save();
@@ -232,7 +226,7 @@ const useMainPointerHandler = () => {
   const rootObjs = useObjects();
   const [connections, setConnections] = useAtom(staffConnectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
-  const getStaffIdOnPoint = usePointingStaffId(styleMap);
+  const getRootObjIdOnPoint = usePointingRootObjId(styleMap);
   const desktopState = useRef(new DesktopStateMachine());
   const canvasHandler = useRef(
     new PointerEventStateMachine(desktopState.current.on)
@@ -243,19 +237,19 @@ const useMainPointerHandler = () => {
   }, [mtx]);
 
   const dndStaff = (desktopPoint: Point) => {
-    const staffId = getStaffIdOnPoint(desktopPoint);
-    const style = rootObjs.get(staffId);
-    if (!style || style.type !== "staff") {
+    const id = getRootObjIdOnPoint(desktopPoint);
+    const style = rootObjs.get(id);
+    if (!style) {
       return;
     }
     const offset = {
       x: desktopPoint.x - style.position.x,
       y: desktopPoint.y - style.position.y,
     };
-    return { staffId, offset };
+    return { objType: style.type, id, offset };
   };
 
-  desktopState.current.getStaffOnPoint = dndStaff;
+  desktopState.current.getRootObjOnPoint = dndStaff;
   desktopState.current.isPointingStaffTail = (
     desktopPoint: Point,
     staffId: number
@@ -290,11 +284,11 @@ const useMainPointerHandler = () => {
     setUncommitedConnection(undefined);
   }, []);
 
-  const onMoveStaff = useCallback(
-    (args: DesktopStateProps["moveStaff"]) => {
-      const { staffId, point, offset } = args;
+  const onMoveRootObj = useCallback(
+    (args: DesktopStateProps["moveRootObj"]) => {
+      const { id, point, offset } = args;
       const position = { x: point.x - offset.x, y: point.y - offset.y };
-      rootObjs.update(staffId, (style) => ({ ...style, position }));
+      rootObjs.update(id, (style) => ({ ...style, position }));
     },
     [rootObjs]
   );
@@ -320,10 +314,10 @@ const useMainPointerHandler = () => {
     []
   );
 
-  const onFocusStaff = useCallback(
-    ({ staffId }: DesktopStateProps["focusStaff"]) => {
-      if (staffId > -1) {
-        setCarets({ staffId, idx: 0 });
+  const onFocusRootObj = useCallback(
+    ({ rootObjId }: DesktopStateProps["focusRootObj"]) => {
+      if (rootObjId > -1) {
+        setCarets({ rootObjId, idx: 0 });
       }
     },
     []
@@ -369,11 +363,11 @@ const useMainPointerHandler = () => {
       case "addStaff":
         onAddStaff(state);
         break;
-      case "focusStaff":
-        onFocusStaff(state);
+      case "focusRootObj":
+        onFocusRootObj(state);
         break;
-      case "moveStaff":
-        onMoveStaff(state);
+      case "moveRootObj":
+        onMoveRootObj(state);
         break;
       case "moveConnection":
         onMoveConnection(state);
@@ -413,21 +407,23 @@ const useMainPointerHandler = () => {
   };
 };
 
-const usePointingStaffId = (
-  styleMap: Map<number, PaintElementStyle<PaintElement>[]>
+const usePointingRootObjId = (
+  styleMap: Map<number, PaintStyle<PaintElement>[]>
 ): ((desktopPoint: Point) => number) => {
   return useCallback(
     (desktopPoint: Point): number => {
       return (
         Array.from(styleMap.entries()).find(
-          (v): v is [number, PaintElementStyle<StaffStyle>[]] => {
+          (v): v is [number, PaintStyle<RootObj>[]] => {
             const [_, styles] = v;
-            const staff = styles.find(
-              (style): style is PaintElementStyle<StaffStyle> =>
-                style.element.type === "staff"
+            const style = styles.find(
+              (style): style is PaintStyle<RootObj> =>
+                style.element.type === "staff" ||
+                style.element.type === "text" ||
+                style.element.type === "file"
             );
-            if (staff) {
-              const bb = offsetBBox(staff.bbox, staff.element.position);
+            if (style) {
+              const bb = offsetBBox(style.bbox, style.element.position);
               return isPointInBBox(desktopPoint, bb);
             }
             return false;
@@ -441,12 +437,11 @@ const usePointingStaffId = (
 
 const getStaffElementAtPoint = (
   staffId: number,
-  styles: PaintElementStyle<PaintElement>[],
+  styles: PaintStyle<PaintElement>[],
   desktopPoint: Point
 ): number => {
   const staff = styles.find(
-    (style): style is PaintElementStyle<StaffStyle> =>
-      style.element.type === "staff"
+    (style): style is PaintStyle<StaffStyle> => style.element.type === "staff"
   );
   if (!staff) {
     return -1;

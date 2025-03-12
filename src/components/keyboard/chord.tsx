@@ -86,7 +86,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   const composeElements = useElementsComposer(duration);
-  const staff = useObjects().get(caret.staffId);
+  const staff = useObjects().get(caret.rootObjId);
   const handlers = usePointerHandler({
     onUp: () => {
       if (!staff) return;
@@ -99,7 +99,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
         ...caret,
         idx: caret.idx + caretAdvance,
       });
-      setElements(new Map(elMap).set(caret.staffId, elements));
+      setElements(new Map(elMap).set(caret.rootObjId, elements));
       tone.play([elements[insertedIndex]], 8);
     },
   });
