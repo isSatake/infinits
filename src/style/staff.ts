@@ -1,11 +1,11 @@
 import { UNIT } from "@/font/bravura";
-import { PaintElementStyle, StaffConnectionStyle, StaffStyle } from "./types";
+import { PaintStyle, StaffConnectionStyle, StaffStyle } from "./types";
 import { Point } from "@/lib/geometry";
 
 export const buildConnectionStyle: (
-  fromStyle: PaintElementStyle<StaffStyle>,
+  fromStyle: PaintStyle<StaffStyle>,
   to: Point
-) => PaintElementStyle<StaffConnectionStyle> = (fromStyle, to) => {
+) => PaintStyle<StaffConnectionStyle> = (fromStyle, to) => {
   const fromStaff = fromStyle.element;
   const fromLines = fromStaff.lines;
   const fromPos = fromStaff.position;
@@ -13,7 +13,7 @@ export const buildConnectionStyle: (
     x: to.x - fromPos.x - fromStyle.width,
     y: to.y - fromPos.y,
   };
-  const connectionStyle: PaintElementStyle<StaffConnectionStyle> = {
+  const connectionStyle: PaintStyle<StaffConnectionStyle> = {
     element: { type: "staffConnection", to: toPoint, lines: fromLines },
     width: 0, // 現状connectionの右に何か描画することはないので0にしておく
     bbox: {

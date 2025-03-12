@@ -5,7 +5,7 @@ import {
   getPreviewScale,
   getPreviewWidth,
 } from "@/style/score-preferences";
-import { determinePaintElementStyle } from "@/style/style";
+import { determineStaffPaintStyle } from "@/style/staff-element";
 import React from "react";
 import { useEffect, useMemo, useRef } from "react";
 import { PreviewState } from "@/state/atom";
@@ -41,7 +41,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
   }, []);
 
   const init = useMemo(() => {
-    const styles = determinePaintElementStyle({
+    const styles = determineStaffPaintStyle({
       elements: preview.elements,
       gapWidth: UNIT,
       staffStyle: preview.staff,
@@ -71,7 +71,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
 
   useEffect(() => {
     console.log("preview", "start");
-    const styles = determinePaintElementStyle({
+    const styles = determineStaffPaintStyle({
       elements: preview.elements,
       gapWidth: UNIT,
       staffStyle: preview.staff,

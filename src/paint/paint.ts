@@ -21,7 +21,7 @@ import {
   StaffStyle,
   TextStyle,
 } from "../style/types";
-import { pitchToY } from "../style/style";
+import { pitchToY } from "../style/staff-element";
 import {
   BarStyle,
   BeamStyle,
@@ -29,7 +29,7 @@ import {
   ClefStyle,
   NoteStyle,
   PaintElement,
-  PaintElementStyle,
+  PaintStyle,
   RestStyle,
   TieStyle,
 } from "../style/types";
@@ -254,7 +254,7 @@ const paintTie = (ctx: CanvasRenderingContext2D, tie: TieStyle) => {
 
 export const paintStyle = (
   ctx: CanvasRenderingContext2D,
-  style: PaintElementStyle<PaintElement>
+  style: PaintStyle<PaintElement>
 ) => {
   const { element } = style;
   const { type } = element;
@@ -332,27 +332,27 @@ const paintFile = (ctx: CanvasRenderingContext2D, element: FileStyle) => {
   ctx.save();
   // 灰色の背景を描画
   ctx.fillStyle = "#E0E0E0";
-  ctx.fillRect(0, 0, 3000, 1000);
+  ctx.fillRect(0, 0, element.width, element.height);
 
   // 左端に黒い再生ボタン（三角形）を描画
+  ctx.save();
+  ctx.translate(element.icon.position.x, element.icon.position.y);
   ctx.fillStyle = "#000000";
   ctx.beginPath();
-  ctx.moveTo(200, 300);
-  ctx.lineTo(400, 500);
-  ctx.lineTo(200, 700);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(element.icon.width, element.icon.height / 2);
+  ctx.lineTo(0, element.icon.height);
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
 
-  // ファイル名を表示
-  const displayName =
-    element.file.name.length > 10
-      ? element.file.name.slice(0, 10) + "..."
-      : element.file.name;
-
+  ctx.save();
+  ctx.translate(element.fileName.position.x, element.fileName.position.y);
   ctx.fillStyle = "#000000";
-  ctx.font = "400px sans-serif";
-  ctx.textBaseline = "middle";
-  ctx.fillText(displayName, 600, 500);
+  ctx.font = `${element.fileName.fontSize}px ${element.fileName.fontFamily}`;
+  ctx.textBaseline = element.fileName.baseline;
+  ctx.fillText(element.fileName.text, 0, 0);
+  ctx.restore();
 
   ctx.restore();
 };

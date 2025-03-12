@@ -89,6 +89,9 @@ export type TextStyle = {
   type: "text";
   position: Point;
   text: string;
+  fontSize: number;
+  fontFamily: string;
+  baseline: "middle";
 };
 export type StaffStyle = {
   type: "staff";
@@ -99,8 +102,11 @@ export type StaffStyle = {
 };
 export type FileStyle = {
   type: "file";
-  file: File;
   position: Point;
+  icon: { type: "play"; position: Point; width: number; height: number };
+  fileName: TextStyle;
+  width: number;
+  height: number;
 };
 export type RootObj = StaffStyle | TextStyle | FileStyle;
 export type StaffConnectionStyle = {
@@ -114,7 +120,7 @@ export type CaretOption = {
   index: number;
   defaultWidth?: boolean;
 };
-export type PaintElementStyle<T> = {
+export type PaintStyle<T> = {
   element: T;
   width: number;
   bbox: BBox;

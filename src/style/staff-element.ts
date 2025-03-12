@@ -48,7 +48,7 @@ import {
   NoteStyle,
   NoteStyleElement,
   PaintElement,
-  PaintElementStyle,
+  PaintStyle,
   Pointing,
   RestStyle,
   TieStyle,
@@ -805,7 +805,7 @@ const determineBeamStyle = (p: {
   stemDirection: "up" | "down";
   duration?: Duration;
   headOrTail?: "head" | "tail";
-}): PaintElementStyle<BeamStyle>[] => {
+}): PaintStyle<BeamStyle>[] => {
   const {
     beamedNotes,
     notePositions,
@@ -837,7 +837,7 @@ const determineBeamStyle = (p: {
       beamLeft = beamRight - UNIT;
     }
   }
-  const beams: PaintElementStyle<BeamStyle>[] = [];
+  const beams: PaintStyle<BeamStyle>[] = [];
   const offsetY =
     (UNIT * bBeamThickness + UNIT * bBeamSpacing) *
     (numOfBeamsMap.get(duration)! - 1);
@@ -921,13 +921,13 @@ const determineBeamedNotesStyle = (
   elementGap: number,
   startIdx: number,
   _pointing?: Pointing
-): PaintElementStyle<NoteStyle | BeamStyle | GapStyle>[] => {
+): PaintStyle<NoteStyle | BeamStyle | GapStyle>[] => {
   const allBeamedPitches = beamedNotes
     .flatMap((n) => n.pitches)
     .map((p) => p.pitch);
   const stemDirection = getStemDirection(allBeamedPitches);
   const notePositions: { left: number; stemOffsetLeft: number }[] = [];
-  const elements: PaintElementStyle<NoteStyle | BeamStyle | GapStyle>[] = [];
+  const elements: PaintStyle<NoteStyle | BeamStyle | GapStyle>[] = [];
   let left = 0;
   for (const _i in beamedNotes) {
     const i = Number(_i);
@@ -1010,7 +1010,7 @@ export const gapElementStyle = ({
   width: number;
   height: number;
   caretOption?: CaretOption;
-}): PaintElementStyle<GapStyle> => {
+}): PaintStyle<GapStyle> => {
   return {
     element: { type: "gap" },
     width,
@@ -1023,7 +1023,7 @@ const determineClefStyle = (
   clef: Clef,
   index: number,
   pointing?: Pointing
-): PaintElementStyle<ClefStyle> => {
+): PaintStyle<ClefStyle> => {
   const path = getPathBBox(bClefG(), UNIT);
   const g = pitchToY(0, 4, 1);
   return {
@@ -1038,15 +1038,15 @@ const determineClefStyle = (
   };
 };
 
-export const determinePaintElementStyle = (p: {
+export const determineStaffPaintStyle = (p: {
   elements: MusicalElement[];
   gapWidth: number;
   staffStyle?: StaffStyle;
   pointing?: Pointing;
   gap?: { idx: number; width: number };
-}): PaintElementStyle<PaintElement>[] => {
+}): PaintStyle<PaintElement>[] => {
   const { elements, gapWidth, staffStyle, pointing, gap } = p;
-  let styles: PaintElementStyle<PaintElement>[] = [];
+  let styles: PaintStyle<PaintElement>[] = [];
   const gapEl = gapElementStyle({
     width: gapWidth,
     height: bStaffHeight,

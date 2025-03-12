@@ -1,14 +1,14 @@
 import {
-  PaintElementStyle,
+  PaintStyle,
   PaintElement,
   TieStyle,
   NoteStyle,
   NoteHeadElement,
 } from "./types";
 
-export const insertTieStyles = (styles: PaintElementStyle<PaintElement>[]) => {
+export const insertTieStyles = (styles: PaintStyle<PaintElement>[]) => {
   const ret = [...styles];
-  const ties: { index: number; style: PaintElementStyle<TieStyle> }[] = [];
+  const ties: { index: number; style: PaintStyle<TieStyle> }[] = [];
   let _i = 0;
   while (_i < ret.length) {
     const style = ret[_i];
@@ -28,7 +28,7 @@ export const insertTieStyles = (styles: PaintElementStyle<PaintElement>[]) => {
           ret.splice(
             _i,
             0,
-            determineTieStyle(style as PaintElementStyle<NoteStyle>, distance)
+            determineTieStyle(style as PaintStyle<NoteStyle>, distance)
           );
           _i = j;
           break;
@@ -46,9 +46,9 @@ export const insertTieStyles = (styles: PaintElementStyle<PaintElement>[]) => {
 };
 
 export const determineTieStyle = (
-  start: PaintElementStyle<NoteStyle>,
+  start: PaintStyle<NoteStyle>,
   width: number
-): PaintElementStyle<TieStyle> => {
+): PaintStyle<TieStyle> => {
   const startHead = start.element.elements.find(
     (e) => e.type === "head"
   ) as NoteHeadElement;

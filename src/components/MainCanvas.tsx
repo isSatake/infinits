@@ -11,13 +11,13 @@ import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
 import { getInitScale } from "@/style/score-preferences";
 import {
   determineCaretStyle,
-  determinePaintElementStyle,
+  determineStaffPaintStyle,
   genStaffStyle,
-} from "@/style/style";
+} from "@/style/staff-element";
 import {
   CaretStyle,
   PaintElement,
-  PaintElementStyle,
+  PaintStyle,
   Pointing,
   RootObj,
 } from "@/style/types";
@@ -39,11 +39,10 @@ import { StaffStyle } from "@/style/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { buildConnectionStyle } from "@/style/staff";
 import { useObjects } from "@/hooks/object";
+import { determineObjPaintStyle } from "@/style/other";
 
 // staff id -> element style
-const elementMapAtom = atom<Map<number, PaintElementStyle<PaintElement>[]>>(
-  new Map()
-);
+const elementMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(new Map());
 
 // staff id -> element bboxes
 const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
@@ -92,10 +91,10 @@ export const MainCanvas = () => {
 
   // element style
   useEffect(() => {
-    const map = new Map<number, PaintElementStyle<PaintElement>[]>();
+    const map = new Map<number, PaintStyle<PaintElement>[]>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "staff") {
-        const styles = determinePaintElementStyle({
+        const styles = determineStaffPaintStyle({
           elements: elements.get(id) ?? [],
           gapWidth: UNIT,
           staffStyle: obj,
@@ -103,13 +102,7 @@ export const MainCanvas = () => {
         });
         map.set(id, styles);
       } else {
-        map.set(id, [
-          {
-            element: obj,
-            width: 0,
-            bbox: { left: 0, right: 1000, top: 0, bottom: 1000 },
-          },
-        ]);
+        map.set(id, [determineObjPaintStyle(obj)]);
       }
     }
     // connection
@@ -130,7 +123,7 @@ export const MainCanvas = () => {
       const fromStyle = map
         .get(id)
         ?.find(
-          (style): style is PaintElementStyle<StaffStyle> =>
+          (style): style is PaintStyle<StaffStyle> =>
             style.element.type === "staff"
         );
       if (!fromStyle) {
@@ -415,16 +408,16 @@ const useMainPointerHandler = () => {
 };
 
 const usePointingRootObjId = (
-  styleMap: Map<number, PaintElementStyle<PaintElement>[]>
+  styleMap: Map<number, PaintStyle<PaintElement>[]>
 ): ((desktopPoint: Point) => number) => {
   return useCallback(
     (desktopPoint: Point): number => {
       return (
         Array.from(styleMap.entries()).find(
-          (v): v is [number, PaintElementStyle<RootObj>[]] => {
+          (v): v is [number, PaintStyle<RootObj>[]] => {
             const [_, styles] = v;
             const style = styles.find(
-              (style): style is PaintElementStyle<RootObj> =>
+              (style): style is PaintStyle<RootObj> =>
                 style.element.type === "staff" ||
                 style.element.type === "text" ||
                 style.element.type === "file"
@@ -444,12 +437,11 @@ const usePointingRootObjId = (
 
 const getStaffElementAtPoint = (
   staffId: number,
-  styles: PaintElementStyle<PaintElement>[],
+  styles: PaintStyle<PaintElement>[],
   desktopPoint: Point
 ): number => {
   const staff = styles.find(
-    (style): style is PaintElementStyle<StaffStyle> =>
-      style.element.type === "staff"
+    (style): style is PaintStyle<StaffStyle> => style.element.type === "staff"
   );
   if (!staff) {
     return -1;
