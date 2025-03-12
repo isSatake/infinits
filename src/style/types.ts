@@ -1,4 +1,4 @@
-import { BBox, Point } from "../lib/geometry";
+import { BBox, Point, Size } from "../lib/geometry";
 import {
   Accidental,
   Bar,
@@ -9,11 +9,11 @@ import {
   Staff,
 } from "../core/types";
 
-export type CaretStyle = { x: number; y: number; width: number; elIdx: number };
+export type CaretStyle = { elIdx: number } & Point & Size;
 type OptionalColor = { color?: string };
 export type PaintElement =
   | StaffStyle
-  | StaffConnectionStyle
+  | ConnectionStyle
   | NoteStyle
   | RestStyle
   | BeamStyle
@@ -91,7 +91,10 @@ export type TextStyle = {
   text: string;
   fontSize: number;
   fontFamily: string;
-  baseline: "middle";
+  baseline: "middle" | "top";
+  width: number;
+  height: number;
+  offset: Point;
 };
 export type StaffStyle = {
   type: "staff";
@@ -110,8 +113,8 @@ export type FileStyle = {
   height: number;
 };
 export type RootObj = StaffStyle | TextStyle | FileStyle;
-export type StaffConnectionStyle = {
-  type: "staffConnection";
+export type ConnectionStyle = {
+  type: "connection";
   to: Point;
   lines: { y: number; width: number }[];
 };

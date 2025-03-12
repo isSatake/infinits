@@ -1145,17 +1145,24 @@ export const determineStaffPaintStyle = (p: {
   return styles;
 };
 
-export const determineCaretStyle = (
-  option: CaretOption,
-  elWidth: number,
-  leftOfCaret: number
-): CaretStyle => {
+export const determineCaretStyle = ({
+  option,
+  elWidth,
+  leftOfCaret,
+  height,
+}: {
+  option: CaretOption;
+  elWidth: number;
+  height: number;
+  leftOfCaret: number;
+}): CaretStyle => {
   const { index: elIdx, defaultWidth } = option;
   const caretWidth = defaultWidth ? kDefaultCaretWidth : elWidth;
   return {
     x: leftOfCaret + (defaultWidth ? elWidth / 2 - caretWidth / 2 : 0),
     y: 0,
     width: caretWidth,
+    height,
     elIdx,
   };
 };
@@ -1166,9 +1173,13 @@ export const genStaffStyle = (staff: Staff, position: Point): StaffStyle => {
     staff,
     position,
     width: { type: "auto" },
-    lines: Array.from({ length: staff.lineCount }).map((_, i) => ({
-      y: UNIT * i,
-      width: bStaffLineWidth,
-    })),
+    lines: genStaffLines(staff.lineCount),
   };
 };
+
+export const genStaffLines = (lineCount: number) => {
+  return Array.from({ length: lineCount }).map((_, i) => ({
+    y: UNIT * i,
+    width: bStaffLineWidth,
+  }));
+}

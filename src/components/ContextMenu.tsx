@@ -4,6 +4,7 @@ import { contextMenuAtom, showDialogAtom } from "@/state/atom";
 import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback } from "react";
 import { Dialog } from "./Dialog";
+import { measureText } from "@/lib/text";
 
 export const ContextMenu = () => {
   const [popover, setPopover] = useAtom(contextMenuAtom);
@@ -43,13 +44,20 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
         {
           label: "OK",
           onClick: (text: string) => {
+            const metrics = measureText({
+              text,
+              fontSize: 500,
+              fontFamily: "sans-serif",
+              baseline: "top",
+            });
             rootObjs.add({
               type: "text",
               position: desktopPoint,
               text,
-              fontSize: 20,
+              fontSize: 500,
               fontFamily: "sans-serif",
-              baseline: "middle",
+              baseline: "top",
+              ...metrics,
             });
             setShowDialog(undefined);
           },
@@ -68,40 +76,41 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
     input.accept = ".mp3,.mp4";
     input.onchange = (event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const fontSize = 500;
-        const fontFamily = "sans-serif";
-        const txtPosition = { x: 700, y: 500 };
-        const fileName =
-          file.name.length > 10 ? file.name.slice(0, 10) + "..." : file.name;
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d")!;
-        ctx.font = `${fontSize}px ${fontFamily}`;
-        const txtWidth = ctx.measureText(fileName).width;
-        canvas.remove();
-        const width = Math.max(3000, txtPosition.x + txtWidth + 200);
-        rootObjs.add({
-          type: "file",
-          file,
-          position: desktopPoint,
-          width,
-          height: 1000,
-          icon: {
-            type: "play",
-            position: { x: 200, y: 300 },
-            width: 300,
-            height: 400,
-          },
-          fileName: {
-            type: "text",
-            position: txtPosition,
-            text: fileName,
-            fontSize,
-            fontFamily,
-            baseline: "middle",
-          },
-        });
-      }
+      if (!file) return;
+      const fontSize = 500;
+      const fontFamily = "sans-serif";
+      const txtPosition = { x: 700, y: 500 };
+      const fileName =
+        file.name.length > 10 ? file.name.slice(0, 10) + "..." : file.name;
+      const txtMetrics = measureText({
+        text: fileName,
+        fontSize,
+        fontFamily,
+        baseline: "middle",
+      });
+      const width = Math.max(3000, txtPosition.x + txtMetrics.width + 200);
+      rootObjs.add({
+        type: "file",
+        file,
+        position: desktopPoint,
+        width,
+        height: 1000,
+        icon: {
+          type: "play",
+          position: { x: 200, y: 300 },
+          width: 300,
+          height: 400,
+        },
+        fileName: {
+          type: "text",
+          position: txtPosition,
+          text: fileName,
+          fontSize,
+          fontFamily,
+          baseline: "middle",
+          ...txtMetrics,
+        },
+      });
     };
     input.click();
     onClose();
