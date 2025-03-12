@@ -86,3 +86,12 @@ const convert = (pa: PitchAcc): Frequency => {
   const acc = accs[accidental ?? "natural"];
   return `${note}${acc}${oct}`;
 };
+
+export const playFile = async (file: File) => {
+  const url = URL.createObjectURL(file);
+  const audio = new Audio(url);
+  audio.play().finally(() => {
+    URL.revokeObjectURL(url);
+    audio.remove();
+  });
+};

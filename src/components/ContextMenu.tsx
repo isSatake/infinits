@@ -82,6 +82,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
         const width = Math.max(3000, txtPosition.x + txtWidth + 200);
         rootObjs.add({
           type: "file",
+          file,
           position: desktopPoint,
           width,
           height: 1000,
