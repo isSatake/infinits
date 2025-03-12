@@ -10,9 +10,6 @@ export const usePlayTone = () => {
   if (obj?.type === "text" || !obj?.type) {
     return;
   }
-  if (obj?.type === "file") {
-    return () => tone.playFile(obj.file);
-  }
-  const musicalElements = elements.get(rootObjId) ?? [];
-  return () => tone.play(musicalElements);
+  return () =>
+    tone.play(obj.type === "file" ? [obj.file] : elements.get(rootObjId) ?? []);
 };
