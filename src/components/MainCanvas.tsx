@@ -39,7 +39,6 @@ import { StaffStyle } from "@/style/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { buildConnectionStyle } from "@/style/staff";
 import { useObjects } from "@/hooks/object";
-import { determineObjPaintStyle } from "@/style/other";
 
 // staff id -> element style
 const elementMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(new Map());
@@ -102,7 +101,14 @@ export const MainCanvas = () => {
         });
         map.set(id, styles);
       } else {
-        map.set(id, [determineObjPaintStyle(obj)]);
+        map.set(id, [
+          {
+            element: obj,
+            width: obj.width,
+            bbox: { left: 0, right: obj.width, top: 0, bottom: obj.height },
+            caretOption: { index: 0 },
+          },
+        ]);
       }
     }
     // connection
@@ -157,7 +163,13 @@ export const MainCanvas = () => {
       bboxMap.get(id)?.push(b) ?? bboxMap.set(id, [b]);
       setBBoxMap(new Map(bboxMap));
       if (caretOption) {
-        const caret = determineCaretStyle(caretOption, width, cursor);
+        const height = _bbox.bottom - _bbox.top;
+        const caret = determineCaretStyle({
+          option: caretOption,
+          elWidth: width,
+          height,
+          leftOfCaret: cursor,
+        });
         caretStyles.push(caret);
       }
       if (type !== "staff" && type !== "beam" && type !== "tie") {

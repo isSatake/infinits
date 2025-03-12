@@ -1145,17 +1145,24 @@ export const determineStaffPaintStyle = (p: {
   return styles;
 };
 
-export const determineCaretStyle = (
-  option: CaretOption,
-  elWidth: number,
-  leftOfCaret: number
-): CaretStyle => {
+export const determineCaretStyle = ({
+  option,
+  elWidth,
+  leftOfCaret,
+  height,
+}: {
+  option: CaretOption;
+  elWidth: number;
+  height: number;
+  leftOfCaret: number;
+}): CaretStyle => {
   const { index: elIdx, defaultWidth } = option;
   const caretWidth = defaultWidth ? kDefaultCaretWidth : elWidth;
   return {
     x: leftOfCaret + (defaultWidth ? elWidth / 2 - caretWidth / 2 : 0),
     y: 0,
     width: caretWidth,
+    height,
     elIdx,
   };
 };

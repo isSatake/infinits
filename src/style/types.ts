@@ -1,4 +1,4 @@
-import { BBox, Point } from "../lib/geometry";
+import { BBox, Point, Size } from "../lib/geometry";
 import {
   Accidental,
   Bar,
@@ -9,7 +9,7 @@ import {
   Staff,
 } from "../core/types";
 
-export type CaretStyle = { x: number; y: number; width: number; elIdx: number };
+export type CaretStyle = { elIdx: number } & Point & Size;
 type OptionalColor = { color?: string };
 export type PaintElement =
   | StaffStyle
@@ -91,7 +91,10 @@ export type TextStyle = {
   text: string;
   fontSize: number;
   fontFamily: string;
-  baseline: "middle";
+  baseline: "middle" | "top";
+  width: number;
+  height: number;
+  offset: Point;
 };
 export type StaffStyle = {
   type: "staff";

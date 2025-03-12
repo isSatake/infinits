@@ -311,8 +311,8 @@ export const paintCaret = ({
   caret: CaretStyle;
   highlighted: boolean;
 }) => {
-  const { x, y, width } = caret;
-  const height = bStaffHeight * scale;
+  const { x, y, width , height} = caret;
+  // const height = bStaffHeight * scale;
   ctx.save();
   ctx.fillStyle = highlighted ? "#FF000055" : "#FF000033";
   ctx.fillRect(x, y, width, height);
@@ -322,8 +322,9 @@ export const paintCaret = ({
 const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
   ctx.save();
   ctx.fillStyle = "#000";
-  ctx.font = "500px sans-serif";
-  ctx.textBaseline = "top";
+  ctx.font = `${element.fontSize}px ${element.fontFamily}`;
+  ctx.textBaseline = element.baseline;
+  ctx.translate(element.offset.x, element.offset.y);
   ctx.fillText(element.text, 0, 0);
   ctx.restore();
 };
