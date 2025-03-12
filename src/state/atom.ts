@@ -37,7 +37,7 @@ export const elementsAtom = atom<Map<number, MusicalElement[]>>(
   new Map([[0, []]])
 );
 
-export const staffConnectionAtom = atom<Map<number, number>>(new Map([[0, 1]]));
+export const connectionAtom = atom<Map<number, number>>(new Map([[0, 1]]));
 
 export const uncommitedStaffConnectionAtom = atom<
   { from: number; position: Point } | undefined

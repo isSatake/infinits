@@ -28,7 +28,7 @@ import {
   contextMenuAtom,
   elementsAtom,
   focusAtom,
-  staffConnectionAtom,
+  connectionAtom,
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
 } from "@/state/atom";
@@ -56,7 +56,7 @@ export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
-  const staffConnection = useAtomValue(staffConnectionAtom);
+  const connection = useAtomValue(connectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
@@ -117,7 +117,7 @@ export const MainCanvas = () => {
       if (uncommitedConnection?.from === id) {
         toPos = uncommitedConnection.position;
       } else {
-        const toId = staffConnection.get(id);
+        const toId = connection.get(id);
         if (toId === undefined) {
           continue;
         }
@@ -142,7 +142,7 @@ export const MainCanvas = () => {
 
     console.log("new style map", map);
     setStyleMap(map);
-  }, [rootObjs.map, staffConnection, uncommitedConnection, elements, pointing]);
+  }, [rootObjs.map, connection, uncommitedConnection, elements, pointing]);
 
   // caret style
   useEffect(() => {
@@ -238,7 +238,7 @@ const useMainPointerHandler = () => {
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
   const rootObjs = useObjects();
-  const [connections, setConnections] = useAtom(staffConnectionAtom);
+  const [connections, setConnections] = useAtom(connectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getRootObjIdOnPoint = usePointingRootObjId(styleMap);
   const desktopState = useRef(new DesktopStateMachine());

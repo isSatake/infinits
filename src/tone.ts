@@ -1,13 +1,11 @@
 import {
-  MusicalElement,
   Duration,
-  Note,
-  Rest,
+  MusicalElement,
   PitchAcc,
-  rootNotes,
+  rootNotes
 } from "@/core/types";
-import { Transport, Part, Sampler, start, Player, loaded } from "tone";
-import { Time, Frequency } from "tone/build/esm/core/type/Units";
+import { Part, Player, Sampler, Transport, loaded, start } from "tone";
+import { Frequency, Time } from "tone/build/esm/core/type/Units";
 
 export const play = async (
   elements: (MusicalElement | File)[],
