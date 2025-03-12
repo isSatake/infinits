@@ -14,15 +14,17 @@ export const usePlayTone = () => {
   const { rootObjId } = useAtomValue(focusAtom);
   const elementsMap = useAtomValue(elementsAtom);
   const connection = useAtomValue(connectionAtom);
+  const connectedIds: number[] = [];
   let id: number | undefined = rootObjId;
   const elements: (MusicalElement | FileStyle)[] = [];
-  while (id !== undefined) {
+  while (id !== undefined && !connectedIds.includes(id)) {
     const obj = rootObjs.get(id);
     if (obj?.type === "file") {
       elements.push(obj);
     } else if (obj?.type === "staff") {
       elements.push(...(elementsMap.get(id) ?? []));
     }
+    connectedIds.push(id);
     id = connection.get(id);
   }
   return () => tone.play(elements);
