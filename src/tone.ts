@@ -1,36 +1,41 @@
-import {
-  MusicalElement,
-  Duration,
-  Note,
-  Rest,
-  PitchAcc,
-  rootNotes,
-} from "@/core/types";
-import { Transport, Part, Sampler, start } from "tone";
-import { Time, Frequency } from "tone/build/esm/core/type/Units";
+import { Duration, MusicalElement, PitchAcc, rootNotes } from "@/core/types";
+import { Part, Player, Sampler, Transport, loaded, start } from "tone";
+import { Frequency, Time } from "tone/build/esm/core/type/Units";
+import { FileStyle } from "./style/types";
 
-export const play = async (elements: MusicalElement[], duration?: Duration) => {
-  const arr: ({ time: Time } & MusicalElement)[] = [];
+export const play = async (
+  elements: (MusicalElement | FileStyle)[],
+  duration?: Duration
+) => {
+  const arr: { time: Time; el: MusicalElement | FileStyle }[] = [];
   let currentPPQ = 0;
-  elements
-    .filter((el): el is Note | Rest => el.type !== "bar")
-    .forEach((el) => {
+  for (const el of elements) {
+    if (el.type === "file") {
+      arr.push({ time: `${currentPPQ}i`, el });
+      // FIXME: fileの再生時間からPPQを計算するべきか、他の方法があるのか
+      currentPPQ += await calcPPQFromDurationSec(el.duration);
+    } else if (el.type !== "bar") {
       arr.push({
         time: `${currentPPQ}i`,
-        ...el,
-        ...(duration ? { duration } : {}),
+        el: { ...el, duration: el.duration ?? duration },
       });
       currentPPQ += (Transport.PPQ * 4) / el.duration;
-    });
-  const part = new Part<{ time: Time } & MusicalElement>((time, value) => {
-    if (value.type === "note") {
-      sampler.triggerAttackRelease(
-        value.pitches.map(convert),
-        `${value.duration}n`,
-        time
-      );
     }
-  }, arr);
+  }
+  const part = new Part<{ time: Time; el: MusicalElement | FileStyle }>(
+    (time, { el }) => {
+      if (el.type === "file") {
+        playFile(el.file);
+      } else if (el.type === "note") {
+        sampler.triggerAttackRelease(
+          el.pitches.map(convert),
+          `${el.duration}n`,
+          time
+        );
+      }
+    },
+    arr
+  );
   await start();
   part.start();
   Transport.start();
@@ -87,11 +92,15 @@ const convert = (pa: PitchAcc): Frequency => {
   return `${note}${acc}${oct}`;
 };
 
-export const playFile = async (file: File) => {
+const playFile = async (file: File) => {
   const url = URL.createObjectURL(file);
-  const audio = new Audio(url);
-  audio.play().finally(() => {
-    URL.revokeObjectURL(url);
-    audio.remove();
-  });
+  const player = new Player(url).toDestination();
+  loaded()
+    .then(() => player.start())
+    .finally(() => URL.revokeObjectURL(url));
+};
+
+const calcPPQFromDurationSec = async (durationSec: number) => {
+  const quarterNoteDuration = 60 / Transport.bpm.value; // 4分音符の長さ（秒）
+  return Math.round((durationSec / quarterNoteDuration) * Transport.PPQ);
 };
