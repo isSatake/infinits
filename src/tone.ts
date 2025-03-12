@@ -1,22 +1,19 @@
-import {
-  Duration,
-  MusicalElement,
-  PitchAcc,
-  rootNotes
-} from "@/core/types";
+import { Duration, MusicalElement, PitchAcc, rootNotes } from "@/core/types";
 import { Part, Player, Sampler, Transport, loaded, start } from "tone";
 import { Frequency, Time } from "tone/build/esm/core/type/Units";
+import { FileStyle } from "./style/types";
 
 export const play = async (
-  elements: (MusicalElement | File)[],
+  elements: (MusicalElement | FileStyle)[],
   duration?: Duration
 ) => {
-  const arr: { time: Time; el: MusicalElement | File }[] = [];
+  const arr: { time: Time; el: MusicalElement | FileStyle }[] = [];
   let currentPPQ = 0;
   for (const el of elements) {
-    if (el instanceof File) {
+    if (el.type === "file") {
       arr.push({ time: `${currentPPQ}i`, el });
-      currentPPQ += 1;
+      // FIXME: fileの再生時間からPPQを計算するべきか、他の方法があるのか
+      currentPPQ += await calcPPQFromDurationSec(el.duration);
     } else if (el.type !== "bar") {
       arr.push({
         time: `${currentPPQ}i`,
@@ -25,10 +22,10 @@ export const play = async (
       currentPPQ += (Transport.PPQ * 4) / el.duration;
     }
   }
-  const part = new Part<{ time: Time; el: MusicalElement | File }>(
+  const part = new Part<{ time: Time; el: MusicalElement | FileStyle }>(
     (time, { el }) => {
-      if (el instanceof File) {
-        playFile(el);
+      if (el.type === "file") {
+        playFile(el.file);
       } else if (el.type === "note") {
         sampler.triggerAttackRelease(
           el.pitches.map(convert),
@@ -101,4 +98,9 @@ const playFile = async (file: File) => {
   loaded()
     .then(() => player.start())
     .finally(() => URL.revokeObjectURL(url));
+};
+
+const calcPPQFromDurationSec = async (durationSec: number) => {
+  const quarterNoteDuration = 60 / Transport.bpm.value; // 4分音符の長さ（秒）
+  return Math.round((durationSec / quarterNoteDuration) * Transport.PPQ);
 };

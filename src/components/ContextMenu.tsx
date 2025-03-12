@@ -5,6 +5,7 @@ import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback } from "react";
 import { Dialog } from "./Dialog";
 import { measureText } from "@/lib/text";
+import { getAudioDurationSec } from "@/lib/file";
 
 export const ContextMenu = () => {
   const [popover, setPopover] = useAtom(contextMenuAtom);
@@ -74,7 +75,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".mp3,.mp4";
-    input.onchange = (event) => {
+    input.onchange = async (event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
       if (!file) return;
       const fontSize = 500;
@@ -93,6 +94,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
         type: "file",
         file,
         position: desktopPoint,
+        duration: await getAudioDurationSec(file),
         width,
         height: 1000,
         icon: {

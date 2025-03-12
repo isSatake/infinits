@@ -106,6 +106,7 @@ export type StaffStyle = {
 export type FileStyle = {
   type: "file";
   file: File;
+  duration: number;
   position: Point;
   icon: { type: "play"; position: Point; width: number; height: number };
   fileName: TextStyle;
