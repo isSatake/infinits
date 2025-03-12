@@ -6,8 +6,9 @@ export const determineObjPaintStyle = (
   if (obj.type === "file") {
     return {
       element: obj,
-      width: 0,
+      width: obj.width,
       bbox: { left: 0, right: obj.width, top: 0, bottom: obj.height },
+      caretOption: { index: 0 },
     };
   }
   return {
