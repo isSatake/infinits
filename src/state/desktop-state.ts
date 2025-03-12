@@ -15,7 +15,7 @@ type DesktopState =
   | ({ type: "moveRootObj" } & DesktopStateProps["moveRootObj"])
   | ({ type: "focusRootObj" } & DesktopStateProps["focusRootObj"])
   | ({ type: "moveConnection" } & DesktopStateProps["moveConnection"])
-  | ({ type: "connectStaff" } & DesktopStateProps["connectStaff"]);
+  | ({ type: "connectRootObj" } & DesktopStateProps["connectRootObj"]);
 
 export type DesktopStateProps = {
   idle: {};
@@ -33,8 +33,8 @@ export type DesktopStateProps = {
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveRootObj: { id: number; offset: Point; point: Point };
   focusRootObj: { rootObjId: number };
-  moveConnection: { staffId: number; point: Point };
-  connectStaff: { from: number; to: number };
+  moveConnection: { rootObjId: number; point: Point };
+  connectRootObj: { from: number; to: number };
 };
 
 export class DesktopStateMachine {
@@ -62,12 +62,12 @@ export class DesktopStateMachine {
     this._getRootObjOnPoint = fn;
   }
 
-  private _isPointingStaffTail: (
+  private _isPointingRootObjTail: (
     point: Point,
     staffId: number
   ) => boolean | void = () => {};
-  set isPointingStaffTail(fn: (point: Point, staffId: number) => boolean) {
-    this._isPointingStaffTail = fn;
+  set isPointingRootObjTail(fn: (point: Point, staffId: number) => boolean) {
+    this._isPointingRootObjTail = fn;
   }
 
   private _onState = (state: DesktopState) => {};
@@ -133,10 +133,10 @@ export class DesktopStateMachine {
             downMtx: DOMMatrix.fromMatrix(this._mtx),
           };
         } else {
-          if (this._isPointingStaffTail(point, ret?.id)) {
+          if (this._isPointingRootObjTail(point, ret?.id)) {
             this.state = {
               type: "moveConnection",
-              staffId: ret.id,
+              rootObjId: ret.id,
               point,
             };
           } else {
@@ -412,8 +412,8 @@ export class DesktopStateMachine {
         const ret = this._getRootObjOnPoint(point);
         if (ret) {
           this.state = {
-            type: "connectStaff",
-            from: this.state.staffId,
+            type: "connectRootObj",
+            from: this.state.rootObjId,
             to: ret.id,
           };
         }

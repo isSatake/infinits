@@ -1,20 +1,20 @@
 import { UNIT } from "@/font/bravura";
-import { PaintStyle, StaffConnectionStyle, StaffStyle } from "./types";
 import { Point } from "@/lib/geometry";
+import { ConnectionStyle, PaintStyle, RootObj } from "./types";
+import { genStaffLines } from "./staff-element";
 
 export const buildConnectionStyle: (
-  fromStyle: PaintStyle<StaffStyle>,
+  fromStyle: PaintStyle<RootObj>,
   to: Point
-) => PaintStyle<StaffConnectionStyle> = (fromStyle, to) => {
-  const fromStaff = fromStyle.element;
-  const fromLines = fromStaff.lines;
-  const fromPos = fromStaff.position;
+) => PaintStyle<ConnectionStyle> = (fromStyle, to) => {
+  const fromLines = genStaffLines(5);
+  const fromPos = fromStyle.element.position;
   const toPoint: Point = {
     x: to.x - fromPos.x - fromStyle.width,
     y: to.y - fromPos.y,
   };
-  const connectionStyle: PaintStyle<StaffConnectionStyle> = {
-    element: { type: "staffConnection", to: toPoint, lines: fromLines },
+  const connectionStyle: PaintStyle<ConnectionStyle> = {
+    element: { type: "connection", to: toPoint, lines: fromLines },
     width: 0, // 現状connectionの右に何か描画することはないので0にしておく
     bbox: {
       left: 0,

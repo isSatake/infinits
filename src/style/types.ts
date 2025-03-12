@@ -13,7 +13,7 @@ export type CaretStyle = { elIdx: number } & Point & Size;
 type OptionalColor = { color?: string };
 export type PaintElement =
   | StaffStyle
-  | StaffConnectionStyle
+  | ConnectionStyle
   | NoteStyle
   | RestStyle
   | BeamStyle
@@ -113,8 +113,8 @@ export type FileStyle = {
   height: number;
 };
 export type RootObj = StaffStyle | TextStyle | FileStyle;
-export type StaffConnectionStyle = {
-  type: "staffConnection";
+export type ConnectionStyle = {
+  type: "connection";
   to: Point;
   lines: { y: number; width: number }[];
 };

@@ -129,8 +129,10 @@ export const MainCanvas = () => {
       const fromStyle = map
         .get(id)
         ?.find(
-          (style): style is PaintStyle<StaffStyle> =>
-            style.element.type === "staff"
+          (style): style is PaintStyle<RootObj> =>
+            style.element.type === "staff" ||
+            style.element.type === "text" ||
+            style.element.type === "file"
         );
       if (!fromStyle) {
         continue;
@@ -262,16 +264,16 @@ const useMainPointerHandler = () => {
   };
 
   desktopState.current.getRootObjOnPoint = dndStaff;
-  desktopState.current.isPointingStaffTail = (
+  desktopState.current.isPointingRootObjTail = (
     desktopPoint: Point,
-    staffId: number
+    rootObjId: number
   ) => {
-    const style = rootObjs.get(staffId);
-    if (!style || style.type !== "staff") {
+    const style = rootObjs.get(rootObjId);
+    if (!style) {
       return false;
     }
-    const staffWidth =
-      styleMap.get(staffId)?.reduce((acc, style) => {
+    const objWidth =
+      styleMap.get(rootObjId)?.reduce((acc, style) => {
         return style.element.type !== "staff" &&
           style.element.type !== "beam" &&
           style.element.type !== "tie"
@@ -282,10 +284,11 @@ const useMainPointerHandler = () => {
       desktopPoint,
       offsetBBox(
         {
-          left: staffWidth * 0.7,
-          right: staffWidth,
+          left: objWidth * 0.7,
+          right: objWidth,
           top: 0,
-          bottom: style.lines.length * UNIT,
+          bottom:
+            style.type === "staff" ? style.lines.length * UNIT : style.height,
         },
         style.position
       )
@@ -306,13 +309,13 @@ const useMainPointerHandler = () => {
   );
 
   const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
-    const { staffId, point: position } = args;
-    connections.delete(staffId);
+    const { rootObjId: from, point: position } = args;
+    connections.delete(from);
     setConnections(connections);
-    setUncommitedConnection({ from: staffId, position });
+    setUncommitedConnection({ from, position });
   };
 
-  const onConnectStaff = (args: DesktopStateProps["connectStaff"]) => {
+  const onConnectRootObj = (args: DesktopStateProps["connectRootObj"]) => {
     const { from, to } = args;
     connections.set(from, to);
     setConnections(connections);
@@ -384,8 +387,8 @@ const useMainPointerHandler = () => {
       case "moveConnection":
         onMoveConnection(state);
         break;
-      case "connectStaff":
-        onConnectStaff(state);
+      case "connectRootObj":
+        onConnectRootObj(state);
         break;
       case "ctxMenu":
         onCtxMenu(state);

@@ -17,7 +17,7 @@ import {
 } from "../core/constants";
 import {
   FileStyle,
-  StaffConnectionStyle,
+  ConnectionStyle,
   StaffStyle,
   TextStyle,
 } from "../style/types";
@@ -107,7 +107,7 @@ export const paintStaff = (
 
 const paintStaffConnection = (
   ctx: CanvasRenderingContext2D,
-  style: StaffConnectionStyle
+  style: ConnectionStyle
 ) => {
   for (const line of style.lines) {
     ctx.save();
@@ -260,7 +260,7 @@ export const paintStyle = (
   const { type } = element;
   if (element.type === "staff") {
     paintStaff(ctx, element, style.width);
-  } else if (type === "staffConnection") {
+  } else if (type === "connection") {
     paintStaffConnection(ctx, element);
   } else if (type === "clef") {
     paintGClef(ctx, element, 0, 0);
@@ -311,7 +311,7 @@ export const paintCaret = ({
   caret: CaretStyle;
   highlighted: boolean;
 }) => {
-  const { x, y, width , height} = caret;
+  const { x, y, width, height } = caret;
   // const height = bStaffHeight * scale;
   ctx.save();
   ctx.fillStyle = highlighted ? "#FF000055" : "#FF000033";

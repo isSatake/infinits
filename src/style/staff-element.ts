@@ -1173,9 +1173,13 @@ export const genStaffStyle = (staff: Staff, position: Point): StaffStyle => {
     staff,
     position,
     width: { type: "auto" },
-    lines: Array.from({ length: staff.lineCount }).map((_, i) => ({
-      y: UNIT * i,
-      width: bStaffLineWidth,
-    })),
+    lines: genStaffLines(staff.lineCount),
   };
 };
+
+export const genStaffLines = (lineCount: number) => {
+  return Array.from({ length: lineCount }).map((_, i) => ({
+    y: UNIT * i,
+    width: bStaffLineWidth,
+  }));
+}
