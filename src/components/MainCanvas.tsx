@@ -3,6 +3,8 @@ import {
   BBox,
   Point,
   Size,
+  addPoint,
+  distanceToLineSegment,
   isPointInBBox,
   offsetBBox,
   scaleSize,
@@ -278,12 +280,22 @@ const useMainPointerHandler = () => {
     }
     for (const [id, v] of connStyleMap) {
       for (const _v of v) {
-        if (
-          isPointInBBox(
-            desktopPoint,
-            offsetBBox(_v.bbox, _v.element.position)
-          )
-        ) {
+        const connectionHeight = (_v.element.lines.length - 1) * UNIT;
+        const d = distanceToLineSegment({
+          point: desktopPoint,
+          start: addPoint(_v.element.position, {
+            x: 0,
+            y: connectionHeight / 2,
+          }),
+          end: addPoint(
+            _v.element.position,
+            addPoint(_v.element.to, {
+              x: 0,
+              y: connectionHeight / 2,
+            })
+          ),
+        });
+        if (!!d && d < connectionHeight / 2) {
           const ret = connections.get(id);
           if (ret !== undefined) {
             return { from: id, to: ret };

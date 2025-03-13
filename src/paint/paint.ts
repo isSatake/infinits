@@ -1,8 +1,6 @@
 import {
   bClefG,
   bLedgerLineThickness,
-  bStaffHeight,
-  bStaffLineWidth,
   Path,
   repeatDotRadius,
   UNIT,
@@ -109,6 +107,15 @@ const paintStaffConnection = (
   ctx: CanvasRenderingContext2D,
   style: ConnectionStyle
 ) => {
+  ctx.save();
+  ctx.fillStyle = "#00FF00";
+  ctx.font = "500px sans-serif";
+  ctx.fillRect(0, 0, 100, 100);
+  ctx.fillText(`(${Math.floor(style.position.x)}, ${Math.floor(style.position.y)})`, 0, 0);
+  ctx.translate(style.to.x, style.to.y);
+  ctx.fillRect(0, 0, 100, 100);
+  ctx.fillText(`(${Math.floor(style.to.x)}, ${Math.floor(style.to.y)})`, 0, 0);
+  ctx.restore();
   for (const line of style.lines) {
     ctx.save();
     ctx.strokeStyle = "#000";
