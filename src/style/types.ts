@@ -116,6 +116,7 @@ export type FileStyle = {
 export type RootObj = StaffStyle | TextStyle | FileStyle;
 export type ConnectionStyle = {
   type: "connection";
+  toId?: number;
   position: Point;
   to: Point;
   lines: { y: number; width: number }[];

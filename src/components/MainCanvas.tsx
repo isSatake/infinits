@@ -59,7 +59,7 @@ export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const elements = useAtomValue(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(elementMapAtom);
-  const connection = useAtomValue(connectionAtom);
+  const connectionMap = useAtomValue(connectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
@@ -119,33 +119,46 @@ export const MainCanvas = () => {
       let toPos;
       if (uncommitedConnection?.from === id) {
         toPos = uncommitedConnection.position;
-      } else {
-        const toId = connection.get(id);
-        if (toId === undefined) {
+        const fromStyle = map
+          .get(id)
+          ?.find(
+            (style): style is PaintStyle<RootObj> =>
+              style.element.type === "staff" ||
+              style.element.type === "text" ||
+              style.element.type === "file"
+          );
+        if (!fromStyle) {
           continue;
         }
-        toPos = rootObjs.get(toId)?.position;
+        map.get(id)?.push(buildConnectionStyle(fromStyle, toPos));
       }
-      if (!toPos) {
+      const connections = connectionMap.get(id);
+      if (connections === undefined) {
         continue;
       }
-      const fromStyle = map
-        .get(id)
-        ?.find(
-          (style): style is PaintStyle<RootObj> =>
-            style.element.type === "staff" ||
-            style.element.type === "text" ||
-            style.element.type === "file"
-        );
-      if (!fromStyle) {
-        continue;
+      for (const toId of connections) {
+        const toPos = rootObjs.get(toId)?.position;
+        if (!toPos) {
+          continue;
+        }
+        const fromStyle = map
+          .get(id)
+          ?.find(
+            (style): style is PaintStyle<RootObj> =>
+              style.element.type === "staff" ||
+              style.element.type === "text" ||
+              style.element.type === "file"
+          );
+        if (!fromStyle) {
+          continue;
+        }
+        map.get(id)?.push(buildConnectionStyle(fromStyle, toPos, toId));
       }
-      map.get(id)?.push(buildConnectionStyle(fromStyle, toPos));
     }
 
     console.log("new style map", map);
     setStyleMap(map);
-  }, [rootObjs.map, connection, uncommitedConnection, elements, pointing]);
+  }, [rootObjs.map, connectionMap, uncommitedConnection, elements, pointing]);
 
   // caret style
   useEffect(() => {
@@ -280,6 +293,9 @@ const useMainPointerHandler = () => {
     }
     for (const [id, v] of connStyleMap) {
       for (const _v of v) {
+        if (_v.element.toId === undefined) {
+          continue;
+        }
         const connectionHeight = (_v.element.lines.length - 1) * UNIT;
         const d = distanceToLineSegment({
           point: desktopPoint,
@@ -296,10 +312,7 @@ const useMainPointerHandler = () => {
           ),
         });
         if (!!d && d < connectionHeight / 2) {
-          const ret = connections.get(id);
-          if (ret !== undefined) {
-            return { from: id, to: ret };
-          }
+          return { from: id, to: _v.element.toId };
         }
       }
     }
@@ -349,15 +362,22 @@ const useMainPointerHandler = () => {
   );
 
   const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
-    const { rootObjId: from, point: position } = args;
-    connections.delete(from);
-    setConnections(connections);
+    const { isNew, rootObjId: from, point: position } = args;
+    if (!isNew) {
+      connections.delete(from);
+      setConnections(connections);
+    }
     setUncommitedConnection({ from, position });
   };
 
   const onConnectRootObj = (args: DesktopStateProps["connectRootObj"]) => {
     const { from, to } = args;
-    connections.set(from, to);
+    const v: number[] = connections.get(from) ?? [];
+    if (v.includes(to)) {
+      return;
+    }
+    v.push(to);
+    connections.set(from, v);
     setConnections(connections);
     setUncommitedConnection(undefined);
   };

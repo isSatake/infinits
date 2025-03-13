@@ -1,9 +1,9 @@
 import { MusicalElement } from "@/core/types";
 import {
+  connectionAtom,
   elementsAtom,
   focusAtom,
   rootObjMapAtom,
-  connectionAtom,
 } from "@/state/atom";
 import { FileStyle } from "@/style/types";
 import * as tone from "@/tone";
@@ -14,18 +14,38 @@ export const usePlayTone = () => {
   const { rootObjId } = useAtomValue(focusAtom);
   const elementsMap = useAtomValue(elementsAtom);
   const connection = useAtomValue(connectionAtom);
-  const connectedIds: number[] = [];
-  let id: number | undefined = rootObjId;
-  const elements: (MusicalElement | FileStyle)[] = [];
-  while (id !== undefined && !connectedIds.includes(id)) {
-    const obj = rootObjs.get(id);
+  // 0 - 1 - 2
+  //     \ - 3
+  // -> [[-1, { elements: [0, 1, 2]}], [1, { elements: [3]}]]
+  const fragments = new Map<
+    number,
+    { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[]
+  >();
+  const processedIds: number[] = [];
+  const processId = (rootObjId: number) => {
+    const obj = rootObjs.get(rootObjId);
+    if (!obj) return;
+    const elements: (MusicalElement | FileStyle)[] = [];
     if (obj?.type === "file") {
       elements.push(obj);
-    } else if (obj?.type === "staff") {
-      elements.push(...(elementsMap.get(id) ?? []));
     }
-    connectedIds.push(id);
-    id = connection.get(id);
-  }
-  return () => tone.play(elements);
+    if (obj?.type === "staff") {
+      elements.push(...(elementsMap.get(rootObjId) ?? []));
+    }
+    return { rootObjId, elements };
+  };
+  const searchFragments = (prevId: number, currentId: number) => {
+    if (processedIds.includes(currentId)) return;
+    processedIds.push(currentId);
+    const elements = processId(currentId);
+    if (!elements) return;
+    fragments.set(prevId, (fragments.get(prevId) ?? []).concat(elements));
+    const connectionIds = connection.get(currentId);
+    if (!connectionIds) return;
+    const [nextId, ...others] = connectionIds;
+    searchFragments(prevId, nextId);
+    others.map((_id) => searchFragments(currentId, _id));
+  };
+  searchFragments(-1, rootObjId);
+  return () => tone.multiPlay(fragments);
 };

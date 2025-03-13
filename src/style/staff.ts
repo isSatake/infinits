@@ -5,8 +5,9 @@ import { genStaffLines } from "./staff-element";
 
 export const buildConnectionStyle: (
   fromStyle: PaintStyle<RootObj>,
-  to: Point
-) => PaintStyle<ConnectionStyle> = (fromStyle, to) => {
+  to: Point,
+  toId?: number
+) => PaintStyle<ConnectionStyle> = (fromStyle, to, toId) => {
   const fromLines = genStaffLines(5);
   const fromPos = fromStyle.element.position;
   const toPoint: Point = {
@@ -16,6 +17,7 @@ export const buildConnectionStyle: (
   const connectionStyle: PaintStyle<ConnectionStyle> = {
     element: {
       type: "connection",
+      toId,
       position: {
         x: fromPos.x + fromStyle.width,
         y: fromPos.y,
