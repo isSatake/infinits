@@ -3,7 +3,6 @@ import { Point } from "@/lib/geometry";
 import { contextMenuAtom, showDialogAtom } from "@/state/atom";
 import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback } from "react";
-import { Dialog } from "./Dialog";
 import { measureText } from "@/lib/text";
 import { getAudioDurationSec } from "@/lib/file";
 
@@ -12,22 +11,22 @@ export const ContextMenu = () => {
   const onClose = useCallback(() => setPopover(undefined), []);
 
   return (
-    <Dialog
-      className={"contextMenu"}
-      open={!!popover}
-      position={popover?.htmlPoint}
-      onClose={onClose}
-    >
-      {popover?.type === "staff" && (
-        <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
-      )}
-      {popover?.type === "canvas" && (
-        <CanvasContextMenu
-          desktopPoint={popover.desktopPoint}
-          onClose={onClose}
-        />
-      )}
-    </Dialog>
+    <div className={"contextMenu"}>
+      <div className="header">
+        <button onClick={onClose}>Cancel</button>
+      </div>
+      <div className="body">
+        {popover?.type === "staff" && (
+          <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
+        )}
+        {popover?.type === "canvas" && (
+          <CanvasContextMenu
+            desktopPoint={popover.desktopPoint}
+            onClose={onClose}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

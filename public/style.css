@@ -33,6 +33,7 @@ body {
   position: absolute;
   background: #d5d8dd;
   width: 100%;
+  height: 645px;
   left: 0;
   bottom: 0;
   padding-bottom: calc(env(safe-area-inset-bottom) + 124px);
@@ -554,25 +555,64 @@ body {
 .contextMenu {
   display: flex;
   flex-direction: column;
-  box-shadow: 5px 5px;
-  border: black 1px solid;
-  font-size: 4em;
-  padding: 0;
   user-select: none;
   -webkit-user-select: none;
+  align-items: center;
+  position: absolute;
+  background: #d5d8dd;
+  width: 100%;
+  height: 645px;
+  left: 0;
+  bottom: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 124px);
 
-  @media (hover: hover) {
-    button:hover {
-      background: #ccc;
+  .body {
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    align-items: center;
+    gap: 20px;
+    font-size: 3em;
+
+    button {
+      padding: 24px 30px;
+      width: 100%;
+      background-color: white;
+      border-radius: var(--key-border-radius);
+      box-shadow: #8d9095 0 3px;
+    }
+    button:active {
+      background: #aaa;
+    }
+    @media (hover: hover) {
+      button:hover {
+        background: #ccc;
+      }
     }
   }
 
-  button {
-    padding: 10px 30px;
-    border-top: 1px solid black;
-  }
-  button:active {
-    background: #aaa;
+  .header {
+    display: flex;
+    width: 90%;
+    height: 94px;
+    font-size: 3em;
+    padding: 16px 0;
+
+    button {
+      color: #007aff;
+      background-color: transparent;
+      border-radius: var(--key-border-radius);
+    }
+    button:active {
+      background: #aaa;
+      color: white;
+    }
+    @media (hover: hover) {
+      button:hover {
+        background: #ccc;
+      }
+    }
   }
 }
 
