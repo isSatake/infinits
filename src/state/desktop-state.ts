@@ -33,7 +33,7 @@ export type DesktopStateProps = {
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveRootObj: { id: number; offset: Point; point: Point };
   focusRootObj: { rootObjId: number };
-  moveConnection: { rootObjId: number; point: Point };
+  moveConnection: { isNew: boolean; rootObjId: number; point: Point };
   connectRootObj: { from: number; to: number };
 };
 
@@ -60,6 +60,15 @@ export class DesktopStateMachine {
     ) => { objType: RootObj["type"]; id: number; offset: Point } | void
   ) {
     this._getRootObjOnPoint = fn;
+  }
+
+  private _getConnectionOnPoint: (
+    point: Point
+  ) => { from: number; to: number } | void = () => {};
+  set getConnectionOnPoint(
+    fn: (point: Point) => { from: number; to: number } | void
+  ) {
+    this._getConnectionOnPoint = fn;
   }
 
   private _isPointingRootObjTail: (
@@ -126,21 +135,32 @@ export class DesktopStateMachine {
           y: state.down.clientY,
         };
         const point = this._mtx.inverse().transformPoint(htmlPoint);
-        const ret = this._getRootObjOnPoint(point);
-        if (!ret) {
+        const connection = this._getConnectionOnPoint(point);
+        if (connection) {
           this.state = {
-            type: "downCanvas",
-            downMtx: DOMMatrix.fromMatrix(this._mtx),
+            type: "moveConnection",
+            isNew: false,
+            rootObjId: connection.from,
+            point,
           };
         } else {
-          if (this._isPointingRootObjTail(point, ret?.id)) {
+          const ret = this._getRootObjOnPoint(point);
+          if (!ret) {
             this.state = {
-              type: "moveConnection",
-              rootObjId: ret.id,
-              point,
+              type: "downCanvas",
+              downMtx: DOMMatrix.fromMatrix(this._mtx),
             };
           } else {
-            this.state = { type: "downRootObj", point, ...ret };
+            if (this._isPointingRootObjTail(point, ret?.id)) {
+              this.state = {
+                type: "moveConnection",
+                isNew: true,
+                rootObjId: ret.id,
+                point,
+              };
+            } else {
+              this.state = { type: "downRootObj", point, ...ret };
+            }
           }
         }
       }

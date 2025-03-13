@@ -1,7 +1,54 @@
 import { Duration, MusicalElement, PitchAcc, rootNotes } from "@/core/types";
-import { Part, Player, Sampler, Transport, loaded, start } from "tone";
-import { Frequency, Time } from "tone/build/esm/core/type/Units";
+import {
+  Part,
+  Player,
+  Sampler,
+  ToneEventCallback,
+  Transport,
+  loaded,
+  start,
+} from "tone";
+import { Frequency, Seconds, Time } from "tone/build/esm/core/type/Units";
 import { FileStyle } from "./style/types";
+
+type CallBackElement = { time: Time; el: MusicalElement | FileStyle };
+
+// 複数パート対応
+export const multiPlay = async (
+  fragments: Map<
+    number,
+    { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[]
+  >
+) => {
+  const parts: Part<CallBackElement>[] = [];
+  // id -> ppq
+  const ppqMap = new Map<number, number>();
+
+  for (const [prevFragmentId, _elements] of fragments) {
+    const arr: CallBackElement[] = [];
+    let currentPPQ = ppqMap.get(prevFragmentId) ?? 0;
+    for (const { rootObjId, elements } of _elements) {
+      for (const el of elements) {
+        if (el.type === "file") {
+          arr.push({ time: `${currentPPQ}i`, el });
+          currentPPQ += await calcPPQFromDurationSec(el.duration);
+        } else if (el.type !== "bar") {
+          arr.push({
+            time: `${currentPPQ}i`,
+            el: { ...el, duration: el.duration },
+          });
+          currentPPQ += (Transport.PPQ * 4) / el.duration;
+        }
+        ppqMap.set(rootObjId, currentPPQ);
+      }
+    }
+    const part = new Part<CallBackElement>(partCallback, arr);
+    parts.push(part);
+  }
+  await start();
+  parts.forEach((part) => part.start());
+  Transport.start();
+};
 
 export const play = async (
   elements: (MusicalElement | FileStyle)[],
@@ -22,23 +69,22 @@ export const play = async (
       currentPPQ += (Transport.PPQ * 4) / el.duration;
     }
   }
-  const part = new Part<{ time: Time; el: MusicalElement | FileStyle }>(
-    (time, { el }) => {
-      if (el.type === "file") {
-        playFile(el.file);
-      } else if (el.type === "note") {
-        sampler.triggerAttackRelease(
-          el.pitches.map(convert),
-          `${el.duration}n`,
-          time
-        );
-      }
-    },
-    arr
-  );
+  const part = new Part<CallBackElement>(partCallback, arr);
   await start();
   part.start();
   Transport.start();
+};
+
+const partCallback: ToneEventCallback<CallBackElement> = (time, { el }) => {
+  if (el.type === "file") {
+    playFile(el.file);
+  } else if (el.type === "note") {
+    sampler.triggerAttackRelease(
+      el.pitches.map(convert),
+      `${el.duration}n`,
+      time
+    );
+  }
 };
 
 const sampler = new Sampler({

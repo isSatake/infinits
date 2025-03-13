@@ -52,3 +52,39 @@ export const isPointInBBox = (
 export const scaleSize = (size: Size, scale: number): Size => {
   return { width: size.width * scale, height: size.height * scale };
 };
+
+export const distanceToLineSegment = ({
+  point,
+  start,
+  end,
+}: {
+  point: Point;
+  start: Point;
+  end: Point;
+}): number | undefined => {
+  const { x: sx, y: sy } = start;
+  const { x: ex, y: ey } = end;
+  const { x: px, y: py } = point;
+
+  // ベクトル AB, AP を求める
+  const ABx = ex - sx;
+  const ABy = ey - sy;
+  const APx = px - sx;
+  const APy = py - sy;
+
+  // 射影比率 t の計算
+  const dotAPAB = APx * ABx + APy * ABy; // AP・AB
+  const dotABAB = ABx * ABx + ABy * ABy; // AB・AB
+  const t = dotAPAB / dotABAB;
+
+  // 射影点を求める
+  const projection = {
+    x: sx + t * ABx,
+    y: sy + t * ABy,
+  };
+
+  // 射影点が線分の外にある場合
+  if (t < 0 || t > 1) return;
+
+  return magnitude(projection, point);
+};

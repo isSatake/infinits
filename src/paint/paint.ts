@@ -1,8 +1,6 @@
 import {
   bClefG,
   bLedgerLineThickness,
-  bStaffHeight,
-  bStaffLineWidth,
   Path,
   repeatDotRadius,
   UNIT,

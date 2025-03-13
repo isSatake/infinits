@@ -5,8 +5,9 @@ import { genStaffLines } from "./staff-element";
 
 export const buildConnectionStyle: (
   fromStyle: PaintStyle<RootObj>,
-  to: Point
-) => PaintStyle<ConnectionStyle> = (fromStyle, to) => {
+  to: Point,
+  toId?: number
+) => PaintStyle<ConnectionStyle> = (fromStyle, to, toId) => {
   const fromLines = genStaffLines(5);
   const fromPos = fromStyle.element.position;
   const toPoint: Point = {
@@ -14,7 +15,16 @@ export const buildConnectionStyle: (
     y: to.y - fromPos.y,
   };
   const connectionStyle: PaintStyle<ConnectionStyle> = {
-    element: { type: "connection", to: toPoint, lines: fromLines },
+    element: {
+      type: "connection",
+      toId,
+      position: {
+        x: fromPos.x + fromStyle.width,
+        y: fromPos.y,
+      },
+      to: toPoint,
+      lines: fromLines,
+    },
     width: 0, // 現状connectionの右に何か描画することはないので0にしておく
     bbox: {
       left: 0,
