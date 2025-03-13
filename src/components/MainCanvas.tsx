@@ -16,6 +16,7 @@ import {
 } from "@/style/staff-element";
 import {
   CaretStyle,
+  ConnectionStyle,
   PaintElement,
   PaintStyle,
   Pointing,
@@ -264,6 +265,33 @@ const useMainPointerHandler = () => {
   };
 
   desktopState.current.getRootObjOnPoint = dndStaff;
+  desktopState.current.getConnectionOnPoint = (desktopPoint: Point) => {
+    const connStyleMap = new Map<number, PaintStyle<ConnectionStyle>[]>();
+    for (const [id, styles] of styleMap) {
+      const connection = styles.filter(
+        (v: PaintStyle<PaintElement>): v is PaintStyle<ConnectionStyle> =>
+          v.element.type === "connection"
+      );
+      if (connection.length > 0) {
+        connStyleMap.set(id, connection);
+      }
+    }
+    for (const [id, v] of connStyleMap) {
+      for (const _v of v) {
+        if (
+          isPointInBBox(
+            desktopPoint,
+            offsetBBox(_v.bbox, _v.element.position)
+          )
+        ) {
+          const ret = connections.get(id);
+          if (ret !== undefined) {
+            return { from: id, to: ret };
+          }
+        }
+      }
+    }
+  };
   desktopState.current.isPointingRootObjTail = (
     desktopPoint: Point,
     rootObjId: number

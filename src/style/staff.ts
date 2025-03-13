@@ -14,7 +14,15 @@ export const buildConnectionStyle: (
     y: to.y - fromPos.y,
   };
   const connectionStyle: PaintStyle<ConnectionStyle> = {
-    element: { type: "connection", to: toPoint, lines: fromLines },
+    element: {
+      type: "connection",
+      position: {
+        x: fromPos.x + fromStyle.width,
+        y: fromPos.y,
+      },
+      to: toPoint,
+      lines: fromLines,
+    },
     width: 0, // 現状connectionの右に何か描画することはないので0にしておく
     bbox: {
       left: 0,
