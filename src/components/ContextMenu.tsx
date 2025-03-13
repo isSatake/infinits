@@ -1,23 +1,17 @@
 import { useObjects } from "@/hooks/object";
-import { Point } from "@/lib/geometry";
-import { contextMenuAtom, showDialogAtom } from "@/state/atom";
-import { useAtom, useSetAtom } from "jotai";
-import React, { FC, useCallback } from "react";
-import { Dialog } from "./Dialog";
-import { measureText } from "@/lib/text";
 import { getAudioDurationSec } from "@/lib/file";
+import { Point } from "@/lib/geometry";
+import { measureText } from "@/lib/text";
+import { contextMenuAtom } from "@/state/atom";
+import { useAtom } from "jotai";
+import React, { FC, useCallback, useState } from "react";
 
 export const ContextMenu = () => {
   const [popover, setPopover] = useAtom(contextMenuAtom);
   const onClose = useCallback(() => setPopover(undefined), []);
 
   return (
-    <Dialog
-      className={"contextMenu"}
-      open={!!popover}
-      position={popover?.htmlPoint}
-      onClose={onClose}
-    >
+    <div className={"contextMenu"}>
       {popover?.type === "staff" && (
         <StaffContextMenu staffId={popover.staffId} onClose={onClose} />
       )}
@@ -27,7 +21,7 @@ export const ContextMenu = () => {
           onClose={onClose}
         />
       )}
-    </Dialog>
+    </div>
   );
 };
 
@@ -35,42 +29,10 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   desktopPoint,
   onClose,
 }) => {
-  const setShowDialog = useSetAtom(showDialogAtom);
   const rootObjs = useObjects();
-  const onAddText = () => {
-    setShowDialog({
-      type: "input",
-      placeholder: "Add Text",
-      buttons: [
-        {
-          label: "OK",
-          onClick: (text: string) => {
-            const metrics = measureText({
-              text,
-              fontSize: 500,
-              fontFamily: "sans-serif",
-              baseline: "top",
-            });
-            rootObjs.add({
-              type: "text",
-              position: desktopPoint,
-              text,
-              fontSize: 500,
-              fontFamily: "sans-serif",
-              baseline: "top",
-              ...metrics,
-            });
-            setShowDialog(undefined);
-          },
-        },
-        {
-          label: "Cancel",
-          onClick: () => setShowDialog(undefined),
-        },
-      ],
-    });
-    onClose();
-  };
+  const [mode, setMode] = useState<"default" | "text">("default");
+  const [text, setText] = useState("");
+
   const onAddFile = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -113,14 +75,81 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
           ...txtMetrics,
         },
       });
+      onClose();
     };
     input.click();
+  };
+
+  const onSubmitText = (text: string) => {
+    const metrics = measureText({
+      text,
+      fontSize: 500,
+      fontFamily: "sans-serif",
+      baseline: "top",
+    });
+    rootObjs.add({
+      type: "text",
+      position: desktopPoint,
+      text,
+      fontSize: 500,
+      fontFamily: "sans-serif",
+      baseline: "top",
+      ...metrics,
+    });
+    setMode("default");
     onClose();
   };
   return (
     <>
-      <button onClick={onAddText}>Add Text</button>
-      <button onClick={onAddFile}>Add File</button>
+      <div className="header">
+        {mode === "default" && <button onClick={onClose}>Cancel</button>}
+        {mode === "text" && (
+          <>
+            <button onClick={() => setMode("default")}>Cancel</button>
+            <button onClick={() => onSubmitText(text)}>OK</button>
+          </>
+        )}
+      </div>
+      <div className="body">
+        {mode === "default" && (
+          <>
+            <button onClick={() => setMode("text")}>Add Text</button>
+            <button onClick={onAddFile}>Add File</button>
+          </>
+        )}
+        {mode === "text" && (
+          <Input
+            placeholder="Add Text"
+            value={text}
+            onChange={setText}
+            onEnter={onSubmitText}
+          />
+        )}
+      </div>
+    </>
+  );
+};
+
+const Input: FC<{
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  onEnter: (v: string) => void;
+}> = ({ placeholder, value, onChange, onEnter }) => {
+  return (
+    <>
+      <div className="inputContainer">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.currentTarget.value)}
+          placeholder={placeholder}
+          onKeyDown={(e) => {
+            if (!e.nativeEvent.isComposing && e.key === "Enter") {
+              onEnter(value);
+            }
+          }}
+        />
+      </div>
     </>
   );
 };
@@ -129,31 +158,19 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   staffId,
   onClose,
 }) => {
-  const setShowDialog = useSetAtom(showDialogAtom);
   const rootObjs = useObjects();
-
   const onClickDelete = () => {
-    setShowDialog({
-      type: "message",
-      title: "Delete?",
-      buttons: [
-        {
-          label: "OK",
-          onClick: () => {
-            rootObjs.remove(staffId);
-            setShowDialog(undefined);
-          },
-        },
-        {
-          label: "Cancel",
-          onClick: () => {
-            setShowDialog(undefined);
-          },
-        },
-      ],
-    });
+    rootObjs.remove(staffId);
     onClose();
   };
-
-  return <button onClick={onClickDelete}>Delete</button>;
+  return (
+    <>
+      <div className="header">
+        <button onClick={onClose}>Cancel</button>
+      </div>
+      <div className="body">
+        <button onClick={onClickDelete}>Delete</button>
+      </div>
+    </>
+  );
 };
