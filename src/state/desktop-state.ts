@@ -430,7 +430,7 @@ export class DesktopStateMachine {
         }
         const point = this._mtx.inverse().transformPoint(state.point);
         const ret = this._getRootObjOnPoint(point);
-        if (ret) {
+        if (ret && this.state.rootObjId !== ret.id) {
           this.state = {
             type: "connectRootObj",
             from: this.state.rootObjId,
