@@ -1,16 +1,12 @@
 import { MusicalElement } from "@/core/types";
-import {
-  connectionAtom,
-  elementsAtom,
-  focusAtom,
-  rootObjMapAtom,
-} from "@/state/atom";
+import { connectionAtom, elementsAtom, focusAtom } from "@/state/atom";
 import { FileStyle } from "@/style/types";
 import * as tone from "@/tone";
 import { useAtomValue } from "jotai";
+import { useObjects } from "./object";
 
 export const usePlayTone = () => {
-  const rootObjs = useAtomValue(rootObjMapAtom);
+  const { map: rootObjs } = useObjects();
   const { rootObjId } = useAtomValue(focusAtom);
   const elementsMap = useAtomValue(elementsAtom);
   const connection = useAtomValue(connectionAtom);
