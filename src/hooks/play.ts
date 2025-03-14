@@ -16,12 +16,12 @@ export const usePlayTone = () => {
   const connection = useAtomValue(connectionAtom);
 
   return () => {
-    // 0 - 1 - 2
-    //     \ - 3
-    // -> [[-1, { elements: [0, 1, 2]}], [1, { elements: [3]}]]
     const fragments = new Map<
-      number,
-      { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[]
+      number, // prevId
+      Map<
+        number, // startId
+        { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[] // currentId -> elements
+      >
     >();
     const processedIds: number[] = [];
     const processId = (rootObjId: number) => {
@@ -36,19 +36,25 @@ export const usePlayTone = () => {
       }
       return { rootObjId, elements };
     };
-    const searchFragments = (prevId: number, currentId: number) => {
+    const searchFragments = (
+      prevId: number,
+      startId: number,
+      currentId: number
+    ) => {
       if (processedIds.includes(currentId)) return;
       processedIds.push(currentId);
       const elements = processId(currentId);
       if (!elements) return;
-      fragments.set(prevId, (fragments.get(prevId) ?? []).concat(elements));
+      const fragment = fragments.get(prevId) ?? new Map();
+      fragment.set(startId, (fragment.get(startId) ?? []).concat(elements));
+      fragments.set(prevId, fragment);
       const connectionIds = connection.get(currentId);
       if (!connectionIds) return;
       const [nextId, ...others] = connectionIds;
-      searchFragments(prevId, nextId);
-      others.map((_id) => searchFragments(currentId, _id));
+      searchFragments(prevId, startId, nextId);
+      others.map((_id) => searchFragments(currentId, _id, _id));
     };
-    searchFragments(-1, rootObjId);
+    searchFragments(-1, rootObjId, rootObjId);
     tone.multiPlay(fragments);
   };
 };

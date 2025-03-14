@@ -16,8 +16,11 @@ type CallBackElement = { time: Time; el: MusicalElement | FileStyle };
 // 複数パート対応
 export const multiPlay = async (
   fragments: Map<
-    number,
-    { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[]
+    number, // prevId
+    Map<
+      number, // startId
+      { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[] // currentId -> elements
+    >
   >
 ) => {
   const parts: Part<CallBackElement>[] = [];
@@ -25,25 +28,27 @@ export const multiPlay = async (
   const ppqMap = new Map<number, number>();
 
   for (const [prevFragmentId, _elements] of fragments) {
-    const arr: CallBackElement[] = [];
-    let currentPPQ = ppqMap.get(prevFragmentId) ?? 0;
-    for (const { rootObjId, elements } of _elements) {
-      for (const el of elements) {
-        if (el.type === "file") {
-          arr.push({ time: `${currentPPQ}i`, el });
-          currentPPQ += await calcPPQFromDurationSec(el.duration);
-        } else if (el.type !== "bar") {
-          arr.push({
-            time: `${currentPPQ}i`,
-            el: { ...el, duration: el.duration },
-          });
-          currentPPQ += (Transport.PPQ * 4) / el.duration;
+    for (const [startId, elel] of _elements) {
+      const arr: CallBackElement[] = [];
+      let currentPPQ = ppqMap.get(prevFragmentId) ?? 0;
+      for (const { rootObjId, elements } of elel) {
+        for (const el of elements) {
+          if (el.type === "file") {
+            arr.push({ time: `${currentPPQ}i`, el });
+            currentPPQ += await calcPPQFromDurationSec(el.duration);
+          } else if (el.type !== "bar") {
+            arr.push({
+              time: `${currentPPQ}i`,
+              el: { ...el, duration: el.duration },
+            });
+            currentPPQ += (Transport.PPQ * 4) / el.duration;
+          }
+          ppqMap.set(rootObjId, currentPPQ);
         }
-        ppqMap.set(rootObjId, currentPPQ);
       }
+      const part = new Part<CallBackElement>(partCallback, arr);
+      parts.push(part);
     }
-    const part = new Part<CallBackElement>(partCallback, arr);
-    parts.push(part);
   }
   await start();
   parts.forEach((part) => part.start());
