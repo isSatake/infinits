@@ -68,6 +68,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
         fileName: {
           type: "text",
           position: txtPosition,
+          localPosition: { x: 0, y: 0 },
           text: fileName,
           fontSize,
           fontFamily,
@@ -87,14 +88,18 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
       fontFamily: "sans-serif",
       baseline: "top",
     });
+    const localPosition = { x: 500, y: 500 - metrics.height / 2 };
     rootObjs.add({
       type: "text",
       position: desktopPoint,
+      localPosition,
       text,
       fontSize: 500,
       fontFamily: "sans-serif",
       baseline: "top",
-      ...metrics,
+      offset: metrics.offset,
+      width: metrics.width + localPosition.x * 2,
+      height: metrics.height + localPosition.y * 2,
     });
     setMode("default");
     onClose();

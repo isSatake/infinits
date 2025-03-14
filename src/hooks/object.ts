@@ -3,7 +3,7 @@ import { RootObj } from "@/style/types";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 
-let id = 0;
+let id = 8;
 
 export const useObjects = (): {
   map: Map<number, RootObj>;

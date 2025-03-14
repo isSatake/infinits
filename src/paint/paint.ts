@@ -5,7 +5,7 @@ import {
   repeatDotRadius,
   UNIT,
 } from "../font/bravura";
-import { BBox } from "../lib/geometry";
+import { addPoint, BBox } from "../lib/geometry";
 import {
   accidentalPathMap,
   downFlagMap,
@@ -318,11 +318,12 @@ export const paintCaret = ({
 };
 
 const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
+  const offset = addPoint(element.localPosition, element.offset);
   ctx.save();
   ctx.fillStyle = "#000";
   ctx.font = `${element.fontSize}px ${element.fontFamily}`;
   ctx.textBaseline = element.baseline;
-  ctx.translate(element.offset.x, element.offset.y);
+  ctx.translate(offset.x, offset.y);
   ctx.fillText(element.text, 0, 0);
   ctx.restore();
 };
