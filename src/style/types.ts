@@ -88,6 +88,7 @@ export type TieStyle = {
 export type TextStyle = {
   type: "text";
   position: Point;
+  localPosition: Point;
   text: string;
   fontSize: number;
   fontFamily: string;
@@ -99,7 +100,7 @@ export type TextStyle = {
 export type StaffStyle = {
   type: "staff";
   staff: Staff;
-  position: Point; // 左上
+  position: Point;
   lines: { y: number; width: number }[];
   width: { type: "auto" } | { type: "fixed"; value: number };
 };
