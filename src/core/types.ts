@@ -53,11 +53,7 @@ export type Clef = {
   pitch: "g" | "f" | "c";
 };
 
-export type Staff = {
-  type: "staff";
-  clef: Clef;
-  lineCount: number;
-};
+export type Staff = { type: "staff"; clef: Clef };
 
 export type KeySignature = {
   root: {

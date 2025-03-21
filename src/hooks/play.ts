@@ -1,6 +1,6 @@
 import { MusicalElement } from "@/core/types";
 import { connectionAtom, elementsAtom, focusAtom } from "@/state/atom";
-import { FileStyle } from "@/style/types";
+import { FileStyle } from "@/layout/types";
 import * as tone from "@/tone";
 import { useAtomValue } from "jotai";
 import { useObjects } from "./object";

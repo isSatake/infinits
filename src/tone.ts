@@ -9,7 +9,7 @@ import {
   start,
 } from "tone";
 import { Frequency, Seconds, Time } from "tone/build/esm/core/type/Units";
-import { FileStyle } from "./style/types";
+import { FileStyle } from "./layout/types";
 
 type CallBackElement = { time: Time; el: MusicalElement | FileStyle };
 

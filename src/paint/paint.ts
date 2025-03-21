@@ -1,6 +1,7 @@
 import {
   bClefG,
   bLedgerLineThickness,
+  bStaffLineWidth,
   Path,
   repeatDotRadius,
   UNIT,
@@ -18,8 +19,8 @@ import {
   ConnectionStyle,
   StaffStyle,
   TextStyle,
-} from "../style/types";
-import { pitchToY } from "../style/staff-element";
+} from "../layout/types";
+import { pitchToY } from "../layout/staff-element";
 import {
   BarStyle,
   BeamStyle,
@@ -30,7 +31,7 @@ import {
   PaintStyle,
   RestStyle,
   TieStyle,
-} from "../style/types";
+} from "../layout/types";
 
 export const initCanvas = ({
   leftPx,
@@ -87,16 +88,16 @@ const paintGClef = (
 
 export const paintStaff = (
   ctx: CanvasRenderingContext2D,
-  style: StaffStyle,
   computedWidth: number
 ) => {
-  for (const line of style.lines) {
+  for (let i = 0; i < 5; i++) {
+    const y = UNIT * i;
     ctx.save();
     ctx.strokeStyle = "#000";
-    ctx.lineWidth = line.width;
+    ctx.lineWidth = bStaffLineWidth;
     ctx.beginPath();
-    ctx.moveTo(0, line.y);
-    ctx.lineTo(computedWidth, line.y);
+    ctx.moveTo(0, y);
+    ctx.lineTo(computedWidth, y);
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
@@ -107,13 +108,14 @@ const paintStaffConnection = (
   ctx: CanvasRenderingContext2D,
   style: ConnectionStyle
 ) => {
-  for (const line of style.lines) {
+  for (let i = 0; i < 5; i++) {
+    const y = UNIT * i;
     ctx.save();
     ctx.strokeStyle = "#000";
-    ctx.lineWidth = line.width;
+    ctx.lineWidth = bStaffLineWidth;
     ctx.beginPath();
-    ctx.moveTo(0, line.y);
-    ctx.lineTo(style.to.x, style.to.y + line.y);
+    ctx.moveTo(0, y);
+    ctx.lineTo(style.to.x, style.to.y + y);
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
@@ -257,7 +259,7 @@ export const paintStyle = (
   const { element } = style;
   const { type } = element;
   if (element.type === "staff") {
-    paintStaff(ctx, element, style.width);
+    paintStaff(ctx, style.width);
   } else if (type === "connection") {
     paintStaffConnection(ctx, element);
   } else if (type === "clef") {

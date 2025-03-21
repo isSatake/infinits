@@ -10,20 +10,18 @@ import {
   scaleSize,
 } from "@/lib/geometry";
 import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
-import { getInitScale } from "@/style/score-preferences";
+import { getInitScale } from "@/layout/score-preferences";
 import {
   determineCaretStyle,
   determineStaffPaintStyle,
-  genStaffStyle,
-} from "@/style/staff-element";
+} from "@/layout/staff-element";
 import {
   CaretStyle,
   ConnectionStyle,
   PaintElement,
   PaintStyle,
   Pointing,
-  RootObj,
-} from "@/style/types";
+} from "@/layout/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -38,13 +36,17 @@ import {
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
-import { StaffStyle } from "@/style/types";
+import { StaffStyle } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import { buildConnectionStyle } from "@/style/staff";
+import { buildConnectionStyle } from "@/layout/staff";
 import { useObjects } from "@/hooks/object";
+import { RootObj } from "@/object";
+import { determineTextPaintStyle } from "@/layout/text";
 
-// staff id -> element style
-const elementMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(new Map());
+// obj id -> element style
+const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
+  new Map()
+);
 
 // staff id -> element bboxes
 const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
@@ -58,7 +60,7 @@ const mtxAtom = atom<DOMMatrix>(
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const elements = useAtomValue(elementsAtom);
-  const [styleMap, setStyleMap] = useAtom(elementMapAtom);
+  const [styleMap, setStyleMap] = useAtom(paintStyleMapAtom);
   const connectionMap = useAtomValue(connectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
@@ -99,10 +101,12 @@ export const MainCanvas = () => {
         const styles = determineStaffPaintStyle({
           elements: elements.get(id) ?? [],
           gapWidth: UNIT,
-          staffStyle: obj,
+          staffObj: obj,
           pointing,
         });
         map.set(id, styles);
+      } else if (obj.type === "text") {
+        map.set(id, [determineTextPaintStyle(obj)]);
       } else {
         map.set(id, [
           {
@@ -250,7 +254,7 @@ export const MainCanvas = () => {
 
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
-  const styleMap = useAtomValue(elementMapAtom);
+  const styleMap = useAtomValue(paintStyleMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
   const rootObjs = useObjects();
@@ -417,13 +421,12 @@ const useMainPointerHandler = () => {
   }, []);
 
   const onAddStaff = useCallback(
-    ({ point }: DesktopStateProps["addStaff"]) => {
-      rootObjs.add(
-        genStaffStyle(
-          { type: "staff", clef: { type: "clef", pitch: "g" }, lineCount: 5 },
-          point
-        )
-      );
+    ({ point: position }: DesktopStateProps["addStaff"]) => {
+      rootObjs.add({
+        type: "staff",
+        position,
+        staff: { type: "staff", clef: { type: "clef", pitch: "g" } },
+      });
     },
     [rootObjs]
   );

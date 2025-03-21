@@ -97,13 +97,7 @@ export type TextStyle = {
   height: number;
   offset: Point;
 };
-export type StaffStyle = {
-  type: "staff";
-  staff: Staff;
-  position: Point;
-  lines: { y: number; width: number }[];
-  width: { type: "auto" } | { type: "fixed"; value: number };
-};
+export type StaffStyle = { type: "staff" };
 export type FileStyle = {
   type: "file";
   file: File;
@@ -114,13 +108,11 @@ export type FileStyle = {
   width: number;
   height: number;
 };
-export type RootObj = StaffStyle | TextStyle | FileStyle;
 export type ConnectionStyle = {
   type: "connection";
   toId?: number;
   position: Point;
   to: Point;
-  lines: { y: number; width: number }[];
 };
 export type Pointing = { index: number; type: PointingType };
 type PointingType = "note" | "rest" | "bar" | "clef";

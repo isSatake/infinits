@@ -15,7 +15,7 @@ import {
   tieModeAtom,
   TieModes,
 } from "@/state/atom";
-import { getPreviewScale, getPreviewWidth } from "@/style/score-preferences";
+import { getPreviewScale, getPreviewWidth } from "@/layout/score-preferences";
 import { useAtomValue, useAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";

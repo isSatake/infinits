@@ -4,8 +4,8 @@ import {
   getPreviewHeight,
   getPreviewScale,
   getPreviewWidth,
-} from "@/style/score-preferences";
-import { determineStaffPaintStyle } from "@/style/staff-element";
+} from "@/layout/score-preferences";
+import { determineStaffPaintStyle } from "@/layout/staff-element";
 import React from "react";
 import { useEffect, useMemo, useRef } from "react";
 import { PreviewState } from "@/state/atom";
@@ -44,7 +44,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     const styles = determineStaffPaintStyle({
       elements: preview.elements,
       gapWidth: UNIT,
-      staffStyle: preview.staff,
+      staffObj: preview.staff,
     });
     const elIdxToX = new Map<number, number>();
     let offsetGap;
@@ -74,7 +74,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     const styles = determineStaffPaintStyle({
       elements: preview.elements,
       gapWidth: UNIT,
-      staffStyle: preview.staff,
+      staffObj: preview.staff,
       gap: preview.offsetted ? init.offsetGap : undefined,
     });
     const ctx = ref.current?.getContext("2d")!;

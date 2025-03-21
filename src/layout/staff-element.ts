@@ -54,6 +54,7 @@ import {
   TieStyle,
 } from "./types";
 import { insertTieStyles } from "./tie";
+import { StaffObject } from "@/object";
 
 const kPointingColor = "#FF0000";
 
@@ -1041,37 +1042,37 @@ const determineClefStyle = (
 export const determineStaffPaintStyle = (p: {
   elements: MusicalElement[];
   gapWidth: number;
-  staffStyle?: StaffStyle;
+  staffObj?: StaffObject;
   pointing?: Pointing;
   gap?: { idx: number; width: number };
 }): PaintStyle<PaintElement>[] => {
-  const { elements, gapWidth, staffStyle, pointing, gap } = p;
+  const { elements, gapWidth, staffObj, pointing, gap } = p;
   let styles: PaintStyle<PaintElement>[] = [];
   const gapEl = gapElementStyle({
     width: gapWidth,
     height: bStaffHeight,
   });
-  let left = 0;
-  if (staffStyle) {
+  let cursor = 0;
+  if (staffObj) {
     styles.push(gapEl);
-    left += gapWidth;
-    const { staff } = staffStyle;
+    cursor += gapWidth;
+    const { staff } = staffObj;
     if (staff.clef) {
       const _pointing = pointing?.index === -1 ? pointing : undefined;
       const clef = determineClefStyle(staff.clef, -1, _pointing);
       styles.push(clef);
-      left += clef.width;
+      cursor += clef.width;
     }
   }
   styles.push({ ...gapEl, caretOption: { index: -1, defaultWidth: true } });
-  left += gapWidth;
+  cursor += gapWidth;
   let index = 0;
   while (index < elements.length) {
     if (gap?.idx === index) {
       styles.push(gapElementStyle({ width: gap.width, height: bStaffHeight }));
-      left += gap.width;
+      cursor += gap.width;
       styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
-      left += gapWidth;
+      cursor += gapWidth;
     }
     const el = elements[index];
     if (el.type === "note") {
@@ -1104,42 +1105,35 @@ export const determineStaffPaintStyle = (p: {
         const _pointing = pointing?.index === index ? pointing : undefined;
         const note = determineNoteStyle({ note: el, pointing: _pointing });
         styles.push({ caretOption: { index }, index, ...note });
-        left += note.width;
+        cursor += note.width;
         styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
-        left += gapWidth;
+        cursor += gapWidth;
         index++;
       }
     } else if (el.type === "rest") {
       const _pointing = pointing?.index === index ? pointing : undefined;
       const rest = determineRestStyle(el, _pointing);
       styles.push({ caretOption: { index }, index, ...rest });
-      left += rest.width;
+      cursor += rest.width;
       styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
-      left += gapWidth;
+      cursor += gapWidth;
       index++;
     } else if (el.type === "bar") {
       const _pointing = pointing?.index === index ? pointing : undefined;
       const bar = determineBarStyle(el, _pointing);
       styles.push({ caretOption: { index }, index, ...bar });
-      left += bar.width;
+      cursor += bar.width;
       styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
-      left += gapWidth;
+      cursor += gapWidth;
       index++;
     }
   }
   styles = insertTieStyles(styles);
-  if (staffStyle) {
-    const width =
-      staffStyle.width.type === "auto" ? left : staffStyle.width.value;
+  if (staffObj) {
     styles.unshift({
-      element: staffStyle,
-      width,
-      bbox: {
-        left: 0,
-        top: 0,
-        right: width,
-        bottom: UNIT * (staffStyle.staff.lineCount - 1),
-      },
+      element: { type: "staff" },
+      width: cursor,
+      bbox: { left: 0, top: 0, right: cursor, bottom: UNIT * 4 },
     });
   }
   return styles;
@@ -1166,20 +1160,3 @@ export const determineCaretStyle = ({
     elIdx,
   };
 };
-
-export const genStaffStyle = (staff: Staff, position: Point): StaffStyle => {
-  return {
-    type: "staff",
-    staff,
-    position,
-    width: { type: "auto" },
-    lines: genStaffLines(staff.lineCount),
-  };
-};
-
-export const genStaffLines = (lineCount: number) => {
-  return Array.from({ length: lineCount }).map((_, i) => ({
-    y: UNIT * i,
-    width: bStaffLineWidth,
-  }));
-}
