@@ -1,10 +1,11 @@
 import { ChordRoot, Duration, MusicalElement } from "@/core/types";
-import { Point } from "@/lib/geometry";
-import { CaretStyle } from "@/layout/types";
+import { BBox, Point } from "@/lib/geometry";
+import { CaretStyle, PaintElement, PaintStyle, Pointing } from "@/layout/types";
 import { atom } from "jotai";
 import { useEffect, useRef, useState } from "react";
 import { StaffStyle } from "../layout/types";
 import { RootObj } from "@/object";
+import { getInitScale } from "@/layout/score-preferences";
 
 // PreviewCanvasの表示
 export type PreviewState = {
@@ -78,3 +79,17 @@ export type TieModes = "tie" | "notie";
 export const tieModeAtom = atom<TieModes>("notie");
 
 export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());
+
+// obj id -> element style
+export const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
+  new Map()
+);
+
+// staff id -> element bboxes
+export const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
+
+export const pointingAtom = atom<Pointing | undefined>(undefined);
+
+export const mtxAtom = atom<DOMMatrix>(
+  new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
+);

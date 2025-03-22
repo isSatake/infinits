@@ -1,61 +1,41 @@
-import { bStaffHeight, UNIT } from "@/font/bravura";
-import {
-  BBox,
-  Point,
-  Size,
-  addPoint,
-  distanceToLineSegment,
-  isPointInBBox,
-  offsetBBox,
-  scaleSize,
-} from "@/lib/geometry";
-import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
-import { getInitScale } from "@/layout/score-preferences";
+import { UNIT } from "@/font/bravura";
+import { useResizeHandler } from "@/hooks/hooks";
+import { useMainPointerHandler } from "@/hooks/main-canvas";
+import { useRootObjects } from "@/hooks/root-obj";
+import { determineFilePaintStyle } from "@/layout/file";
+import { buildConnectionStyle } from "@/layout/staff";
 import {
   determineCaretStyle,
   determineStaffPaintStyle,
 } from "@/layout/staff-element";
+import { determineTextPaintStyle } from "@/layout/text";
 import {
   CaretStyle,
-  ConnectionStyle,
   PaintElement,
   PaintStyle,
-  Pointing,
-  RootObjStyle,
+  RootObjStyle
 } from "@/layout/types";
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import {
+  offsetBBox,
+  scaleSize,
+  Size
+} from "@/lib/geometry";
+import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
+import {
+  bboxAtom,
   caretStyleAtom,
-  contextMenuAtom,
+  connectionAtom,
   elementsAtom,
   focusAtom,
-  connectionAtom,
+  mtxAtom,
+  paintStyleMapAtom,
+  pointingAtom,
   uncommitedStaffConnectionAtom,
-  useFocusHighlighted,
+  useFocusHighlighted
 } from "@/state/atom";
-import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
-import { useResizeHandler } from "@/hooks/hooks";
-import { PointerEventStateMachine } from "@/state/pointer-state";
-import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import { buildConnectionStyle } from "@/layout/staff";
-import { useRootObjects } from "@/hooks/root-obj";
-import { determineTextPaintStyle } from "@/layout/text";
-import { determineFilePaintStyle } from "@/layout/file";
-
-// obj id -> element style
-const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
-  new Map()
-);
-
-// staff id -> element bboxes
-const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
-
-const pointingAtom = atom<Pointing | undefined>(undefined);
-
-const mtxAtom = atom<DOMMatrix>(
-  new DOMMatrix([getInitScale(), 0, 0, getInitScale(), 0, 0])
-);
+import { useAtom, useAtomValue } from "jotai";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -253,244 +233,4 @@ export const MainCanvas = () => {
       {...useMainPointerHandler()}
     ></canvas>
   );
-};
-
-const useMainPointerHandler = () => {
-  const [mtx, setMtx] = useAtom(mtxAtom);
-  const styleMap = useAtomValue(paintStyleMapAtom);
-  const setPopover = useSetAtom(contextMenuAtom);
-  const setCarets = useSetAtom(focusAtom);
-  const rootObjs = useRootObjects();
-  const [connections, setConnections] = useAtom(connectionAtom);
-  const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
-  const getRootObjIdOnPoint = usePointingRootObjId();
-  const desktopState = useRef(new DesktopStateMachine());
-  const canvasHandler = useRef(
-    new PointerEventStateMachine(desktopState.current.on)
-  );
-
-  useEffect(() => {
-    desktopState.current.mtx = mtx;
-  }, [mtx]);
-
-  const dndStaff = (desktopPoint: Point) => {
-    const id = getRootObjIdOnPoint(desktopPoint);
-    const style = rootObjs.get(id);
-    if (!style) {
-      return;
-    }
-    const offset = {
-      x: desktopPoint.x - style.position.x,
-      y: desktopPoint.y - style.position.y,
-    };
-    return { objType: style.type, id, offset };
-  };
-
-  desktopState.current.getRootObjOnPoint = dndStaff;
-  desktopState.current.getConnectionOnPoint = (desktopPoint: Point) => {
-    const connStyleMap = new Map<number, PaintStyle<ConnectionStyle>[]>();
-    for (const [id, styles] of styleMap) {
-      const connection = styles.filter(
-        (v: PaintStyle<PaintElement>): v is PaintStyle<ConnectionStyle> =>
-          v.element.type === "connection"
-      );
-      if (connection.length > 0) {
-        connStyleMap.set(id, connection);
-      }
-    }
-    for (const [id, v] of connStyleMap) {
-      for (const _v of v) {
-        if (_v.element.toId === undefined) {
-          continue;
-        }
-        const d = distanceToLineSegment({
-          point: desktopPoint,
-          start: addPoint(_v.element.position, { x: 0, y: bStaffHeight / 2 }),
-          end: addPoint(
-            _v.element.position,
-            addPoint(_v.element.to, { x: 0, y: bStaffHeight / 2 })
-          ),
-        });
-        if (!!d && d < bStaffHeight / 2) {
-          return { from: id, to: _v.element.toId };
-        }
-      }
-    }
-  };
-  desktopState.current.isPointingRootObjTail = (
-    desktopPoint: Point,
-    rootObjId: number
-  ) => {
-    const obj = rootObjs.get(rootObjId);
-    if (!obj) {
-      return false;
-    }
-    const objWidth =
-      styleMap.get(rootObjId)?.reduce((acc, style) => {
-        return style.element.type !== "staff" &&
-          style.element.type !== "beam" &&
-          style.element.type !== "tie"
-          ? (acc += style.width)
-          : 0;
-      }, 0) ?? 0;
-    return desktopPoint.x > obj.position.x + objWidth * 0.7;
-  };
-
-  const onIdle = useCallback(() => {
-    setUncommitedConnection(undefined);
-  }, []);
-
-  const onMoveRootObj = useCallback(
-    (args: DesktopStateProps["moveRootObj"]) => {
-      const { id, point, offset } = args;
-      const position = { x: point.x - offset.x, y: point.y - offset.y };
-      rootObjs.update(id, (style) => ({ ...style, position }));
-    },
-    [rootObjs]
-  );
-
-  const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
-    const { isNew, rootObjId: from, point: position } = args;
-    if (!isNew) {
-      connections.delete(from);
-      setConnections(connections);
-    }
-    setUncommitedConnection({ from, position });
-  };
-
-  const onConnectRootObj = (args: DesktopStateProps["connectRootObj"]) => {
-    const { from, to } = args;
-    const v: number[] = connections.get(from) ?? [];
-    if (v.includes(to)) {
-      return;
-    }
-    v.push(to);
-    connections.set(from, v);
-    setConnections(connections);
-    setUncommitedConnection(undefined);
-  };
-
-  const onCtxMenuStaff = useCallback(
-    ({ staffId, htmlPoint }: DesktopStateProps["ctxMenuStaff"]) => {
-      setPopover({ type: "staff", htmlPoint, staffId });
-    },
-    []
-  );
-
-  const onFocusRootObj = useCallback(
-    ({ rootObjId }: DesktopStateProps["focusRootObj"]) => {
-      if (rootObjId > -1) {
-        setCarets({ rootObjId, idx: 0 });
-      }
-    },
-    []
-  );
-
-  const onCtxMenu = (props: DesktopStateProps["ctxMenu"]) => {
-    setPopover({
-      type: "canvas",
-      htmlPoint: props.htmlPoint,
-      desktopPoint: props.desktopPoint,
-    });
-  };
-
-  const onPan = useCallback(({ translated }: DesktopStateProps["pan"]) => {
-    console.log("CanvasState", "pan");
-    setMtx(translated);
-  }, []);
-
-  const onZoom = useCallback(({ translated }: DesktopStateProps["zoom"]) => {
-    console.log("CanvasState", "zoom");
-    setMtx(translated);
-  }, []);
-
-  const onAddStaff = useCallback(
-    ({ point: position }: DesktopStateProps["addStaff"]) => {
-      rootObjs.add({
-        type: "staff",
-        position,
-        staff: { type: "staff", clef: { type: "clef", pitch: "g" } },
-      });
-    },
-    [rootObjs]
-  );
-
-  desktopState.current.onState = (state) => {
-    switch (state.type) {
-      case "idle":
-        onIdle();
-        break;
-      case "downCanvas":
-        break;
-      case "addStaff":
-        onAddStaff(state);
-        break;
-      case "focusRootObj":
-        onFocusRootObj(state);
-        break;
-      case "moveRootObj":
-        onMoveRootObj(state);
-        break;
-      case "moveConnection":
-        onMoveConnection(state);
-        break;
-      case "connectRootObj":
-        onConnectRootObj(state);
-        break;
-      case "ctxMenu":
-        onCtxMenu(state);
-        break;
-      case "ctxMenuStaff":
-        onCtxMenuStaff(state);
-        break;
-      case "pan":
-        onPan(state);
-        break;
-      case "zoom":
-        onZoom(state);
-        break;
-    }
-  };
-
-  return {
-    onTouchEnd: (ev: React.TouchEvent<HTMLCanvasElement>) => {
-      // iOS Safariでダブルタップ長押し時に拡大鏡が出るのを防ぐ
-      ev.preventDefault();
-    },
-    onPointerDown: (ev: React.PointerEvent) => {
-      canvasHandler.current.on("down", ev);
-    },
-    onPointerMove: (ev: React.PointerEvent) => {
-      canvasHandler.current.on("move", ev);
-    },
-    onPointerUp: (ev: React.PointerEvent) => {
-      canvasHandler.current.on("up", ev);
-    },
-  };
-};
-
-const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
-  const styleMap = useAtomValue(paintStyleMapAtom);
-  const objs = useRootObjects();
-  return (desktopPoint: Point): number => {
-    return (
-      Array.from(objs.map).find(([id, obj]) => {
-        const styles = styleMap.get(id);
-        if (!styles) {
-          return false;
-        }
-        const style = styles.find(
-          (style): style is PaintStyle<RootObjStyle> =>
-            style.element.type === "staff" ||
-            style.element.type === "text" ||
-            style.element.type === "file"
-        );
-        if (style) {
-          const bb = offsetBBox(style.bbox, obj.position);
-          return isPointInBBox(desktopPoint, bb);
-        }
-        return false;
-      })?.[0] ?? -1
-    );
-  };
 };
