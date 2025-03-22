@@ -5,7 +5,7 @@ import { useCallback } from "react";
 
 let id = 0;
 
-export const useObjects = (): {
+export const useRootObjects = (): {
   map: Map<number, RootObj>;
   get: (id: number) => RootObj | undefined;
   add: (obj: RootObj) => void;

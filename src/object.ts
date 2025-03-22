@@ -16,7 +16,6 @@ export type FileObject = {
   position: Point;
   file: File;
   duration: number;
-  fileName: string;
 };
 
 export type RootObj = StaffObject | TextObject | FileObject;

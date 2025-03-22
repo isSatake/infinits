@@ -21,7 +21,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
 import * as tone from "@/tone";
-import { useObjects } from "./object";
+import { useRootObjects } from "./root-obj";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;
@@ -138,7 +138,7 @@ export const usePreviewHandlers = (duration: Duration) => {
   const composeElements = useElementsComposer(duration);
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
-  const staff = useObjects().get(caret.rootObjId);
+  const staff = useRootObjects().get(caret.rootObjId);
   const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({

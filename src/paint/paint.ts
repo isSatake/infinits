@@ -104,7 +104,7 @@ export const paintStaff = (
   }
 };
 
-const paintStaffConnection = (
+const paintConnection = (
   ctx: CanvasRenderingContext2D,
   style: ConnectionStyle
 ) => {
@@ -261,7 +261,7 @@ export const paintStyle = (
   if (element.type === "staff") {
     paintStaff(ctx, style.width);
   } else if (type === "connection") {
-    paintStaffConnection(ctx, element);
+    paintConnection(ctx, element);
   } else if (type === "clef") {
     paintGClef(ctx, element, 0, 0);
   } else if (type === "note") {
@@ -320,7 +320,7 @@ export const paintCaret = ({
 };
 
 const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
-  const offset = addPoint(element.localPosition, element.offset);
+  const offset = addPoint(element.txtPosition, element.offset);
   ctx.save();
   ctx.fillStyle = "#000";
   ctx.font = `${element.fontSize}px ${element.fontFamily}`;
@@ -349,7 +349,7 @@ const paintFile = (ctx: CanvasRenderingContext2D, element: FileStyle) => {
   ctx.restore();
 
   ctx.save();
-  ctx.translate(element.fileName.position.x, element.fileName.position.y);
+  ctx.translate(element.fileName.txtPosition.x, element.fileName.txtPosition.y);
   ctx.fillStyle = "#000000";
   ctx.font = `${element.fileName.fontSize}px ${element.fileName.fontFamily}`;
   ctx.textBaseline = element.fileName.baseline;

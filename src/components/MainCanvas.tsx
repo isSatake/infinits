@@ -1,4 +1,4 @@
-import { UNIT } from "@/font/bravura";
+import { bStaffHeight, UNIT } from "@/font/bravura";
 import {
   BBox,
   Point,
@@ -21,6 +21,7 @@ import {
   PaintElement,
   PaintStyle,
   Pointing,
+  RootObjStyle,
 } from "@/layout/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -39,9 +40,10 @@ import { PointerEventStateMachine } from "@/state/pointer-state";
 import { StaffStyle } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { buildConnectionStyle } from "@/layout/staff";
-import { useObjects } from "@/hooks/object";
+import { useRootObjects } from "@/hooks/root-obj";
 import { RootObj } from "@/object";
 import { determineTextPaintStyle } from "@/layout/text";
+import { determineFilePaintStyle } from "@/layout/file";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
@@ -75,7 +77,7 @@ export const MainCanvas = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const rootObjs = useObjects();
+  const rootObjs = useRootObjects();
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -108,25 +110,18 @@ export const MainCanvas = () => {
       } else if (obj.type === "text") {
         map.set(id, [determineTextPaintStyle(obj)]);
       } else {
-        map.set(id, [
-          {
-            element: obj,
-            width: obj.width,
-            bbox: { left: 0, right: obj.width, top: 0, bottom: obj.height },
-            caretOption: { index: 0 },
-          },
-        ]);
+        map.set(id, [determineFilePaintStyle(obj)]);
       }
     }
     // connection
-    for (const [id, _] of rootObjs.map) {
+    for (const [id, { position }] of rootObjs.map) {
       let toPos;
       if (uncommitedConnection?.from === id) {
         toPos = uncommitedConnection.position;
         const fromStyle = map
           .get(id)
           ?.find(
-            (style): style is PaintStyle<RootObj> =>
+            (style): style is PaintStyle<RootObjStyle> =>
               style.element.type === "staff" ||
               style.element.type === "text" ||
               style.element.type === "file"
@@ -134,7 +129,12 @@ export const MainCanvas = () => {
         if (!fromStyle) {
           continue;
         }
-        map.get(id)?.push(buildConnectionStyle(fromStyle, toPos));
+        map.get(id)?.push(
+          buildConnectionStyle({
+            from: { position, width: fromStyle.width },
+            to: { position: toPos },
+          })
+        );
       }
       const connections = connectionMap.get(id);
       if (connections === undefined) {
@@ -148,7 +148,7 @@ export const MainCanvas = () => {
         const fromStyle = map
           .get(id)
           ?.find(
-            (style): style is PaintStyle<RootObj> =>
+            (style): style is PaintStyle<RootObjStyle> =>
               style.element.type === "staff" ||
               style.element.type === "text" ||
               style.element.type === "file"
@@ -156,7 +156,12 @@ export const MainCanvas = () => {
         if (!fromStyle) {
           continue;
         }
-        map.get(id)?.push(buildConnectionStyle(fromStyle, toPos, toId));
+        map.get(id)?.push(
+          buildConnectionStyle({
+            from: { position, width: fromStyle.width },
+            to: { position: toPos, id: toId },
+          })
+        );
       }
     }
 
@@ -223,11 +228,11 @@ export const MainCanvas = () => {
       }
       ctx.restore();
     }
-    const currentStaff = rootObjs.get(focus.rootObjId);
+    const obj = rootObjs.get(focus.rootObjId);
     const caret = caretStyle.at(focus.idx);
-    if (currentStaff && caret) {
+    if (obj && caret) {
       ctx.save();
-      ctx.translate(currentStaff.position.x, currentStaff.position.y);
+      ctx.translate(obj.position.x, obj.position.y);
       paintCaret({ ctx, scale: 1, caret, highlighted: focusHighlighted });
       ctx.restore();
     }
@@ -257,10 +262,10 @@ const useMainPointerHandler = () => {
   const styleMap = useAtomValue(paintStyleMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
-  const rootObjs = useObjects();
+  const rootObjs = useRootObjects();
   const [connections, setConnections] = useAtom(connectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
-  const getRootObjIdOnPoint = usePointingRootObjId(styleMap);
+  const getRootObjIdOnPoint = usePointingRootObjId();
   const desktopState = useRef(new DesktopStateMachine());
   const canvasHandler = useRef(
     new PointerEventStateMachine(desktopState.current.on)
@@ -300,22 +305,15 @@ const useMainPointerHandler = () => {
         if (_v.element.toId === undefined) {
           continue;
         }
-        const connectionHeight = (_v.element.lines.length - 1) * UNIT;
         const d = distanceToLineSegment({
           point: desktopPoint,
-          start: addPoint(_v.element.position, {
-            x: 0,
-            y: connectionHeight / 2,
-          }),
+          start: addPoint(_v.element.position, { x: 0, y: bStaffHeight / 2 }),
           end: addPoint(
             _v.element.position,
-            addPoint(_v.element.to, {
-              x: 0,
-              y: connectionHeight / 2,
-            })
+            addPoint(_v.element.to, { x: 0, y: bStaffHeight / 2 })
           ),
         });
-        if (!!d && d < connectionHeight / 2) {
+        if (!!d && d < bStaffHeight / 2) {
           return { from: id, to: _v.element.toId };
         }
       }
@@ -325,8 +323,8 @@ const useMainPointerHandler = () => {
     desktopPoint: Point,
     rootObjId: number
   ) => {
-    const style = rootObjs.get(rootObjId);
-    if (!style) {
+    const obj = rootObjs.get(rootObjId);
+    if (!obj) {
       return false;
     }
     const objWidth =
@@ -337,19 +335,7 @@ const useMainPointerHandler = () => {
           ? (acc += style.width)
           : 0;
       }, 0) ?? 0;
-    return isPointInBBox(
-      desktopPoint,
-      offsetBBox(
-        {
-          left: objWidth * 0.7,
-          right: objWidth,
-          top: 0,
-          bottom:
-            style.type === "staff" ? style.lines.length * UNIT : style.height,
-        },
-        style.position
-      )
-    );
+    return desktopPoint.x > obj.position.x + objWidth * 0.7;
   };
 
   const onIdle = useCallback(() => {
@@ -485,63 +471,31 @@ const useMainPointerHandler = () => {
   };
 };
 
-const usePointingRootObjId = (
-  styleMap: Map<number, PaintStyle<PaintElement>[]>
-): ((desktopPoint: Point) => number) => {
-  return useCallback(
-    (desktopPoint: Point): number => {
-      return (
-        Array.from(styleMap.entries()).find(
-          (v): v is [number, PaintStyle<RootObj>[]] => {
-            const [_, styles] = v;
-            const style = styles.find(
-              (style): style is PaintStyle<RootObj> =>
-                style.element.type === "staff" ||
-                style.element.type === "text" ||
-                style.element.type === "file"
-            );
-            if (style) {
-              const bb = offsetBBox(style.bbox, style.element.position);
-              return isPointInBBox(desktopPoint, bb);
-            }
+const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
+  const styleMap = useAtomValue(paintStyleMapAtom);
+  const objs = useRootObjects();
+  return (desktopPoint: Point): number => {
+    return (
+      Array.from(styleMap.entries()).find(
+        (v): v is [number, PaintStyle<RootObjStyle>[]] => {
+          const [id, styles] = v;
+          const obj = objs.get(id);
+          if (!obj) {
             return false;
           }
-        )?.[0] ?? -1
-      );
-    },
-    [styleMap]
-  );
-};
-
-const getStaffElementAtPoint = (
-  staffId: number,
-  styles: PaintStyle<PaintElement>[],
-  desktopPoint: Point
-): number => {
-  const staff = styles.find(
-    (style): style is PaintStyle<StaffStyle> => style.element.type === "staff"
-  );
-  if (!staff) {
-    return -1;
-  }
-  const bb = offsetBBox(staff.bbox, staff.element.position);
-  if (!isPointInBBox(desktopPoint, bb)) {
-    return -1;
-  }
-  let cursor = 0;
-  for (let i in styles) {
-    const style = styles[i];
-    const { width, element } = style;
-    if (
-      element.type !== "staff" &&
-      element.type !== "beam" &&
-      element.type !== "tie"
-    ) {
-      cursor += width;
-    }
-    if (isPointInBBox(desktopPoint, offsetBBox(style.bbox, { x: cursor }))) {
-      return Number(i);
-    }
-  }
-  return -1;
+          const style = styles.find(
+            (style): style is PaintStyle<RootObjStyle> =>
+              style.element.type === "staff" ||
+              style.element.type === "text" ||
+              style.element.type === "file"
+          );
+          if (style) {
+            const bb = offsetBBox(style.bbox, obj.position);
+            return isPointInBBox(desktopPoint, bb);
+          }
+          return false;
+        }
+      )?.[0] ?? -1
+    );
+  };
 };

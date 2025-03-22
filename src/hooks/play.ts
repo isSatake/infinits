@@ -3,10 +3,10 @@ import { connectionAtom, elementsAtom, focusAtom } from "@/state/atom";
 import { FileStyle } from "@/layout/types";
 import * as tone from "@/tone";
 import { useAtomValue } from "jotai";
-import { useObjects } from "./object";
+import { useRootObjects } from "./root-obj";
 
 export const usePlayTone = () => {
-  const { map: rootObjs } = useObjects();
+  const { map: rootObjs } = useRootObjects();
   const { rootObjId } = useAtomValue(focusAtom);
   const elementsMap = useAtomValue(elementsAtom);
   const connection = useAtomValue(connectionAtom);
