@@ -1,15 +1,16 @@
 import { Staff } from "./core/types";
 import { Point } from "./lib/geometry";
 
+export type RootObj = ScoreObject | TextObject | FileObject;
 export type TextObject = {
   type: "text";
   position: Point;
   text: string;
 };
-export type StaffObject = {
-  type: "staff";
+export type ScoreObject = {
+  type: "score";
   position: Point;
-  staff: Staff;
+  staffs: StaffObject[];
 };
 export type FileObject = {
   type: "file";
@@ -18,4 +19,8 @@ export type FileObject = {
   duration: number;
 };
 
-export type RootObj = StaffObject | TextObject | FileObject;
+export type StaffObject = {
+  type: "staff";
+  position: Point; // score内の相対座標
+  staff: Staff;
+};

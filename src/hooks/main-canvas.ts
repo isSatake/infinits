@@ -178,9 +178,15 @@ export const useMainPointerHandler = () => {
   const onAddStaff = useCallback(
     ({ point: position }: DesktopStateProps["addStaff"]) => {
       rootObjs.add({
-        type: "staff",
+        type: "score",
         position,
-        staff: { type: "staff", clef: { type: "clef", pitch: "g" } },
+        staffs: [
+          {
+            type: "staff",
+            position: { x: 0, y: 0 },
+            staff: { clef: { pitch: "g" } },
+          },
+        ],
       });
     },
     [rootObjs]
@@ -252,7 +258,7 @@ const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
         }
         const style = styles.find(
           (style): style is PaintStyle<RootObjStyle> =>
-            style.element.type === "staff" ||
+            style.element.type === "score" ||
             style.element.type === "text" ||
             style.element.type === "file"
         );

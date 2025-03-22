@@ -13,14 +13,10 @@ import {
   CaretStyle,
   PaintElement,
   PaintStyle,
-  RootObjStyle
+  RootObjStyle,
 } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import {
-  offsetBBox,
-  scaleSize,
-  Size
-} from "@/lib/geometry";
+import { offsetBBox, scaleSize, Size } from "@/lib/geometry";
 import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
 import {
   bboxAtom,
@@ -32,7 +28,7 @@ import {
   paintStyleMapAtom,
   pointingAtom,
   uncommitedStaffConnectionAtom,
-  useFocusHighlighted
+  useFocusHighlighted,
 } from "@/state/atom";
 import { useAtom, useAtomValue } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -77,13 +73,17 @@ export const MainCanvas = () => {
   useEffect(() => {
     const map = new Map<number, PaintStyle<PaintElement>[]>();
     for (const [id, obj] of rootObjs.map) {
-      if (obj.type === "staff") {
-        const styles = determineStaffPaintStyle({
-          elements: elements.get(id) ?? [],
-          gapWidth: UNIT,
-          staffObj: obj,
-          pointing,
-        });
+      if (obj.type === "score") {
+        const styles = obj.staffs
+          .map((staffObj) =>
+            determineStaffPaintStyle({
+              elements: elements.get(id) ?? [],
+              gapWidth: UNIT,
+              staffObj,
+              pointing,
+            })
+          )
+          .flat();
         map.set(id, styles);
       } else if (obj.type === "text") {
         map.set(id, [determineTextPaintStyle(obj)]);

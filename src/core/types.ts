@@ -48,12 +48,9 @@ export type Repeat = {
 
 export type MusicalElement = Note | Rest | Bar;
 
-export type Clef = {
-  type: "clef";
-  pitch: "g" | "f" | "c";
-};
+export type Clef = { pitch: "g" | "f" | "c" };
 
-export type Staff = { type: "staff"; clef: Clef };
+export type Staff = { clef: Clef };
 
 export type KeySignature = {
   root: {

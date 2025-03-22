@@ -12,6 +12,7 @@ import {
 export type CaretStyle = { elIdx: number } & Point & Size;
 type OptionalColor = { color?: string };
 export type PaintElement =
+  | ScoreStyle
   | StaffStyle
   | ConnectionStyle
   | NoteStyle
@@ -96,6 +97,7 @@ export type TextStyle = {
   height: number;
   offset: Point;
 };
+export type ScoreStyle = { type: "score"; staffs: StaffStyle[] };
 export type StaffStyle = { type: "staff" };
 export type FileStyle = {
   type: "file";
@@ -106,7 +108,7 @@ export type FileStyle = {
   width: number;
   height: number;
 };
-export type RootObjStyle = StaffStyle | TextStyle | FileStyle;
+export type RootObjStyle = ScoreStyle | TextStyle | FileStyle;
 export type ConnectionStyle = {
   type: "connection";
   toId?: number;
