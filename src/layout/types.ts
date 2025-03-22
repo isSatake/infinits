@@ -87,8 +87,7 @@ export type TieStyle = {
 } & OptionalColor;
 export type TextStyle = {
   type: "text";
-  position: Point;
-  localPosition: Point;
+  txtPosition: Point;
   text: string;
   fontSize: number;
   fontFamily: string;
@@ -97,30 +96,22 @@ export type TextStyle = {
   height: number;
   offset: Point;
 };
-export type StaffStyle = {
-  type: "staff";
-  staff: Staff;
-  position: Point;
-  lines: { y: number; width: number }[];
-  width: { type: "auto" } | { type: "fixed"; value: number };
-};
+export type StaffStyle = { type: "staff" };
 export type FileStyle = {
   type: "file";
   file: File;
   duration: number;
-  position: Point;
   icon: { type: "play"; position: Point; width: number; height: number };
   fileName: TextStyle;
   width: number;
   height: number;
 };
-export type RootObj = StaffStyle | TextStyle | FileStyle;
+export type RootObjStyle = StaffStyle | TextStyle | FileStyle;
 export type ConnectionStyle = {
   type: "connection";
   toId?: number;
   position: Point;
   to: Point;
-  lines: { y: number; width: number }[];
 };
 export type Pointing = { index: number; type: PointingType };
 type PointingType = "note" | "rest" | "bar" | "clef";

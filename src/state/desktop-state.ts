@@ -1,7 +1,6 @@
-import { off } from "process";
 import { Point } from "../lib/geometry";
 import { PointerState } from "./pointer-state";
-import { RootObj } from "@/style/types";
+import { RootObj } from "@/object";
 
 type DesktopState =
   | ({ type: "idle" } & DesktopStateProps["idle"])

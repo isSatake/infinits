@@ -1,11 +1,11 @@
 import { rootObjMapAtom } from "@/state/atom";
-import { RootObj } from "@/style/types";
+import { RootObj } from "@/object";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 
-let id = 8;
+let id = 0;
 
-export const useObjects = (): {
+export const useRootObjects = (): {
   map: Map<number, RootObj>;
   get: (id: number) => RootObj | undefined;
   add: (obj: RootObj) => void;
