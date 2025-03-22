@@ -37,11 +37,9 @@ import {
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
-import { StaffStyle } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { buildConnectionStyle } from "@/layout/staff";
 import { useRootObjects } from "@/hooks/root-obj";
-import { RootObj } from "@/object";
 import { determineTextPaintStyle } from "@/layout/text";
 import { determineFilePaintStyle } from "@/layout/file";
 
@@ -476,26 +474,23 @@ const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
   const objs = useRootObjects();
   return (desktopPoint: Point): number => {
     return (
-      Array.from(styleMap.entries()).find(
-        (v): v is [number, PaintStyle<RootObjStyle>[]] => {
-          const [id, styles] = v;
-          const obj = objs.get(id);
-          if (!obj) {
-            return false;
-          }
-          const style = styles.find(
-            (style): style is PaintStyle<RootObjStyle> =>
-              style.element.type === "staff" ||
-              style.element.type === "text" ||
-              style.element.type === "file"
-          );
-          if (style) {
-            const bb = offsetBBox(style.bbox, obj.position);
-            return isPointInBBox(desktopPoint, bb);
-          }
+      Array.from(objs.map).find(([id, obj]) => {
+        const styles = styleMap.get(id);
+        if (!styles) {
           return false;
         }
-      )?.[0] ?? -1
+        const style = styles.find(
+          (style): style is PaintStyle<RootObjStyle> =>
+            style.element.type === "staff" ||
+            style.element.type === "text" ||
+            style.element.type === "file"
+        );
+        if (style) {
+          const bb = offsetBBox(style.bbox, obj.position);
+          return isPointInBBox(desktopPoint, bb);
+        }
+        return false;
+      })?.[0] ?? -1
     );
   };
 };
