@@ -1,13 +1,5 @@
+import { Accidental, Bar, Clef, Duration, Note, Rest } from "../core/types";
 import { BBox, Point, Size } from "../lib/geometry";
-import {
-  Accidental,
-  Bar,
-  Clef,
-  Duration,
-  Note,
-  Rest,
-  Staff,
-} from "../core/types";
 
 export type CaretStyle = { elIdx: number } & Point & Size;
 type OptionalColor = { color?: string };
@@ -97,7 +89,7 @@ export type TextStyle = {
   height: number;
   offset: Point;
 };
-export type ScoreStyle = { type: "score"; staffs: StaffStyle[] };
+export type ScoreStyle = { type: "score" };
 export type StaffStyle = { type: "staff" };
 export type FileStyle = {
   type: "file";

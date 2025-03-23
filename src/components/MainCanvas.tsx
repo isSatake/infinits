@@ -14,9 +14,11 @@ import {
   PaintElement,
   PaintStyle,
   RootObjStyle,
+  ScoreStyle,
+  StaffStyle,
 } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import { offsetBBox, scaleSize, Size } from "@/lib/geometry";
+import { expandBBox, offsetBBox, scaleSize, Size } from "@/lib/geometry";
 import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
 import {
   bboxAtom,
@@ -74,7 +76,7 @@ export const MainCanvas = () => {
     const map = new Map<number, PaintStyle<PaintElement>[]>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "score") {
-        const styles = obj.staffs
+        const staffStyles = obj.staffs
           .map((staffObj) =>
             determineStaffPaintStyle({
               elements: elements.get(id) ?? [],
@@ -84,7 +86,23 @@ export const MainCanvas = () => {
             })
           )
           .flat();
-        map.set(id, styles);
+        const scoreBBox = staffStyles
+          .filter(
+            (style): style is PaintStyle<StaffStyle> =>
+              style.element.type === "staff"
+          )
+          .reduce((acc, v) => expandBBox(acc, v.bbox), {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+          });
+        const scoreStyle: PaintStyle<ScoreStyle> = {
+          element: { type: "score" },
+          width: scoreBBox.right - scoreBBox.left,
+          bbox: scoreBBox,
+        };
+        map.set(id, [scoreStyle, ...staffStyles]);
       } else if (obj.type === "text") {
         map.set(id, [determineTextPaintStyle(obj)]);
       } else {
@@ -177,7 +195,12 @@ export const MainCanvas = () => {
         });
         caretStyles.push(caret);
       }
-      if (type !== "staff" && type !== "beam" && type !== "tie") {
+      if (
+        type !== "score" &&
+        type !== "staff" &&
+        type !== "beam" &&
+        type !== "tie"
+      ) {
         cursor += width;
       }
     }
@@ -200,7 +223,12 @@ export const MainCanvas = () => {
         const { type } = style.element;
         paintStyle(ctx, style);
         paintBBox(ctx, style.bbox);
-        if (type !== "staff" && type !== "beam" && type !== "tie") {
+        if (
+          type !== "score" &&
+          type !== "staff" &&
+          type !== "beam" &&
+          type !== "tie"
+        ) {
           ctx.translate(style.width, 0);
         }
       }

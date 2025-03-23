@@ -49,6 +49,15 @@ export const isPointInBBox = (
   return left <= x && x <= right && top <= y && y <= bottom;
 };
 
+export const expandBBox = (a: BBox, b: BBox): BBox => {
+  return {
+    left: Math.min(a.left, b.left),
+    top: Math.min(a.top, b.top),
+    right: Math.max(a.right, b.right),
+    bottom: Math.max(a.bottom, b.bottom),
+  };
+};
+
 export const scaleSize = (size: Size, scale: number): Size => {
   return { width: size.width * scale, height: size.height * scale };
 };
