@@ -19,19 +19,24 @@ import {
   uncommitedStaffConnectionAtom,
   mtxAtom,
   paintStyleMapAtom,
+  rootObjMapAtom,
+  staffObjMapAtom,
+  scoreStaffMapAtom,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useRef, useEffect, useCallback } from "react";
-import { useRootObjects } from "./root-obj";
+import { useMapAtom } from "./root-obj";
 
 export const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(paintStyleMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
-  const rootObjs = useRootObjects();
+  const rootObjs = useMapAtom(rootObjMapAtom);
+  const staffs = useMapAtom(staffObjMapAtom);
+  const scoreStaffMap = useMapAtom(scoreStaffMapAtom).map;
   const [connections, setConnections] = useAtom(connectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getRootObjIdOnPoint = usePointingRootObjId();
@@ -177,17 +182,13 @@ export const useMainPointerHandler = () => {
 
   const onAddStaff = useCallback(
     ({ point: position }: DesktopStateProps["addStaff"]) => {
-      rootObjs.add({
-        type: "score",
-        position,
-        staffs: [
-          {
-            type: "staff",
-            position: { x: 0, y: 0 },
-            staff: { clef: { pitch: "g" } },
-          },
-        ],
+      const staffId = staffs.add({
+        type: "staff",
+        position: { x: 0, y: 0 },
+        staff: { clef: { pitch: "g" } },
       });
+      const scoreId = rootObjs.add({ type: "score", position });
+      scoreStaffMap.set(scoreId, [staffId]);
     },
     [rootObjs]
   );
@@ -248,7 +249,7 @@ export const useMainPointerHandler = () => {
 
 const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
   const styleMap = useAtomValue(paintStyleMapAtom);
-  const objs = useRootObjects();
+  const objs = useMapAtom(rootObjMapAtom);
   return (desktopPoint: Point): number => {
     return (
       Array.from(objs.map).find(([id, obj]) => {

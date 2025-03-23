@@ -1,7 +1,7 @@
-import { useRootObjects } from "@/hooks/root-obj";
+import { useMapAtom } from "@/hooks/root-obj";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
-import { contextMenuAtom } from "@/state/atom";
+import { contextMenuAtom, rootObjMapAtom } from "@/state/atom";
 import { useAtom } from "jotai";
 import React, { FC, useCallback, useState } from "react";
 
@@ -28,7 +28,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   desktopPoint,
   onClose,
 }) => {
-  const rootObjs = useRootObjects();
+  const rootObjs = useMapAtom(rootObjMapAtom);
   const [mode, setMode] = useState<"default" | "text">("default");
   const [text, setText] = useState("");
 
@@ -114,7 +114,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   staffId,
   onClose,
 }) => {
-  const rootObjs = useRootObjects();
+  const rootObjs = useMapAtom(rootObjMapAtom);
   const onClickDelete = () => {
     rootObjs.remove(staffId);
     onClose();

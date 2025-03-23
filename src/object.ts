@@ -10,7 +10,6 @@ export type TextObject = {
 export type ScoreObject = {
   type: "score";
   position: Point;
-  staffs: StaffObject[];
 };
 export type FileObject = {
   type: "file";

@@ -4,7 +4,7 @@ import { Duration, PitchAcc, MusicalElement, Pitch } from "@/core/types";
 import { kAccidentalModes } from "@/input";
 import {
   focusAtom,
-  elementsAtom,
+  staffElementsMapAtom,
   PreviewState,
   caretStyleAtom,
   previewAtom,
@@ -14,6 +14,7 @@ import {
   beamModeAtom,
   tieModeAtom,
   TieModes,
+  staffObjMapAtom,
 } from "@/state/atom";
 import { getPreviewScale, getPreviewWidth } from "@/layout/score-preferences";
 import { useAtomValue, useAtom } from "jotai";
@@ -21,7 +22,6 @@ import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
 import * as tone from "@/tone";
-import { useRootObjects } from "./root-obj";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;
@@ -59,7 +59,7 @@ const useSortChord: () => (newEl: MusicalElement) => MusicalElement = () => {
 };
 
 export const useBaseElements = () => {
-  const elements = useAtomValue(elementsAtom);
+  const elements = useAtomValue(staffElementsMapAtom);
   const caret = useAtomValue(focusAtom);
   return useMemo(
     () => [...(elements.get(caret.rootObjId) ?? [])],
@@ -137,8 +137,8 @@ export const usePreviewHandlers = (duration: Duration) => {
   const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
   const composeElements = useElementsComposer(duration);
   const [caret, setCaret] = useAtom(focusAtom);
-  const [elMap, setElements] = useAtom(elementsAtom);
-  const staff = useRootObjects().get(caret.rootObjId);
+  const [elMap, setElements] = useAtom(staffElementsMapAtom);
+  const staff = useAtomValue(staffObjMapAtom).get(caret.rootObjId);
   const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({

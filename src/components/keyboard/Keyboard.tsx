@@ -9,7 +9,7 @@ import {
   beamModeAtom,
   caretStyleAtom,
   chordSelectionAtom,
-  elementsAtom,
+  staffElementsMapAtom,
   focusAtom,
   NoteInputMode,
   noteInputModeAtom,
@@ -150,7 +150,7 @@ const FlagChordKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
 const Backspace = () => {
   const [caret, setCaret] = useAtom(focusAtom);
   const caretStyle = useAtomValue(caretStyleAtom);
-  const [elMap, setElements] = useAtom(elementsAtom);
+  const [elMap, setElements] = useAtom(staffElementsMapAtom);
   return (
     <GrayKey
       onClick={() => {
@@ -245,7 +245,7 @@ const useInputBar: () => (subtype: BarTypes) => void = () => {
   const [caret, setCaret] = useAtom(focusAtom);
   const baseElements = useBaseElements();
   const beamMode = useAtomValue(beamModeAtom);
-  const [elMap, setElements] = useAtom(elementsAtom);
+  const [elMap, setElements] = useAtom(staffElementsMapAtom);
   return useCallback(
     (subtype: BarTypes) => {
       const { elements, caretAdvance } = inputMusicalElement({

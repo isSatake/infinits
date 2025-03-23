@@ -1,7 +1,7 @@
 import { UNIT } from "@/font/bravura";
 import { useResizeHandler } from "@/hooks/hooks";
 import { useMainPointerHandler } from "@/hooks/main-canvas";
-import { useRootObjects } from "@/hooks/root-obj";
+import { useMapAtom } from "@/hooks/root-obj";
 import { determineFilePaintStyle } from "@/layout/file";
 import { buildConnectionStyle } from "@/layout/staff";
 import {
@@ -24,20 +24,23 @@ import {
   bboxAtom,
   caretStyleAtom,
   connectionAtom,
-  elementsAtom,
+  staffElementsMapAtom,
   focusAtom,
   mtxAtom,
   paintStyleMapAtom,
   pointingAtom,
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
+  rootObjMapAtom,
+  staffObjMapAtom,
+  scoreStaffMapAtom,
 } from "@/state/atom";
 import { useAtom, useAtomValue } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const elements = useAtomValue(elementsAtom);
+  const elements = useAtomValue(staffElementsMapAtom);
   const [styleMap, setStyleMap] = useAtom(paintStyleMapAtom);
   const connectionMap = useAtomValue(connectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
@@ -53,7 +56,9 @@ export const MainCanvas = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const rootObjs = useRootObjects();
+  const rootObjs = useMapAtom(rootObjMapAtom);
+  const staffs = useMapAtom(staffObjMapAtom);
+  const scoreStaffMap = useAtomValue(scoreStaffMapAtom);
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -76,16 +81,19 @@ export const MainCanvas = () => {
     const map = new Map<number, PaintStyle<PaintElement>[]>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "score") {
-        const staffStyles = obj.staffs
-          .map((staffObj) =>
-            determineStaffPaintStyle({
-              elements: elements.get(id) ?? [],
-              gapWidth: UNIT,
-              staffObj,
-              pointing,
-            })
-          )
-          .flat();
+        const staffStyles =
+          scoreStaffMap
+            .get(id)
+            ?.map((staffId) => staffs.get(staffId))
+            .map((staffObj) =>
+              determineStaffPaintStyle({
+                elements: elements.get(id) ?? [],
+                gapWidth: UNIT,
+                staffObj,
+                pointing,
+              })
+            )
+            .flat() ?? [];
         const scoreBBox = staffStyles
           .filter(
             (style): style is PaintStyle<StaffStyle> =>
