@@ -45,6 +45,7 @@ export const determineFilePaintStyle = (
     element,
     width,
     bbox: { left: 0, right: width, top: 0, bottom: height },
+    mtx: new DOMMatrix().translate(obj.position.x, obj.position.y),
     caretOption: { index: 0 },
   };
 };

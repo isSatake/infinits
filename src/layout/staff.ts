@@ -29,6 +29,7 @@ export const buildConnectionStyle: (p: {
         to.position.y - from.position.y + bStaffHeight
       ),
     },
+    mtx: new DOMMatrix().translate(from.position.x, from.position.y),
   };
   return connectionStyle;
 };

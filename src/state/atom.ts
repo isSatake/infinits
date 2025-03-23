@@ -43,9 +43,7 @@ export const staffElementsMapAtom = atom<Map<number, MusicalElement[]>>(
 export const staffObjMapAtom = atom<Map<number, StaffObject>>(new Map());
 
 // score id -> staff ids
-export const scoreStaffMapAtom = atom<Map<number, number[]>>(
-  new Map([[0, []]])
-);
+export const scoreStaffMapAtom = atom<Map<number, number[]>>(new Map());
 
 export const connectionAtom = atom<Map<number, number[]>>(new Map());
 

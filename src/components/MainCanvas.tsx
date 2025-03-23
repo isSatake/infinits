@@ -19,6 +19,7 @@ import {
 } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { expandBBox, offsetBBox, scaleSize, Size } from "@/lib/geometry";
+import { StaffObject } from "@/object";
 import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
 import {
   bboxAtom,
@@ -81,14 +82,23 @@ export const MainCanvas = () => {
     const map = new Map<number, PaintStyle<PaintElement>[]>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "score") {
+        const scoreMtx = new DOMMatrix().translate(
+          obj.position.x,
+          obj.position.y
+        );
         const staffStyles =
           scoreStaffMap
             .get(id)
             ?.map((staffId) => staffs.get(staffId))
+            .filter((v): v is StaffObject => !!v)
             .map((staffObj) =>
               determineStaffPaintStyle({
                 elements: elements.get(id) ?? [],
                 gapWidth: UNIT,
+                mtx: scoreMtx.translate(
+                  staffObj.position.x,
+                  staffObj.position.y
+                ),
                 staffObj,
                 pointing,
               })
@@ -109,6 +119,7 @@ export const MainCanvas = () => {
           element: { type: "score" },
           width: scoreBBox.right - scoreBBox.left,
           bbox: scoreBBox,
+          mtx: new DOMMatrix().translate(obj.position.x, obj.position.y),
         };
         map.set(id, [scoreStyle, ...staffStyles]);
       } else if (obj.type === "text") {
@@ -224,22 +235,18 @@ export const MainCanvas = () => {
     ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    for (const [id, obj] of rootObjs.map) {
+    for (const style of styleMap.values().toArray().flat()) {
       ctx.save();
-      ctx.translate(obj.position.x, obj.position.y);
-      for (const style of styleMap.get(id) ?? []) {
-        const { type } = style.element;
-        paintStyle(ctx, style);
-        paintBBox(ctx, style.bbox);
-        if (
-          type !== "score" &&
-          type !== "staff" &&
-          type !== "beam" &&
-          type !== "tie"
-        ) {
-          ctx.translate(style.width, 0);
-        }
-      }
+      ctx.transform(
+        style.mtx.a,
+        style.mtx.b,
+        style.mtx.c,
+        style.mtx.d,
+        style.mtx.e,
+        style.mtx.f
+      );
+      paintStyle(ctx, style);
+      paintBBox(ctx, style.bbox);
       ctx.restore();
     }
     const obj = rootObjs.get(focus.rootObjId);

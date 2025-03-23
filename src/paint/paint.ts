@@ -163,16 +163,16 @@ const paintNote = ({
   const color = element.color ?? "#000";
   for (const noteEl of element.elements) {
     if (noteEl.type === "head") {
-      const { duration, position } = noteEl;
+      const { duration, mtx } = noteEl;
       ctx.save();
-      ctx.translate(position.x, position.y);
+      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       const path = noteHeadByDuration(duration);
       paintBravuraPath(ctx, 0, 0, 1, path, color);
       ctx.restore();
     } else if (noteEl.type === "ledger") {
-      const { width, position } = noteEl;
+      const { width, mtx } = noteEl;
       ctx.save();
-      ctx.translate(position.x, position.y);
+      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       ctx.strokeStyle = color;
       ctx.lineWidth = bLedgerLineThickness;
       ctx.beginPath();
@@ -182,25 +182,28 @@ const paintNote = ({
       ctx.stroke();
       ctx.restore();
     } else if (noteEl.type === "accidental") {
-      const { position, accidental } = noteEl;
+      const { mtx, accidental } = noteEl;
       const path = accidentalPathMap().get(accidental)!;
       ctx.save();
-      ctx.translate(position.x, position.y);
+      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       paintBravuraPath(ctx, 0, 0, 1, path, color);
       ctx.restore();
     } else if (noteEl.type === "flag") {
-      const { duration, direction, position } = noteEl;
+      const { duration, direction, mtx } = noteEl;
       const path =
         direction === "up"
           ? upFlagMap().get(duration)
           : downFlagMap().get(duration);
       if (path) {
-        paintBravuraPath(ctx, position.x, position.y, 1, path, color);
+        ctx.save();
+        ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
+        paintBravuraPath(ctx, 0, 0, 1, path, color);
+        ctx.restore();
       }
     } else if (noteEl.type === "stem") {
-      const { position, width, height } = noteEl;
+      const { mtx, width, height } = noteEl;
       ctx.save();
-      ctx.translate(position.x + width / 2, position.y);
+      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       ctx.strokeStyle = color;
       ctx.lineWidth = width;
       ctx.beginPath();

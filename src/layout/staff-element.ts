@@ -68,11 +68,13 @@ const tiePosition = (noteHeadPos: Point, noteHeadBBox: BBox): Point => {
 
 export const determineNoteStyle = ({
   note,
+  mtx,
   stemDirection,
   beamed = false,
   pointing,
 }: {
   note: Note;
+  mtx: DOMMatrix;
   stemDirection?: "up" | "down";
   beamed?: boolean;
   pointing?: Pointing;
@@ -81,6 +83,7 @@ export const determineNoteStyle = ({
   width: number;
   stemOffsetLeft: number;
   bbox: BBox;
+  mtx: DOMMatrix;
 } => {
   const elements: NoteStyleElement[] = [];
   const bboxes: BBox[] = [];
@@ -96,7 +99,7 @@ export const determineNoteStyle = ({
     accBBoxes.push(getPathBBox(accidentalPathMap().get(accidental)!, UNIT));
     elements.push({
       type: "accidental",
-      position: { x: 0, y },
+      mtx: mtx.translate(0, y),
       accidental,
     });
   }
@@ -125,7 +128,7 @@ export const determineNoteStyle = ({
       elements.push({
         type: "ledger",
         width: ledgerWidth,
-        position: { x: leftOfLedgerLine, y },
+        mtx: mtx.translate(leftOfLedgerLine, y),
       });
       ledgerBBoxes.push({
         left: leftOfLedgerLine,
@@ -142,7 +145,7 @@ export const determineNoteStyle = ({
       elements.push({
         type: "ledger",
         width: ledgerWidth,
-        position: { x: leftOfLedgerLine, y },
+        mtx: mtx.translate(leftOfLedgerLine, y),
       });
       ledgerBBoxes.push({
         left: leftOfLedgerLine,
@@ -218,7 +221,7 @@ export const determineNoteStyle = ({
     );
     elements.push({
       type: "head",
-      position,
+      mtx: mtx.translate(position.x, position.y),
       duration: note.duration,
       tie: tiePosition(position, bbox),
     });
@@ -238,6 +241,7 @@ export const determineNoteStyle = ({
       direction: stemDirection,
       lowest: pitchAsc[0],
       highest: pitchAsc[pitchAsc.length - 1],
+      mtx,
     });
     elements.push(...el);
     bboxes.push(...stemFlagBB);
@@ -253,7 +257,7 @@ export const determineNoteStyle = ({
     );
     elements.push({
       type: "head",
-      position,
+      mtx: mtx.translate(position.x, position.y),
       duration: note.duration,
       tie: tiePosition(position, bbox),
     });
@@ -270,6 +274,7 @@ export const determineNoteStyle = ({
     width: bbox.right - bbox.left,
     stemOffsetLeft: leftOfStemOrNotehead,
     bbox,
+    mtx,
   };
 };
 
@@ -377,6 +382,7 @@ const determineStemFlagStyle = ({
   direction,
   lowest,
   highest,
+  mtx,
   beamed,
 }: {
   left: number;
@@ -384,6 +390,7 @@ const determineStemFlagStyle = ({
   direction: "up" | "down";
   lowest: PitchAcc;
   highest: PitchAcc;
+  mtx: DOMMatrix;
   beamed?: {
     top?: number;
     bottom?: number;
@@ -415,7 +422,7 @@ const determineStemFlagStyle = ({
         };
         elements.push({
           type: "flag",
-          position,
+          mtx: mtx.translate(position.x, position.y),
           duration, // pathも渡したほうがいいんだろうか
           direction,
         });
@@ -435,7 +442,7 @@ const determineStemFlagStyle = ({
         };
         elements.push({
           type: "flag",
-          position,
+          mtx: mtx.translate(position.x, position.y),
           duration,
           direction,
         });
@@ -443,26 +450,29 @@ const determineStemFlagStyle = ({
       }
     }
   }
+  const stemElPos = { x: stemCenter - bStemWidth / 2, y: top };
   const stemEl: NoteStyleElement = {
     type: "stem",
-    position: { x: stemCenter - bStemWidth / 2, y: top },
+    // stemの中心にtranslateしておく
+    mtx: mtx.translate(stemElPos.x + bStemWidth / 2, stemElPos.y),
     width: bStemWidth,
     height: bottom - top,
   };
   elements.push(stemEl);
   bboxes.push({
-    left: stemEl.position.x,
-    top: stemEl.position.y,
-    right: stemEl.position.x + stemEl.width,
-    bottom: stemEl.position.y + stemEl.height,
+    left: stemElPos.x,
+    top: stemElPos.y,
+    right: stemElPos.x + stemEl.width,
+    bottom: stemElPos.y + stemEl.height,
   });
   return { elements, bboxes };
 };
 
 const determineRestStyle = (
   rest: Rest,
+  mtx: DOMMatrix,
   pointing?: Pointing
-): { element: RestStyle; bbox: BBox; width: number } => {
+): { element: RestStyle; bbox: BBox; mtx: DOMMatrix; width: number } => {
   const path = restPathMap().get(rest.duration)!;
   const y = UNIT * path.originUnits;
   const pathOrigin = { x: 0, y };
@@ -475,14 +485,16 @@ const determineRestStyle = (
       ...(pointing ? { color: kPointingColor } : {}),
     },
     bbox,
+    mtx: mtx.translate(0, y),
     width: bbox.right - bbox.left,
   };
 };
 
 const determineBarStyle = (
   bar: Bar,
+  mtx: DOMMatrix,
   pointing?: Pointing
-): { element: BarStyle; bbox: BBox; width: number } => {
+): { element: BarStyle; bbox: BBox; mtx: DOMMatrix; width: number } => {
   const thinWidth = bThinBarlineThickness * UNIT;
   const barlineSeparation = bBarlineSeparation * UNIT;
   if (bar.subtype === "single") {
@@ -507,6 +519,7 @@ const determineBarStyle = (
         right: thinWidth,
         bottom: bStaffHeight,
       },
+      mtx,
     };
   } else if (bar.subtype === "double") {
     return {
@@ -536,6 +549,7 @@ const determineBarStyle = (
         right: barlineSeparation + thinWidth * 2,
         bottom: bStaffHeight,
       },
+      mtx,
     };
   } else if (bar.subtype === "final") {
     const boldWidth = bThickBarlineThickness * UNIT;
@@ -570,6 +584,7 @@ const determineBarStyle = (
         right: width,
         bottom: bStaffHeight,
       },
+      mtx,
     };
   } else {
     // repeat
@@ -619,6 +634,7 @@ const determineBarStyle = (
         right: width,
         bottom: bStaffHeight,
       },
+      mtx,
     };
   }
 };
@@ -804,6 +820,7 @@ const determineBeamStyle = (p: {
   notePositions: { left: number; stemOffsetLeft: number }[];
   linearFunc: (x: number) => number;
   stemDirection: "up" | "down";
+  mtx: DOMMatrix;
   duration?: Duration;
   headOrTail?: "head" | "tail";
 }): PaintStyle<BeamStyle>[] => {
@@ -814,6 +831,7 @@ const determineBeamStyle = (p: {
     stemDirection,
     duration = 8,
     headOrTail,
+    mtx,
   } = p;
   console.log("determineBeamStyle", duration);
   let shouldExt = false;
@@ -862,6 +880,7 @@ const determineBeamStyle = (p: {
       right: shape.ne.x,
       bottom: shape.sw.y,
     },
+    mtx: mtx.translate(beamLeft),
   });
   if (duration === 32) {
     return beams;
@@ -921,6 +940,7 @@ const determineBeamedNotesStyle = (
   duration: Duration,
   elementGap: number,
   startIdx: number,
+  mtx: DOMMatrix,
   _pointing?: Pointing
 ): PaintStyle<NoteStyle | BeamStyle | GapStyle>[] => {
   const allBeamedPitches = beamedNotes
@@ -941,6 +961,7 @@ const determineBeamedNotesStyle = (
       stemDirection,
       beamed: true,
       pointing,
+      mtx,
     });
     notePositions.push({ left, stemOffsetLeft: noteStyle.stemOffsetLeft });
     const caretOption = { index: i + startIdx };
@@ -950,6 +971,7 @@ const determineBeamedNotesStyle = (
       gapElementStyle({
         width: elementGap,
         height: bStaffHeight,
+        mtx: mtx.translate(left, 0),
         caretOption: {
           ...caretOption,
           index: i + startIdx,
@@ -958,6 +980,7 @@ const determineBeamedNotesStyle = (
       })
     );
     left += elementGap;
+    mtx.translate(elementGap, 0);
   }
   // durationが変わろうが、始点・終点が変わろうが共通
   const linearFunc = getBeamLinearFunc({
@@ -971,6 +994,7 @@ const determineBeamedNotesStyle = (
     notePositions,
     linearFunc,
     stemDirection,
+    mtx,
   });
   for (const i in beamedNotes) {
     const { pitches } = beamedNotes[i];
@@ -993,6 +1017,7 @@ const determineBeamedNotesStyle = (
       lowest: pitchAsc[0],
       highest: pitchAsc[pitchAsc.length - 1],
       beamed,
+      mtx,
     });
     // gapを考慮したindex
     const parent = elements[Number(i) * 2];
@@ -1006,16 +1031,19 @@ const determineBeamedNotesStyle = (
 export const gapElementStyle = ({
   width,
   height,
+  mtx,
   caretOption,
 }: {
   width: number;
   height: number;
+  mtx: DOMMatrix;
   caretOption?: CaretOption;
 }): PaintStyle<GapStyle> => {
   return {
     element: { type: "gap" },
     width,
     bbox: { left: 0, top: 0, right: width, bottom: height },
+    mtx,
     caretOption,
   };
 };
@@ -1023,6 +1051,7 @@ export const gapElementStyle = ({
 const determineClefStyle = (
   clef: Clef,
   index: number,
+  mtx: DOMMatrix,
   pointing?: Pointing
 ): PaintStyle<ClefStyle> => {
   const path = getPathBBox(bClefG(), UNIT);
@@ -1035,6 +1064,7 @@ const determineClefStyle = (
     },
     width: path.right - path.left,
     bbox: offsetBBox(path, { y: g }),
+    mtx: mtx.translate(0, g),
     index,
   };
 };
@@ -1042,37 +1072,51 @@ const determineClefStyle = (
 export const determineStaffPaintStyle = (p: {
   elements: MusicalElement[];
   gapWidth: number;
+  mtx: DOMMatrix;
   staffObj?: StaffObject;
   pointing?: Pointing;
   gap?: { idx: number; width: number };
 }): PaintStyle<PaintElement>[] => {
-  const { elements, gapWidth, staffObj, pointing, gap } = p;
+  const { elements, gapWidth, mtx: _mtx, staffObj, pointing, gap } = p;
   let styles: PaintStyle<PaintElement>[] = [];
-  const gapEl = gapElementStyle({
-    width: gapWidth,
-    height: bStaffHeight,
-  });
+  let mtx = new DOMMatrix(_mtx.toString());
+  const gapEl = gapElementStyle({ width: gapWidth, height: bStaffHeight, mtx });
   let cursor = 0;
   if (staffObj) {
     styles.push(gapEl);
     cursor += gapWidth;
+    mtx = mtx.translate(gapWidth, 0);
     const { staff } = staffObj;
     if (staff.clef) {
       const _pointing = pointing?.index === -1 ? pointing : undefined;
-      const clef = determineClefStyle(staff.clef, -1, _pointing);
+      const clef = determineClefStyle(staff.clef, -1, mtx, _pointing);
       styles.push(clef);
       cursor += clef.width;
+      mtx = mtx.translate(clef.width, 0);
     }
   }
-  styles.push({ ...gapEl, caretOption: { index: -1, defaultWidth: true } });
+  styles.push({
+    ...gapEl,
+    mtx,
+    caretOption: { index: -1, defaultWidth: true },
+  });
   cursor += gapWidth;
+  mtx = mtx.translate(gapWidth, 0);
   let index = 0;
   while (index < elements.length) {
     if (gap?.idx === index) {
-      styles.push(gapElementStyle({ width: gap.width, height: bStaffHeight }));
+      styles.push(
+        gapElementStyle({ width: gap.width, height: bStaffHeight, mtx })
+      );
       cursor += gap.width;
-      styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+      mtx = mtx.translate(gap.width, 0);
+      styles.push({
+        ...gapEl,
+        mtx,
+        caretOption: { index, defaultWidth: true },
+      });
       cursor += gapWidth;
+      mtx = mtx.translate(gapWidth, 0);
     }
     const el = elements[index];
     if (el.type === "note") {
@@ -1097,34 +1141,49 @@ export const determineStaffPaintStyle = (p: {
           el.duration,
           gapWidth,
           index,
+          mtx,
           _pointing
         );
         styles.push(...beamedStyles);
         index += beamedNotes.length;
       } else {
         const _pointing = pointing?.index === index ? pointing : undefined;
-        const note = determineNoteStyle({ note: el, pointing: _pointing });
+        const note = determineNoteStyle({ note: el, mtx, pointing: _pointing });
         styles.push({ caretOption: { index }, index, ...note });
         cursor += note.width;
-        styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+        mtx = mtx.translate(note.width, 0);
+        styles.push({
+          ...gapEl,
+          mtx,
+          caretOption: { index, defaultWidth: true },
+        });
         cursor += gapWidth;
+        mtx = mtx.translate(gapWidth, 0);
         index++;
       }
     } else if (el.type === "rest") {
       const _pointing = pointing?.index === index ? pointing : undefined;
-      const rest = determineRestStyle(el, _pointing);
+      const rest = determineRestStyle(el, mtx, _pointing);
       styles.push({ caretOption: { index }, index, ...rest });
       cursor += rest.width;
-      styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+      mtx = mtx.translate(rest.width, 0);
+      styles.push({
+        ...gapEl,
+        mtx,
+        caretOption: { index, defaultWidth: true },
+      });
       cursor += gapWidth;
+      mtx = mtx.translate(gapWidth, 0);
       index++;
     } else if (el.type === "bar") {
       const _pointing = pointing?.index === index ? pointing : undefined;
-      const bar = determineBarStyle(el, _pointing);
+      const bar = determineBarStyle(el, mtx, _pointing);
       styles.push({ caretOption: { index }, index, ...bar });
       cursor += bar.width;
+      mtx = mtx.translate(bar.width, 0);
       styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
       cursor += gapWidth;
+      mtx = mtx.translate(gapWidth, 0);
       index++;
     }
   }
@@ -1134,6 +1193,7 @@ export const determineStaffPaintStyle = (p: {
       element: { type: "staff" },
       width: cursor,
       bbox: { left: 0, top: 0, right: cursor, bottom: UNIT * 4 },
+      mtx: _mtx,
     });
   }
   return styles;

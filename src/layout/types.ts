@@ -25,23 +25,23 @@ export type NoteStyle = {
 // 1音に含まれる描画パーツ
 export type NoteHeadElement = {
   type: "head";
-  position: Point;
+  mtx: DOMMatrix;
   duration: Duration;
   tie: Point;
 };
 export type NoteStyleElement =
   | NoteHeadElement
-  | { type: "accidental"; position: Point; accidental: Accidental }
-  | { type: "ledger"; position: Point; width: number }
+  | { type: "accidental"; mtx: DOMMatrix; accidental: Accidental }
+  | { type: "ledger"; mtx: DOMMatrix; width: number }
   | {
       type: "flag";
-      position: Point;
+      mtx: DOMMatrix;
       duration: Duration;
       direction: "up" | "down";
     }
   | {
       type: "stem";
-      position: Point;
+      mtx: DOMMatrix;
       width: number;
       height: number;
     };
@@ -117,6 +117,7 @@ export type PaintStyle<T> = {
   element: T;
   width: number;
   bbox: BBox;
+  mtx: DOMMatrix;
   index?: number;
   caretOption?: CaretOption;
 };
