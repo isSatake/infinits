@@ -76,14 +76,8 @@ const paintBravuraPath = (
   ctx.restore();
 };
 
-const paintGClef = (
-  ctx: CanvasRenderingContext2D,
-  element: ClefStyle,
-  left: number,
-  topOfStaff: number
-) => {
-  const g = pitchToY(topOfStaff, 4, 1);
-  paintBravuraPath(ctx, left, g, 1, bClefG(), element.color);
+const paintGClef = (ctx: CanvasRenderingContext2D, element: ClefStyle) => {
+  paintBravuraPath(ctx, 0, 0, 1, bClefG(), element.color);
 };
 
 export const paintStaff = (
@@ -266,7 +260,7 @@ export const paintStyle = (
   } else if (type === "connection") {
     paintConnection(ctx, element);
   } else if (type === "clef") {
-    paintGClef(ctx, element, 0, 0);
+    paintGClef(ctx, element);
   } else if (type === "note") {
     paintNote({ ctx, element });
   } else if (type === "rest") {

@@ -1063,7 +1063,7 @@ const determineClefStyle = (
       ...(pointing ? { color: kPointingColor } : {}),
     },
     width: path.right - path.left,
-    bbox: offsetBBox(path, { y: g }),
+    bbox: path,
     mtx: mtx.translate(0, g),
     index,
   };
