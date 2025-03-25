@@ -475,13 +475,11 @@ const determineRestStyle = (
 ): { element: RestStyle; bbox: BBox; mtx: DOMMatrix; width: number } => {
   const path = restPathMap().get(rest.duration)!;
   const y = UNIT * path.originUnits;
-  const pathOrigin = { x: 0, y };
   const bbox = offsetBBox(getPathBBox(path, UNIT), { y });
   return {
     element: {
       type: "rest",
       rest,
-      position: pathOrigin,
       ...(pointing ? { color: kPointingColor } : {}),
     },
     bbox,

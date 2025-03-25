@@ -216,10 +216,9 @@ const paintRest = ({
   ctx: CanvasRenderingContext2D;
   element: RestStyle;
 }) => {
-  const { rest, position, color } = element;
+  const { rest, color } = element;
   const path = restPathMap().get(rest.duration)!;
   ctx.save();
-  ctx.translate(position.x, position.y);
   paintBravuraPath(ctx, 0, 0, 1, path, color);
   ctx.restore();
 };

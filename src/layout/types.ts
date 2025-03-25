@@ -48,7 +48,6 @@ export type NoteStyleElement =
 export type RestStyle = {
   type: "rest";
   rest: Rest;
-  position: Point;
 } & OptionalColor;
 export type BarStyle = {
   type: "bar";
