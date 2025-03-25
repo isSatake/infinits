@@ -157,14 +157,14 @@ const paintNote = ({
   const color = element.color ?? "#000";
   for (const noteEl of element.elements) {
     if (noteEl.type === "head") {
-      const { duration, mtx } = noteEl;
+      const { duration, localTransform: mtx } = noteEl;
       ctx.save();
       ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       const path = noteHeadByDuration(duration);
       paintBravuraPath(ctx, 0, 0, 1, path, color);
       ctx.restore();
     } else if (noteEl.type === "ledger") {
-      const { width, mtx } = noteEl;
+      const { width, localTransform: mtx } = noteEl;
       ctx.save();
       ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       ctx.strokeStyle = color;
@@ -176,14 +176,14 @@ const paintNote = ({
       ctx.stroke();
       ctx.restore();
     } else if (noteEl.type === "accidental") {
-      const { mtx, accidental } = noteEl;
+      const { localTransform: mtx, accidental } = noteEl;
       const path = accidentalPathMap().get(accidental)!;
       ctx.save();
       ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       paintBravuraPath(ctx, 0, 0, 1, path, color);
       ctx.restore();
     } else if (noteEl.type === "flag") {
-      const { duration, direction, mtx } = noteEl;
+      const { duration, direction, localTransform: mtx } = noteEl;
       const path =
         direction === "up"
           ? upFlagMap().get(duration)
@@ -195,7 +195,7 @@ const paintNote = ({
         ctx.restore();
       }
     } else if (noteEl.type === "stem") {
-      const { mtx, width, height } = noteEl;
+      const { localTransform: mtx, width, height } = noteEl;
       ctx.save();
       ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       ctx.strokeStyle = color;

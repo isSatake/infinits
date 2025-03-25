@@ -247,6 +247,22 @@ export const MainCanvas = () => {
       );
       paintStyle(ctx, style);
       paintBBox(ctx, style.bbox);
+      // 0, 0に+を描画(for debug)
+      ctx.save();
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 10;
+      ctx.beginPath()
+      ctx.moveTo(-130, 0);
+      ctx.lineTo(130, 0);
+      ctx.moveTo(0, -130);
+      ctx.lineTo(0, 130);
+      ctx.stroke();
+      ctx.translate(30, 30);
+      ctx.font = "250px sans-serif";
+      ctx.textBaseline = "bottom";
+      ctx.fillStyle = "red";
+      ctx.fillText(style.element.type, 0, 0);
+      ctx.restore();
       ctx.restore();
     }
     const obj = rootObjs.get(focus.rootObjId);
