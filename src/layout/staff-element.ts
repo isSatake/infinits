@@ -44,11 +44,12 @@ import {
   ClefStyle,
   GapStyle,
   NoteStyle,
-  NoteStyleElement,
+  NoteStyleChildren,
   PaintElement,
   PaintStyle,
   Pointing,
   RestStyle,
+  StaffStyle,
 } from "./types";
 
 const kPointingColor = "#FF0000";
@@ -80,7 +81,7 @@ export const determineNoteStyle = ({
   bbox: BBox;
   mtx: DOMMatrix;
 } => {
-  const elements: NoteStyleElement[] = [];
+  const elements: NoteStyleChildren[] = [];
   const bboxes: BBox[] = [];
   const localMtx = new DOMMatrix();
 
@@ -264,7 +265,7 @@ export const determineNoteStyle = ({
     element: {
       type: "note",
       note,
-      elements,
+      children: elements,
       ...(pointing ? { color: kPointingColor } : undefined),
     },
     width: bbox.right - bbox.left,
@@ -391,11 +392,11 @@ const determineStemFlagStyle = ({
     top?: number;
     bottom?: number;
   };
-}): { elements: NoteStyleElement[]; bboxes: BBox[] } => {
+}): { elements: NoteStyleChildren[]; bboxes: BBox[] } => {
   if (duration === 1) {
     return { elements: [], bboxes: [] };
   }
-  const elements: NoteStyleElement[] = [];
+  const elements: NoteStyleChildren[] = [];
   let { top, bottom } = calcStemShape({
     dnp: { topOfStaff: 0, scale: 1, duration },
     direction,
@@ -447,7 +448,7 @@ const determineStemFlagStyle = ({
     }
   }
   const stemElPos = { x: stemCenter - bStemWidth / 2, y: top };
-  const stemEl: NoteStyleElement = {
+  const stemEl: NoteStyleChildren = {
     type: "stem",
     // stemの中心にtranslateしておく
     localTransform: mtx.translate(stemElPos.x + bStemWidth / 2, stemElPos.y),
@@ -496,7 +497,7 @@ const determineBarStyle = (
         type: "bar",
         bar,
         ...(pointing ? { color: kPointingColor } : {}),
-        elements: [
+        children: [
           {
             type: "line",
             position: { x: 0, y: 0 },
@@ -520,7 +521,7 @@ const determineBarStyle = (
         type: "bar",
         bar,
         ...(pointing ? { color: kPointingColor } : {}),
-        elements: [
+        children: [
           {
             type: "line",
             position: { x: 0, y: 0 },
@@ -552,7 +553,7 @@ const determineBarStyle = (
         type: "bar",
         bar,
         ...(pointing ? { color: kPointingColor } : {}),
-        elements: [
+        children: [
           {
             type: "line",
             position: { x: 0, y: 0 },
@@ -594,7 +595,7 @@ const determineBarStyle = (
         type: "bar",
         bar,
         ...(pointing ? { color: kPointingColor } : {}),
-        elements: [
+        children: [
           {
             type: "dot",
             position: { x: 0, y: UNIT + UNIT / 2 }, // 第2間
@@ -1015,7 +1016,7 @@ const determineBeamedNotesStyle = (
     const parent = elements[Number(i) * 2];
     const noteSyle = parent.element as NoteStyle;
     parent.bbox = mergeBBoxes([parent.bbox, ...stemFlag.bboxes]);
-    noteSyle.elements.push(...stemFlag.elements);
+    noteSyle.children.push(...stemFlag.elements);
   }
   return [...beams, ...elements];
 };
@@ -1067,24 +1068,25 @@ export const determineStaffPaintStyle = (p: {
   gap?: { idx: number; width: number };
 }): PaintStyle<PaintElement>[] => {
   const { elements, gapWidth, mtx: _mtx, staffObj, pointing, gap } = p;
-  let styles: PaintStyle<PaintElement>[] = [];
+  // let styles: PaintStyle<PaintElement>[] = [];
+  const children: StaffStyle["children"][] = [];
   let staffMtx = new DOMMatrix();
   const gapEl = gapElementStyle({ width: gapWidth, height: bStaffHeight });
   let cursor = 0;
   if (staffObj) {
-    styles.push(gapEl);
+    children.push(gapEl);
     cursor += gapWidth;
     staffMtx = staffMtx.translate(gapWidth, 0);
     const { staff } = staffObj;
     if (staff.clef) {
       const _pointing = pointing?.index === -1 ? pointing : undefined;
       const clef = determineClefStyle(staff.clef, -1, _pointing);
-      styles.push(clef);
+      children.push(clef);
       cursor += clef.width;
       staffMtx = staffMtx.translate(clef.width, 0);
     }
   }
-  styles.push({
+  children.push({
     ...gapEl,
     mtx: staffMtx,
     caretOption: { index: -1, defaultWidth: true },
@@ -1094,10 +1096,10 @@ export const determineStaffPaintStyle = (p: {
   let index = 0;
   while (index < elements.length) {
     if (gap?.idx === index) {
-      styles.push(gapElementStyle({ width: gap.width, height: bStaffHeight }));
+      children.push(gapElementStyle({ width: gap.width, height: bStaffHeight }));
       cursor += gap.width;
       staffMtx = staffMtx.translate(gap.width, 0);
-      styles.push({
+      children.push({
         ...gapEl,
         mtx: staffMtx,
         caretOption: { index, defaultWidth: true },

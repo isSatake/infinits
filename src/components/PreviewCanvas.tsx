@@ -50,7 +50,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     let offsetGap;
     let cursor = 0;
     for (const style of styles) {
-      const { width, element, index } = style;
+      const { width, element: element, index } = style;
       if (index === preview.insertedIndex) {
         offsetGap = { idx: preview.insertedIndex, width };
       }

@@ -251,7 +251,7 @@ export const MainCanvas = () => {
       ctx.save();
       ctx.strokeStyle = "red";
       ctx.lineWidth = 10;
-      ctx.beginPath()
+      ctx.beginPath();
       ctx.moveTo(-130, 0);
       ctx.lineTo(130, 0);
       ctx.moveTo(0, -130);

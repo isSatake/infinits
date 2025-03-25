@@ -121,7 +121,7 @@ const paintConnection = (
  */
 const paintBarline = (ctx: CanvasRenderingContext2D, element: BarStyle) => {
   const color = element.color ?? "#000";
-  for (const el of element.elements) {
+  for (const el of element.children) {
     ctx.save();
     if (el.type === "line") {
       ctx.translate(el.position.x + el.lineWidth / 2, el.position.y);
@@ -155,7 +155,7 @@ const paintNote = ({
   element: NoteStyle;
 }) => {
   const color = element.color ?? "#000";
-  for (const noteEl of element.elements) {
+  for (const noteEl of element.children) {
     if (noteEl.type === "head") {
       const { duration, localTransform: mtx } = noteEl;
       ctx.save();
@@ -252,7 +252,7 @@ export const paintStyle = (
   ctx: CanvasRenderingContext2D,
   style: PaintStyle<PaintElement>
 ) => {
-  const { element } = style;
+  const { element: element } = style;
   const { type } = element;
   if (element.type === "staff") {
     paintStaff(ctx, style.width);

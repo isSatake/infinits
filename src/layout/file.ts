@@ -42,7 +42,7 @@ export const determineFilePaintStyle = (
     },
   };
   return {
-    element,
+    element: element,
     width,
     bbox: { left: 0, right: width, top: 0, bottom: height },
     mtx: new DOMMatrix().translate(obj.position.x, obj.position.y),

@@ -20,7 +20,7 @@ export type PaintElement =
 export type NoteStyle = {
   type: "note";
   note: Note;
-  elements: NoteStyleElement[];
+  children: NoteStyleChildren[];
 } & OptionalColor;
 // 1音に含まれる描画パーツ
 export type NoteHeadElement = {
@@ -29,7 +29,7 @@ export type NoteHeadElement = {
   duration: Duration;
   tie: Point;
 };
-export type NoteStyleElement =
+export type NoteStyleChildren =
   | NoteHeadElement
   | { type: "accidental"; localTransform: DOMMatrix; accidental: Accidental }
   | { type: "ledger"; localTransform: DOMMatrix; width: number }
@@ -52,9 +52,9 @@ export type RestStyle = {
 export type BarStyle = {
   type: "bar";
   bar: Bar;
-  elements: BarStyleElement[];
+  children: BarStyleChildren[];
 } & OptionalColor;
-export type BarStyleElement =
+export type BarStyleChildren =
   | { type: "line"; position: Point; height: number; lineWidth: number }
   | { type: "dot"; position: Point };
 export type BeamStyle = {
@@ -88,8 +88,18 @@ export type TextStyle = {
   height: number;
   offset: Point;
 };
-export type ScoreStyle = { type: "score" };
-export type StaffStyle = { type: "staff" };
+export type ScoreStyle = { type: "score"; children: StaffStyle[] };
+export type StaffStyle = {
+  type: "staff";
+  children:
+    | NoteStyle
+    | RestStyle
+    | ClefStyle
+    | BarStyle
+    | GapStyle
+    | TieStyle
+    | BeamStyle;
+};
 export type FileStyle = {
   type: "file";
   file: File;

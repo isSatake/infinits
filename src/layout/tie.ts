@@ -49,7 +49,7 @@ export const determineTieStyle = (
   start: PaintStyle<NoteStyle>,
   width: number
 ): PaintStyle<TieStyle> => {
-  const startHead = start.element.elements.find(
+  const startHead = start.element.children.find(
     (e) => e.type === "head"
   ) as NoteHeadElement;
   return {
