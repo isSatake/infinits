@@ -2,7 +2,6 @@ import { Accidental, Bar, Clef, Duration, Note, Rest } from "../core/types";
 import { BBox, Point, Size } from "../lib/geometry";
 
 export type CaretStyle = { elIdx: number } & Point & Size;
-type OptionalColor = { color?: string };
 export type PaintElement =
   | ScoreStyle
   | StaffStyle
@@ -16,80 +15,68 @@ export type PaintElement =
   | TieStyle
   | TextStyle
   | FileStyle;
-// 1音
-export type NoteStyle = {
-  type: "note";
-  note: Note;
-  children: NoteStyleChildren[];
-} & OptionalColor;
-// 1音に含まれる描画パーツ
-export type NoteHeadElement = {
-  type: "head";
-  localTransform: DOMMatrix;
-  duration: Duration;
-  tie: Point;
-};
-export type NoteStyleChildren =
-  | NoteHeadElement
-  | { type: "accidental"; localTransform: DOMMatrix; accidental: Accidental }
-  | { type: "ledger"; localTransform: DOMMatrix; width: number }
-  | {
-      type: "flag";
-      localTransform: DOMMatrix;
-      duration: Duration;
-      direction: "up" | "down";
-    }
-  | {
-      type: "stem";
-      localTransform: DOMMatrix;
-      width: number;
-      height: number;
-    };
-export type RestStyle = {
-  type: "rest";
-  rest: Rest;
-} & OptionalColor;
-export type BarStyle = {
+// export type NoteStyle = PaintStyle & {
+//   type: "note";
+//   note: Note;
+//   children: NoteStyleChildren[];
+// };
+export type NoteStyle = PaintStyle2<
+  { type: "note"; note: Note },
+  NoteStyleChildren
+>;
+export type NoteHeadElement = { type: "head"; duration: Duration; tie: Point };
+export type NoteStyleChildren = PaintStyle &
+  (
+    | NoteHeadElement
+    | { type: "accidental"; accidental: Accidental }
+    | { type: "ledger"; ledgerWidth: number }
+    | {
+        type: "flag";
+        duration: Duration;
+        direction: "up" | "down";
+      }
+    | { type: "stem"; lineWidth: number; height: number }
+  );
+export type RestStyle = PaintStyle & { type: "rest"; rest: Rest };
+export type BarStyle = PaintStyle & {
   type: "bar";
   bar: Bar;
   children: BarStyleChildren[];
-} & OptionalColor;
-export type BarStyleChildren =
-  | { type: "line"; position: Point; height: number; lineWidth: number }
-  | { type: "dot"; position: Point };
-export type BeamStyle = {
+};
+export type BarStyleChildren = PaintStyle &
+  (
+    | { type: "line"; position: Point; height: number; lineWidth: number }
+    | { type: "dot"; position: Point }
+  );
+export type BeamStyle = PaintStyle & {
   type: "beam";
   nw: Point;
   ne: Point;
   sw: Point;
   se: Point;
-} & OptionalColor;
-export type ClefStyle = {
-  // paintとの分担を考えるとposition持っとくほうがいいかもしれん
+};
+export type ClefStyle = PaintStyle & {
   type: "clef";
   clef: Clef;
-} & OptionalColor;
-export type GapStyle = { type: "gap" } & OptionalColor;
-export type TieStyle = {
+};
+export type GapStyle = PaintStyle & { type: "gap" };
+export type TieStyle = PaintStyle & {
   type: "tie";
   position: Point;
   cpLow: Point; // 弧線の曲率が小さい方
   cpHigh: Point;
   end: Point;
-} & OptionalColor;
-export type TextStyle = {
+};
+export type TextStyle = PaintStyle & {
   type: "text";
-  txtPosition: Point;
   text: string;
   fontSize: number;
   fontFamily: string;
   baseline: "middle" | "top";
-  width: number;
-  height: number;
   offset: Point;
 };
-export type ScoreStyle = { type: "score"; children: StaffStyle[] };
-export type StaffStyle = {
+export type ScoreStyle = PaintStyle & { type: "score"; children: StaffStyle[] };
+export type StaffStyle = PaintStyle & {
   type: "staff";
   children:
     | NoteStyle
@@ -100,12 +87,14 @@ export type StaffStyle = {
     | TieStyle
     | BeamStyle;
 };
-export type FileStyle = {
+export type FileStyle = PaintStyle & {
   type: "file";
   file: File;
   duration: number;
-  icon: { type: "play"; position: Point; width: number; height: number };
-  fileName: TextStyle;
+  children: (PlayIconStyle | TextStyle)[];
+};
+export type PlayIconStyle = PaintStyle & {
+  type: "play";
   width: number;
   height: number;
 };
@@ -122,11 +111,25 @@ export type CaretOption = {
   index: number;
   defaultWidth?: boolean;
 };
-export type PaintStyle<T> = {
-  element: T;
+export type PaintStyle = {
   width: number;
+  height: number;
   bbox: BBox;
   mtx: DOMMatrix;
+  color?: string;
   index?: number;
   caretOption?: CaretOption;
+};
+
+export type PaintStyle2<T, E, C = undefined> = {
+  type: T;
+  element: E;
+  width: number;
+  height: number;
+  bbox: BBox;
+  mtx: DOMMatrix;
+  color?: string;
+  index?: number;
+  caretOption?: CaretOption;
+  children?: C extends undefined ? never : PaintStyle2<C>[];
 };

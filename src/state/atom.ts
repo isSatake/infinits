@@ -89,9 +89,7 @@ export const tieModeAtom = atom<TieModes>("notie");
 export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());
 
 // obj id -> element style
-export const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
-  new Map()
-);
+export const paintStyleMapAtom = atom<Map<number, PaintStyle[]>>(new Map());
 
 // staff id -> element bboxes
 export const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(

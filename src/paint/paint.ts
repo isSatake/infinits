@@ -164,7 +164,7 @@ const paintNote = ({
       paintBravuraPath(ctx, 0, 0, 1, path, color);
       ctx.restore();
     } else if (noteEl.type === "ledger") {
-      const { width, localTransform: mtx } = noteEl;
+      const { ledgerWidth: width, localTransform: mtx } = noteEl;
       ctx.save();
       ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       ctx.strokeStyle = color;
@@ -195,7 +195,7 @@ const paintNote = ({
         ctx.restore();
       }
     } else if (noteEl.type === "stem") {
-      const { localTransform: mtx, width, height } = noteEl;
+      const { localTransform: mtx, lineWidth: width, height } = noteEl;
       ctx.save();
       ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
       ctx.strokeStyle = color;

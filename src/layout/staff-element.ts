@@ -124,7 +124,7 @@ export const determineNoteStyle = ({
       const y = pitchToY(0, p, 1);
       elements.push({
         type: "ledger",
-        width: ledgerWidth,
+        ledgerWidth: ledgerWidth,
         localTransform: localMtx.translate(leftOfLedgerLine, y),
       });
       ledgerBBoxes.push({
@@ -141,7 +141,7 @@ export const determineNoteStyle = ({
       const y = pitchToY(0, p, 1);
       elements.push({
         type: "ledger",
-        width: ledgerWidth,
+        ledgerWidth: ledgerWidth,
         localTransform: localMtx.translate(leftOfLedgerLine, y),
       });
       ledgerBBoxes.push({
@@ -452,14 +452,14 @@ const determineStemFlagStyle = ({
     type: "stem",
     // stemの中心にtranslateしておく
     localTransform: mtx.translate(stemElPos.x + bStemWidth / 2, stemElPos.y),
-    width: bStemWidth,
+    lineWidth: bStemWidth,
     height: bottom - top,
   };
   elements.push(stemEl);
   bboxes.push({
     left: stemElPos.x,
     top: stemElPos.y,
-    right: stemElPos.x + stemEl.width,
+    right: stemElPos.x + stemEl.lineWidth,
     bottom: stemElPos.y + stemEl.height,
   });
   return { elements, bboxes };
@@ -1096,7 +1096,9 @@ export const determineStaffPaintStyle = (p: {
   let index = 0;
   while (index < elements.length) {
     if (gap?.idx === index) {
-      children.push(gapElementStyle({ width: gap.width, height: bStaffHeight }));
+      children.push(
+        gapElementStyle({ width: gap.width, height: bStaffHeight })
+      );
       cursor += gap.width;
       staffMtx = staffMtx.translate(gap.width, 0);
       children.push({

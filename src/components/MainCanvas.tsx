@@ -79,13 +79,9 @@ export const MainCanvas = () => {
 
   // element style
   useEffect(() => {
-    const map = new Map<number, PaintStyle<PaintElement>[]>();
+    const map = new Map<number, PaintStyle[]>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "score") {
-        const scoreMtx = new DOMMatrix().translate(
-          obj.position.x,
-          obj.position.y
-        );
         const staffStyles =
           scoreStaffMap
             .get(id)
@@ -95,7 +91,7 @@ export const MainCanvas = () => {
               determineStaffPaintStyle({
                 elements: elements.get(id) ?? [],
                 gapWidth: UNIT,
-                mtx: scoreMtx.translate(
+                mtx: new DOMMatrix().translate(
                   staffObj.position.x,
                   staffObj.position.y
                 ),
@@ -106,8 +102,7 @@ export const MainCanvas = () => {
             .flat() ?? [];
         const scoreBBox = staffStyles
           .filter(
-            (style): style is PaintStyle<StaffStyle> =>
-              style.element.type === "staff"
+            (style): style is StaffStyle => style.element.type === "staff"
           )
           .reduce((acc, v) => expandBBox(acc, v.bbox), {
             left: 0,
@@ -115,11 +110,13 @@ export const MainCanvas = () => {
             top: 0,
             bottom: 0,
           });
-        const scoreStyle: PaintStyle<ScoreStyle> = {
-          element: { type: "score" },
+        const scoreStyle: ScoreStyle = {
+          type: "score",
           width: scoreBBox.right - scoreBBox.left,
+          height: scoreBBox.bottom - scoreBBox.top,
           bbox: scoreBBox,
           mtx: new DOMMatrix().translate(obj.position.x, obj.position.y),
+          children: staffStyles,
         };
         map.set(id, [scoreStyle, ...staffStyles]);
       } else if (obj.type === "text") {
@@ -128,57 +125,57 @@ export const MainCanvas = () => {
         map.set(id, [determineFilePaintStyle(obj)]);
       }
     }
-    // connection
-    for (const [id, { position }] of rootObjs.map) {
-      let toPos;
-      if (uncommitedConnection?.from === id) {
-        toPos = uncommitedConnection.position;
-        const fromStyle = map
-          .get(id)
-          ?.find(
-            (style): style is PaintStyle<RootObjStyle> =>
-              style.element.type === "staff" ||
-              style.element.type === "text" ||
-              style.element.type === "file"
-          );
-        if (!fromStyle) {
-          continue;
-        }
-        map.get(id)?.push(
-          buildConnectionStyle({
-            from: { position, width: fromStyle.width },
-            to: { position: toPos },
-          })
-        );
-      }
-      const connections = connectionMap.get(id);
-      if (connections === undefined) {
-        continue;
-      }
-      for (const toId of connections) {
-        const toPos = rootObjs.get(toId)?.position;
-        if (!toPos) {
-          continue;
-        }
-        const fromStyle = map
-          .get(id)
-          ?.find(
-            (style): style is PaintStyle<RootObjStyle> =>
-              style.element.type === "staff" ||
-              style.element.type === "text" ||
-              style.element.type === "file"
-          );
-        if (!fromStyle) {
-          continue;
-        }
-        map.get(id)?.push(
-          buildConnectionStyle({
-            from: { position, width: fromStyle.width },
-            to: { position: toPos, id: toId },
-          })
-        );
-      }
-    }
+    // TODO connection
+    // for (const [id, { position }] of rootObjs.map) {
+    //   let toPos;
+    //   if (uncommitedConnection?.from === id) {
+    //     toPos = uncommitedConnection.position;
+    //     const fromStyle = map
+    //       .get(id)
+    //       ?.find(
+    //         (style): style is RootObjStyle =>
+    //           style.type === "staff" ||
+    //           style.type === "text" ||
+    //           style.type === "file"
+    //       );
+    //     if (!fromStyle) {
+    //       continue;
+    //     }
+    //     map.get(id)?.push(
+    //       buildConnectionStyle({
+    //         from: { position, width: fromStyle.width },
+    //         to: { position: toPos },
+    //       })
+    //     );
+    //   }
+    //   const connections = connectionMap.get(id);
+    //   if (connections === undefined) {
+    //     continue;
+    //   }
+    //   for (const toId of connections) {
+    //     const toPos = rootObjs.get(toId)?.position;
+    //     if (!toPos) {
+    //       continue;
+    //     }
+    //     const fromStyle = map
+    //       .get(id)
+    //       ?.find(
+    //         (style): style is RootObjStyle =>
+    //           style.type === "staff" ||
+    //           style.type === "text" ||
+    //           style.type === "file"
+    //       );
+    //     if (!fromStyle) {
+    //       continue;
+    //     }
+    //     map.get(id)?.push(
+    //       buildConnectionStyle({
+    //         from: { position, width: fromStyle.width },
+    //         to: { position: toPos, id: toId },
+    //       })
+    //     );
+    //   }
+    // }
 
     console.log("new style map", map);
     setStyleMap(map);
