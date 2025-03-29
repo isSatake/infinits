@@ -3,7 +3,7 @@ import {
   PaintElement,
   TieStyle,
   NoteStyle,
-  NoteHeadElement,
+  NoteHeadStyle,
 } from "./types";
 
 export const insertTieStyles = (styles: PaintStyle<PaintElement>[]) => {
@@ -51,7 +51,7 @@ export const determineTieStyle = (
 ): PaintStyle<TieStyle> => {
   const startHead = start.element.children.find(
     (e) => e.type === "head"
-  ) as NoteHeadElement;
+  ) as NoteHeadStyle;
   return {
     element: {
       type: "tie",

@@ -20,7 +20,7 @@ import {
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { expandBBox, offsetBBox, scaleSize, Size } from "@/lib/geometry";
 import { StaffObject } from "@/object";
-import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
+import { paintBBox, paintCaret, paintNode, resetCanvas2 } from "@/paint/paint";
 import {
   bboxAtom,
   caretStyleAtom,
@@ -242,7 +242,7 @@ export const MainCanvas = () => {
         style.mtx.e,
         style.mtx.f
       );
-      paintStyle(ctx, style);
+      paintNode(ctx, style);
       paintBBox(ctx, style.bbox);
       // 0, 0に+を描画(for debug)
       ctx.save();

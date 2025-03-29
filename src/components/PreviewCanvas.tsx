@@ -1,5 +1,5 @@
 import { UNIT, bStaffHeight } from "@/font/bravura";
-import { paintBBox, paintStyle, resetCanvas2 } from "@/paint/paint";
+import { paintBBox, paintNode, resetCanvas2 } from "@/paint/paint";
 import {
   getPreviewHeight,
   getPreviewScale,
@@ -87,7 +87,7 @@ export const PreviewCanvas = ({ preview }: { preview: PreviewState }) => {
     // 入力中Elementをセンタリング
     ctx.translate(htmlWidth / 2 / a - init.centerX, 0);
     for (const style of styles) {
-      paintStyle(ctx, style);
+      paintNode(ctx, style);
       paintBBox(ctx, style.bbox); // debug
       if (
         style.element.type !== "staff" &&

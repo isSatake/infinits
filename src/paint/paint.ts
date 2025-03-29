@@ -1,13 +1,4 @@
 import {
-  bClefG,
-  bLedgerLineThickness,
-  bStaffLineWidth,
-  Path,
-  repeatDotRadius,
-  UNIT,
-} from "../font/bravura";
-import { addPoint, BBox } from "../lib/geometry";
-import {
   accidentalPathMap,
   downFlagMap,
   noteHeadByDuration,
@@ -15,23 +6,29 @@ import {
   upFlagMap,
 } from "../core/constants";
 import {
-  FileStyle,
-  ConnectionStyle,
-  StaffStyle,
-  TextStyle,
-} from "../layout/types";
-import { pitchToY } from "../layout/staff-element";
+  bClefG,
+  bLedgerLineThickness,
+  bStaffLineWidth,
+  Path,
+  repeatDotRadius,
+  UNIT,
+} from "../font/bravura";
 import {
-  BarStyle,
+  AccidentalStyle,
+  BarLineStyle,
   BeamStyle,
   CaretStyle,
-  ClefStyle,
-  NoteStyle,
-  PaintElement,
-  PaintStyle,
+  ConnectionStyle,
+  FlagStyle,
+  LedgerStyle,
+  NoteHeadStyle,
+  PaintNode,
   RestStyle,
+  StemStyle,
+  TextStyle,
   TieStyle,
 } from "../layout/types";
+import { BBox, Size } from "../lib/geometry";
 
 export const initCanvas = ({
   leftPx,
@@ -76,14 +73,11 @@ const paintBravuraPath = (
   ctx.restore();
 };
 
-const paintGClef = (ctx: CanvasRenderingContext2D, element: ClefStyle) => {
-  paintBravuraPath(ctx, 0, 0, 1, bClefG(), element.color);
+const paintGClef = (ctx: CanvasRenderingContext2D) => {
+  paintBravuraPath(ctx, 0, 0, 1, bClefG(), "#000");
 };
 
-export const paintStaff = (
-  ctx: CanvasRenderingContext2D,
-  computedWidth: number
-) => {
+export const paintStaff = (ctx: CanvasRenderingContext2D, width: number) => {
   for (let i = 0; i < 5; i++) {
     const y = UNIT * i;
     ctx.save();
@@ -91,7 +85,7 @@ export const paintStaff = (
     ctx.lineWidth = bStaffLineWidth;
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(computedWidth, y);
+    ctx.lineTo(width, y);
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
@@ -116,110 +110,93 @@ const paintConnection = (
   }
 };
 
-/**
- * 小節線描画
- */
-const paintBarline = (ctx: CanvasRenderingContext2D, element: BarStyle) => {
-  const color = element.color ?? "#000";
-  for (const el of element.children) {
+const paintBarline = (ctx: CanvasRenderingContext2D, style: BarLineStyle) => {
+  const { lineWidth, height } = style;
+  ctx.save();
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, height);
+  ctx.closePath();
+  ctx.stroke();
+};
+
+const paintBarDot = (ctx: CanvasRenderingContext2D) => {
+  ctx.save();
+  const rad = repeatDotRadius;
+  ctx.fillStyle = "#000";
+  ctx.beginPath();
+  ctx.arc(0, 0, rad, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, UNIT, rad, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+};
+
+const paintNoteHead = (ctx: CanvasRenderingContext2D, style: NoteHeadStyle) => {
+  const { duration } = style;
+  ctx.save();
+  const path = noteHeadByDuration(duration);
+  paintBravuraPath(ctx, 0, 0, 1, path, "#000");
+  ctx.restore();
+};
+
+const paintLedger = (ctx: CanvasRenderingContext2D, style: LedgerStyle) => {
+  const { ledgerWidth: width } = style;
+  ctx.save();
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = bLedgerLineThickness;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(width, 0);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+};
+
+const paintAccidental = (
+  ctx: CanvasRenderingContext2D,
+  style: AccidentalStyle
+) => {
+  const { accidental } = style;
+  const path = accidentalPathMap().get(accidental)!;
+  ctx.save();
+  paintBravuraPath(ctx, 0, 0, 1, path, "#000");
+  ctx.restore();
+};
+
+const paintFlag = (ctx: CanvasRenderingContext2D, style: FlagStyle) => {
+  const { duration, direction } = style;
+  const path =
+    direction === "up"
+      ? upFlagMap().get(duration)
+      : downFlagMap().get(duration);
+  if (path) {
     ctx.save();
-    if (el.type === "line") {
-      ctx.translate(el.position.x + el.lineWidth / 2, el.position.y);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = el.lineWidth;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, el.height);
-      ctx.closePath();
-      ctx.stroke();
-    } else {
-      const rad = repeatDotRadius;
-      ctx.translate(el.position.x + rad, el.position.y);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(0, 0, rad, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, UNIT, rad, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    paintBravuraPath(ctx, 0, 0, 1, path, "#000");
     ctx.restore();
   }
 };
 
-const paintNote = ({
-  ctx,
-  element,
-}: {
-  ctx: CanvasRenderingContext2D;
-  element: NoteStyle;
-}) => {
-  const color = element.color ?? "#000";
-  for (const noteEl of element.children) {
-    if (noteEl.type === "head") {
-      const { duration, localTransform: mtx } = noteEl;
-      ctx.save();
-      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
-      const path = noteHeadByDuration(duration);
-      paintBravuraPath(ctx, 0, 0, 1, path, color);
-      ctx.restore();
-    } else if (noteEl.type === "ledger") {
-      const { ledgerWidth: width, localTransform: mtx } = noteEl;
-      ctx.save();
-      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = bLedgerLineThickness;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(width, 0);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    } else if (noteEl.type === "accidental") {
-      const { localTransform: mtx, accidental } = noteEl;
-      const path = accidentalPathMap().get(accidental)!;
-      ctx.save();
-      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
-      paintBravuraPath(ctx, 0, 0, 1, path, color);
-      ctx.restore();
-    } else if (noteEl.type === "flag") {
-      const { duration, direction, localTransform: mtx } = noteEl;
-      const path =
-        direction === "up"
-          ? upFlagMap().get(duration)
-          : downFlagMap().get(duration);
-      if (path) {
-        ctx.save();
-        ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
-        paintBravuraPath(ctx, 0, 0, 1, path, color);
-        ctx.restore();
-      }
-    } else if (noteEl.type === "stem") {
-      const { localTransform: mtx, lineWidth: width, height } = noteEl;
-      ctx.save();
-      ctx.transform(mtx.a, mtx.b, mtx.c, mtx.d, mtx.e, mtx.f);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, height);
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
+const paintStem = (ctx: CanvasRenderingContext2D, style: StemStyle) => {
+  const { lineWidth, height } = style;
+  ctx.save();
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, height);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
 };
 
-const paintRest = ({
-  ctx,
-  element,
-}: {
-  ctx: CanvasRenderingContext2D;
-  element: RestStyle;
-}) => {
-  const { rest, color } = element;
+const paintRest = (ctx: CanvasRenderingContext2D, { rest }: RestStyle) => {
   const path = restPathMap().get(rest.duration)!;
   ctx.save();
-  paintBravuraPath(ctx, 0, 0, 1, path, color);
+  paintBravuraPath(ctx, 0, 0, 1, path, "#000");
   ctx.restore();
 };
 
@@ -239,7 +216,6 @@ const paintBeam = (ctx: CanvasRenderingContext2D, beam: BeamStyle) => {
 const paintTie = (ctx: CanvasRenderingContext2D, tie: TieStyle) => {
   ctx.save();
   ctx.fillStyle = "#000";
-  ctx.translate(tie.position.x, tie.position.y);
   ctx.moveTo(0, 0);
   ctx.quadraticCurveTo(tie.cpLow.x, tie.cpLow.y, tie.end.x, tie.end.y);
   ctx.quadraticCurveTo(tie.cpHigh.x, tie.cpHigh.y, 0, 0);
@@ -248,34 +224,42 @@ const paintTie = (ctx: CanvasRenderingContext2D, tie: TieStyle) => {
   ctx.restore();
 };
 
-export const paintStyle = (
-  ctx: CanvasRenderingContext2D,
-  style: PaintStyle<PaintElement>
-) => {
-  const { element: element } = style;
-  const { type } = element;
-  if (element.type === "staff") {
-    paintStaff(ctx, style.width);
+export const paintNode = (ctx: CanvasRenderingContext2D, node: PaintNode) => {
+  const { type, style } = node;
+  if (type === "staff") {
+    paintStaff(ctx, node.width);
   } else if (type === "connection") {
-    paintConnection(ctx, element);
-  } else if (type === "clef") {
-    paintGClef(ctx, element);
-  } else if (type === "note") {
-    paintNote({ ctx, element });
+    paintConnection(ctx, style);
+  } else if (type === "noteHead") {
+    paintNoteHead(ctx, style);
+  } else if (type === "accidental") {
+    paintAccidental(ctx, style);
+  } else if (type === "ledger") {
+    paintLedger(ctx, style);
+  } else if (type === "flag") {
+    paintFlag(ctx, style);
+  } else if (type === "stem") {
+    paintStem(ctx, style);
   } else if (type === "rest") {
-    paintRest({ ctx, element });
+    paintRest(ctx, style);
+  } else if (type === "clef") {
+    paintGClef(ctx);
+  } else if (type === "barLine") {
+    paintBarline(ctx, style);
+  } else if (type === "barDot") {
+    paintBarDot(ctx);
   } else if (type === "beam") {
-    paintBeam(ctx, element);
+    paintBeam(ctx, style);
   } else if (type === "tie") {
-    paintTie(ctx, element);
-  } else if (type === "bar") {
-    paintBarline(ctx, element);
+    paintTie(ctx, style);
   } else if (type === "gap") {
     // no-op
   } else if (type === "text") {
-    paintText(ctx, element);
+    paintText(ctx, style);
   } else if (type === "file") {
-    paintFile(ctx, element);
+    paintFileBackground(ctx, node);
+  } else if (type === "playIcon") {
+    paintPlayIcon(ctx, node);
   }
 };
 
@@ -316,42 +300,32 @@ export const paintCaret = ({
 };
 
 const paintText = (ctx: CanvasRenderingContext2D, element: TextStyle) => {
-  const offset = addPoint(element.txtPosition, element.offset);
+  const { fontSize, fontFamily, baseline, offset, text } = element;
   ctx.save();
   ctx.fillStyle = "#000";
-  ctx.font = `${element.fontSize}px ${element.fontFamily}`;
-  ctx.textBaseline = element.baseline;
+  ctx.font = `${fontSize}px ${fontFamily}`;
+  ctx.textBaseline = baseline;
   ctx.translate(offset.x, offset.y);
-  ctx.fillText(element.text, 0, 0);
+  ctx.fillText(text, 0, 0);
   ctx.restore();
 };
 
-const paintFile = (ctx: CanvasRenderingContext2D, element: FileStyle) => {
+const paintFileBackground = (ctx: CanvasRenderingContext2D, size: Size) => {
   ctx.save();
-  // 灰色の背景を描画
   ctx.fillStyle = "#E0E0E0";
-  ctx.fillRect(0, 0, element.width, element.height);
+  ctx.fillRect(0, 0, size.width, size.height);
+  ctx.restore();
+};
 
-  // 左端に黒い再生ボタン（三角形）を描画
+const paintPlayIcon = (ctx: CanvasRenderingContext2D, size: Size) => {
   ctx.save();
-  ctx.translate(element.icon.position.x, element.icon.position.y);
   ctx.fillStyle = "#000000";
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(element.icon.width, element.icon.height / 2);
-  ctx.lineTo(0, element.icon.height);
+  ctx.lineTo(size.width, size.height / 2);
+  ctx.lineTo(0, size.height);
   ctx.closePath();
   ctx.fill();
-  ctx.restore();
-
-  ctx.save();
-  ctx.translate(element.fileName.txtPosition.x, element.fileName.txtPosition.y);
-  ctx.fillStyle = "#000000";
-  ctx.font = `${element.fileName.fontSize}px ${element.fileName.fontFamily}`;
-  ctx.textBaseline = element.fileName.baseline;
-  ctx.fillText(element.fileName.text, 0, 0);
-  ctx.restore();
-
   ctx.restore();
 };
 
