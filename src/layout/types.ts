@@ -20,13 +20,10 @@ export type PaintNodeMap = {
     caretOption?: CaretOption;
   } & (ChildrenMap[K] extends never
     ? {}
-    : { children: StyleMap[ChildrenMap[K]][] });
+    : { children: PaintNodeMap[ChildrenMap[K]][] });
 };
 
-export type CaretOption = {
-  index: number;
-  defaultWidth?: boolean;
-};
+export type CaretOption = { index: number };
 
 export type StyleMap = {
   score: {};
@@ -90,6 +87,7 @@ export type TieStyle = {
 };
 export type TextStyle = {
   text: string;
+  textPosition: Point;
   fontSize: number;
   fontFamily: string;
   baseline: "middle" | "top";

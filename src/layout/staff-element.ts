@@ -33,7 +33,7 @@ import {
   repeatDotRadius,
   UNIT,
 } from "../font/bravura";
-import { BBox, getPathBBox, offsetBBox, Point } from "../lib/geometry";
+import { BBox, getPathBBox, offsetBBox, Point, Size } from "../lib/geometry";
 import { kDefaultCaretWidth } from "./score-preferences";
 import { insertTieStyles } from "./tie";
 import {
@@ -46,11 +46,13 @@ import {
   NoteStyle,
   NoteStyleChildren,
   PaintElement,
+  PaintNodeMap,
   PaintStyle,
   Pointing,
   RestStyle,
   StaffStyle,
 } from "./types";
+import { P } from "vitest/dist/chunks/environment.d8YfPkTm.js";
 
 const kPointingColor = "#FF0000";
 
@@ -64,23 +66,15 @@ const tiePosition = (noteHeadPos: Point, noteHeadBBox: BBox): Point => {
 
 export const determineNoteStyle = ({
   note,
-  mtx,
   stemDirection,
   beamed = false,
   pointing,
 }: {
   note: Note;
-  mtx: DOMMatrix;
   stemDirection?: "up" | "down";
   beamed?: boolean;
   pointing?: Pointing;
-}): {
-  element: NoteStyle;
-  width: number;
-  stemOffsetLeft: number;
-  bbox: BBox;
-  mtx: DOMMatrix;
-} => {
+}): PaintNodeMap["note"] => {
   const elements: NoteStyleChildren[] = [];
   const bboxes: BBox[] = [];
   const localMtx = new DOMMatrix();
@@ -936,13 +930,13 @@ const determineBeamedNotesStyle = (
   startIdx: number,
   mtx: DOMMatrix,
   _pointing?: Pointing
-): PaintStyle<NoteStyle | BeamStyle | GapStyle>[] => {
+): PaintNodeMap["note" | "beam" | "gap"][] => {
   const allBeamedPitches = beamedNotes
     .flatMap((n) => n.pitches)
     .map((p) => p.pitch);
   const stemDirection = getStemDirection(allBeamedPitches);
   const notePositions: { left: number; stemOffsetLeft: number }[] = [];
-  const elements: PaintStyle<NoteStyle | BeamStyle | GapStyle>[] = [];
+  const ret: PaintNodeMap["note" | "beam" | "gap"][] = [];
   let left = 0;
   for (const _i in beamedNotes) {
     const i = Number(_i);
@@ -959,10 +953,10 @@ const determineBeamedNotesStyle = (
     });
     notePositions.push({ left, stemOffsetLeft: noteStyle.stemOffsetLeft });
     const caretOption = { index: i + startIdx };
-    elements.push({ caretOption, index: i + startIdx, ...noteStyle });
+    ret.push({ caretOption, index: i + startIdx, ...noteStyle });
     left += noteStyle.width;
-    elements.push(
-      gapElementStyle({
+    ret.push(
+      createGapNode({
         width: elementGap,
         height: bStaffHeight,
         caretOption: {
@@ -1013,101 +1007,88 @@ const determineBeamedNotesStyle = (
       mtx,
     });
     // gapを考慮したindex
-    const parent = elements[Number(i) * 2];
+    const parent = ret[Number(i) * 2];
     const noteSyle = parent.element as NoteStyle;
     parent.bbox = mergeBBoxes([parent.bbox, ...stemFlag.bboxes]);
     noteSyle.children.push(...stemFlag.elements);
   }
-  return [...beams, ...elements];
+  return [...beams, ...ret];
 };
 
-export const gapElementStyle = ({
-  width,
-  height,
+export const createGapNode = ({
+  size,
+  position,
   caretOption,
 }: {
-  width: number;
-  height: number;
+  size: Size;
+  position: Point;
   caretOption?: CaretOption;
-}): PaintStyle<GapStyle> => {
+}): PaintNodeMap["gap"] => {
   return {
-    element: { type: "gap" },
-    width,
-    bbox: { left: 0, top: 0, right: width, bottom: height },
-    mtx: new DOMMatrix(),
+    type: "gap",
+    style: {},
+    ...size,
+    bbox: { left: 0, top: 0, right: size.width, bottom: size.height },
+    mtx: new DOMMatrix().translate(position.x, position.y),
     caretOption,
   };
 };
 
-const determineClefStyle = (
-  clef: Clef,
-  index: number,
-  pointing?: Pointing
-): PaintStyle<ClefStyle> => {
+const createClefNode = (index: number): PaintNodeMap["clef"] => {
   const path = getPathBBox(bClefG(), UNIT);
   const g = pitchToY(0, 4, 1);
   return {
-    element: {
-      type: "clef",
-      clef,
-      ...(pointing ? { color: kPointingColor } : {}),
-    },
+    type: "clef",
+    style: {},
     width: path.right - path.left,
+    height: path.bottom - path.top,
     bbox: path,
     mtx: new DOMMatrix().translate(0, g),
     index,
   };
 };
 
-export const determineStaffPaintStyle = (p: {
+export const createStaffNode = (p: {
   elements: MusicalElement[];
-  gapWidth: number;
-  mtx: DOMMatrix;
-  staffObj?: StaffObject;
+  staffObj: StaffObject;
   pointing?: Pointing;
   gap?: { idx: number; width: number };
-}): PaintStyle<PaintElement>[] => {
-  const { elements, gapWidth, mtx: _mtx, staffObj, pointing, gap } = p;
-  // let styles: PaintStyle<PaintElement>[] = [];
-  const children: StaffStyle["children"][] = [];
+}): PaintNodeMap["staff"] => {
+  const { elements, staffObj, pointing, gap } = p;
+  const children: PaintNodeMap["staff"]["children"] = [];
   let staffMtx = new DOMMatrix();
-  const gapEl = gapElementStyle({ width: gapWidth, height: bStaffHeight });
+  const gapSize = { width: UNIT, height: bStaffHeight };
   let cursor = 0;
-  if (staffObj) {
+  {
+    const gapEl = createGapNode({ size: gapSize, position: { x: 0, y: 0 } });
     children.push(gapEl);
-    cursor += gapWidth;
-    staffMtx = staffMtx.translate(gapWidth, 0);
-    const { staff } = staffObj;
-    if (staff.clef) {
-      const _pointing = pointing?.index === -1 ? pointing : undefined;
-      const clef = determineClefStyle(staff.clef, -1, _pointing);
-      children.push(clef);
-      cursor += clef.width;
-      staffMtx = staffMtx.translate(clef.width, 0);
-    }
+    cursor += gapEl.width;
   }
-  children.push({
-    ...gapEl,
-    mtx: staffMtx,
-    caretOption: { index: -1, defaultWidth: true },
-  });
-  cursor += gapWidth;
-  staffMtx = staffMtx.translate(gapWidth, 0);
+  // staffMtx = staffMtx.translate(gapWidth, 0);
+  const clef = createClefNode(-1);
+  children.push(clef);
+  cursor += clef.width;
+  // staffMtx = staffMtx.translate(clef.width, 0);
+  {
+    const gapEl = createGapNode({
+      size: gapSize,
+      position: { x: cursor, y: 0 },
+      caretOption: { index: -1 },
+    });
+    children.push(gapEl);
+    cursor += gapEl.width;
+  }
+  // staffMtx = staffMtx.translate(gapWidth, 0);
   let index = 0;
   while (index < elements.length) {
-    if (gap?.idx === index) {
-      children.push(
-        gapElementStyle({ width: gap.width, height: bStaffHeight })
-      );
-      cursor += gap.width;
-      staffMtx = staffMtx.translate(gap.width, 0);
-      children.push({
-        ...gapEl,
-        mtx: staffMtx,
-        caretOption: { index, defaultWidth: true },
+    {
+      const gapEl = createGapNode({
+        size: gapSize,
+        position: { x: cursor, y: 0 },
+        ...(gap?.idx === index ? {} : { caretOption: { index } }),
       });
-      cursor += gapWidth;
-      staffMtx = staffMtx.translate(gapWidth, 0);
+      children.push(gapEl);
+      cursor += gapEl.width;
     }
     const el = elements[index];
     if (el.type === "note") {
@@ -1191,7 +1172,16 @@ export const determineStaffPaintStyle = (p: {
       mtx: _mtx,
     });
   }
-  return styles;
+  const ret: PaintNodeMap["staff"] = {
+    type: "staff",
+    style: {},
+    bbox: { left: 0, top: 0, right: 0, bottom: 0 }, // childrenを全部足す
+    width: cursor, // bboxから計算する
+    height: bStaffHeight, // 同上
+    mtx: new DOMMatrix().translate(staffObj.position.x, staffObj.position.y),
+    children: [],
+  };
+  return ret;
 };
 
 export const determineCaretStyle = ({

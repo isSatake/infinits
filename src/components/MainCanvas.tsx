@@ -4,19 +4,9 @@ import { useMainPointerHandler } from "@/hooks/main-canvas";
 import { useMapAtom } from "@/hooks/root-obj";
 import { determineFilePaintStyle } from "@/layout/file";
 import { buildConnectionStyle } from "@/layout/staff";
-import {
-  determineCaretStyle,
-  determineStaffPaintStyle,
-} from "@/layout/staff-element";
+import { determineCaretStyle, createStaffNode } from "@/layout/staff-element";
 import { determineTextPaintStyle } from "@/layout/text";
-import {
-  CaretStyle,
-  PaintElement,
-  PaintStyle,
-  RootObjStyle,
-  ScoreStyle,
-  StaffStyle,
-} from "@/layout/types";
+import { CaretStyle, PaintNode, PaintNodeMap } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { expandBBox, offsetBBox, scaleSize, Size } from "@/lib/geometry";
 import { StaffObject } from "@/object";
@@ -79,7 +69,7 @@ export const MainCanvas = () => {
 
   // element style
   useEffect(() => {
-    const map = new Map<number, PaintStyle[]>();
+    const map = new Map<number, PaintNode>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "score") {
         const staffStyles =
@@ -88,13 +78,8 @@ export const MainCanvas = () => {
             ?.map((staffId) => staffs.get(staffId))
             .filter((v): v is StaffObject => !!v)
             .map((staffObj) =>
-              determineStaffPaintStyle({
+              createStaffNode({
                 elements: elements.get(id) ?? [],
-                gapWidth: UNIT,
-                mtx: new DOMMatrix().translate(
-                  staffObj.position.x,
-                  staffObj.position.y
-                ),
                 staffObj,
                 pointing,
               })
@@ -110,8 +95,9 @@ export const MainCanvas = () => {
             top: 0,
             bottom: 0,
           });
-        const scoreStyle: ScoreStyle = {
+        const scoreStyle: PaintNodeMap["score"] = {
           type: "score",
+          style: {},
           width: scoreBBox.right - scoreBBox.left,
           height: scoreBBox.bottom - scoreBBox.top,
           bbox: scoreBBox,
@@ -120,9 +106,9 @@ export const MainCanvas = () => {
         };
         map.set(id, [scoreStyle, ...staffStyles]);
       } else if (obj.type === "text") {
-        map.set(id, [determineTextPaintStyle(obj)]);
+        map.set(id, determineTextPaintStyle(obj));
       } else {
-        map.set(id, [determineFilePaintStyle(obj)]);
+        map.set(id, determineFilePaintStyle(obj));
       }
     }
     // TODO connection
