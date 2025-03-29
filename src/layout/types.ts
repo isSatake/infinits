@@ -14,7 +14,7 @@ export type PaintNodeMap = {
     width: number;
     height: number;
     bbox: BBox;
-    mtx: DOMMatrix;
+    mtx: DOMMatrix; // 親に対するtransform
     color?: string;
     index?: number;
     caretOption?: CaretOption;
@@ -29,12 +29,12 @@ export type StyleMap = {
   score: {};
   staff: {};
   connection: ConnectionStyle;
-  note: {};
+  note: { stemOffsetLeft: number };
   noteHead: NoteHeadStyle;
   accidental: AccidentalStyle;
   ledger: LedgerStyle;
   flag: FlagStyle;
-  stem: StemStyle;
+  stem: {};
   rest: RestStyle;
   clef: {};
   bar: {};
@@ -75,9 +75,8 @@ export type NoteHeadStyle = { duration: Duration; tie: Point };
 export type AccidentalStyle = { accidental: Accidental };
 export type LedgerStyle = { ledgerWidth: number };
 export type FlagStyle = { duration: Duration; direction: "up" | "down" };
-export type StemStyle = { lineWidth: number; height: number };
 export type RestStyle = { rest: Rest };
-export type BarLineStyle = { height: number; lineWidth: number };
+export type BarLineStyle = { lineWidth: number };
 export type ConnectionStyle = { toId?: number; position: Point; to: Point };
 export type BeamStyle = { nw: Point; ne: Point; sw: Point; se: Point };
 export type TieStyle = {

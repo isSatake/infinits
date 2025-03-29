@@ -10,7 +10,6 @@ import {
 } from "../core/constants";
 import {
   Bar,
-  Clef,
   Duration,
   MusicalElement,
   Note,
@@ -37,22 +36,13 @@ import { BBox, getPathBBox, offsetBBox, Point, Size } from "../lib/geometry";
 import { kDefaultCaretWidth } from "./score-preferences";
 import { insertTieStyles } from "./tie";
 import {
-  BarStyle,
   BeamStyle,
   CaretOption,
   CaretStyle,
-  ClefStyle,
-  GapStyle,
-  NoteStyle,
-  NoteStyleChildren,
-  PaintElement,
   PaintNodeMap,
-  PaintStyle,
   Pointing,
   RestStyle,
-  StaffStyle,
 } from "./types";
-import { P } from "vitest/dist/chunks/environment.d8YfPkTm.js";
 
 const kPointingColor = "#FF0000";
 
@@ -64,18 +54,16 @@ const tiePosition = (noteHeadPos: Point, noteHeadBBox: BBox): Point => {
   };
 };
 
-export const determineNoteStyle = ({
+export const createNoteNode = ({
   note,
   stemDirection,
   beamed = false,
-  pointing,
 }: {
   note: Note;
   stemDirection?: "up" | "down";
   beamed?: boolean;
-  pointing?: Pointing;
 }): PaintNodeMap["note"] => {
-  const elements: NoteStyleChildren[] = [];
+  const elements: PaintNodeMap["note"]["children"] = [];
   const bboxes: BBox[] = [];
   const localMtx = new DOMMatrix();
 
@@ -87,11 +75,15 @@ export const determineNoteStyle = ({
     }
     const { pitch, accidental } = p;
     const y = pitchToY(0, pitch, 1);
-    accBBoxes.push(getPathBBox(accidentalPathMap().get(accidental)!, UNIT));
+    const bbox = getPathBBox(accidentalPathMap().get(accidental)!, UNIT);
+    accBBoxes.push(bbox);
     elements.push({
       type: "accidental",
-      localTransform: localMtx.translate(0, y),
-      accidental,
+      style: { accidental },
+      width: bbox.right - bbox.left,
+      height: bbox.bottom - bbox.top,
+      bbox,
+      mtx: new DOMMatrix().translate(0, y),
     });
   }
   bboxes.push(...accBBoxes);
@@ -116,34 +108,42 @@ export const determineNoteStyle = ({
     // C4
     for (let p = 0; p >= minPitch; p -= 2) {
       const y = pitchToY(0, p, 1);
-      elements.push({
-        type: "ledger",
-        ledgerWidth: ledgerWidth,
-        localTransform: localMtx.translate(leftOfLedgerLine, y),
-      });
-      ledgerBBoxes.push({
+      const bbox = {
         left: leftOfLedgerLine,
         right: leftOfLedgerLine + ledgerWidth,
         top: y - bLedgerLineThickness,
         bottom: y + bLedgerLineThickness,
+      };
+      elements.push({
+        type: "ledger",
+        style: { ledgerWidth },
+        width: bbox.right - bbox.left,
+        height: bbox.bottom - bbox.top,
+        bbox,
+        mtx: new DOMMatrix().translate(leftOfLedgerLine, y),
       });
+      ledgerBBoxes.push(bbox);
     }
   }
   if (maxPitch >= 12) {
     // A5
     for (let p = 12; p < maxPitch + 1; p += 2) {
       const y = pitchToY(0, p, 1);
-      elements.push({
-        type: "ledger",
-        ledgerWidth: ledgerWidth,
-        localTransform: localMtx.translate(leftOfLedgerLine, y),
-      });
-      ledgerBBoxes.push({
+      const bbox = {
         left: leftOfLedgerLine,
         right: leftOfLedgerLine + ledgerWidth,
         top: y - bLedgerLineThickness,
         bottom: y + bLedgerLineThickness,
+      };
+      elements.push({
+        type: "ledger",
+        style: { ledgerWidth },
+        width: bbox.right - bbox.left,
+        height: bbox.bottom - bbox.top,
+        bbox,
+        mtx: new DOMMatrix().translate(leftOfLedgerLine, y),
       });
+      ledgerBBoxes.push(bbox);
     }
   }
   bboxes.push(...ledgerBBoxes);
@@ -211,10 +211,12 @@ export const determineNoteStyle = ({
       position
     );
     elements.push({
-      type: "head",
-      localTransform: localMtx.translate(position.x, position.y),
-      duration: note.duration,
-      tie: tiePosition(position, bbox),
+      type: "noteHead",
+      style: { duration: note.duration, tie: tiePosition(position, bbox) },
+      width: bbox.right - bbox.left,
+      height: bbox.bottom - bbox.top,
+      bbox,
+      mtx: new DOMMatrix().translate(position.x, position.y),
     });
     noteheadStemFlagBBoxes.push(bbox);
   }
@@ -226,7 +228,7 @@ export const determineNoteStyle = ({
   bboxes.push(...noteheadStemFlagBBoxes);
   if (!beamed) {
     // stem, flag
-    const { elements: el, bboxes: stemFlagBB } = determineStemFlagStyle({
+    const { nodes: el, bboxes: stemFlagBB } = createStemFlagNodes({
       left: leftOfStemOrNotehead,
       duration: note.duration,
       direction: stemDirection,
@@ -247,26 +249,26 @@ export const determineNoteStyle = ({
       position
     );
     elements.push({
-      type: "head",
-      localTransform: localMtx.translate(position.x, position.y),
-      duration: note.duration,
-      tie: tiePosition(position, bbox),
+      type: "noteHead",
+      style: { duration: note.duration, tie: tiePosition(position, bbox) },
+      width: bbox.right - bbox.left,
+      height: bbox.bottom - bbox.top,
+      bbox,
+      mtx: new DOMMatrix().translate(position.x, position.y),
     });
     bboxes.push(bbox);
   }
   const bbox = mergeBBoxes(bboxes);
-  return {
-    element: {
-      type: "note",
-      note,
-      children: elements,
-      ...(pointing ? { color: kPointingColor } : undefined),
-    },
+  const ret: PaintNodeMap["note"] = {
+    type: "note",
+    style: { stemOffsetLeft: leftOfStemOrNotehead },
     width: bbox.right - bbox.left,
-    stemOffsetLeft: leftOfStemOrNotehead,
+    height: bbox.bottom - bbox.top,
     bbox,
     mtx: new DOMMatrix(),
+    children: elements,
   };
+  return ret;
 };
 
 const mergeBBoxes = (bboxes: BBox[]): BBox => {
@@ -367,13 +369,12 @@ const gapWithAccidental = (scale: number): number => {
   return (UNIT / 4) * scale; // 勘
 };
 
-const determineStemFlagStyle = ({
+const createStemFlagNodes = ({
   left,
   duration,
   direction,
   lowest,
   highest,
-  mtx,
   beamed,
 }: {
   left: number;
@@ -381,16 +382,15 @@ const determineStemFlagStyle = ({
   direction: "up" | "down";
   lowest: PitchAcc;
   highest: PitchAcc;
-  mtx: DOMMatrix;
-  beamed?: {
-    top?: number;
-    bottom?: number;
-  };
-}): { elements: NoteStyleChildren[]; bboxes: BBox[] } => {
+  beamed?: { top?: number; bottom?: number };
+}): {
+  nodes: (PaintNodeMap["stem"] | PaintNodeMap["flag"])[];
+  bboxes: BBox[];
+} => {
   if (duration === 1) {
-    return { elements: [], bboxes: [] };
+    return { nodes: [], bboxes: [] };
   }
-  const elements: NoteStyleChildren[] = [];
+  const elements: (PaintNodeMap["stem"] | PaintNodeMap["flag"])[] = [];
   let { top, bottom } = calcStemShape({
     dnp: { topOfStaff: 0, scale: 1, duration },
     direction,
@@ -411,13 +411,16 @@ const determineStemFlagStyle = ({
           x: left + UNIT * path.stemUpNW.x,
           y: top + UNIT * path.stemUpNW.y,
         };
+        const bbox = getPathBBox(path, UNIT);
         elements.push({
           type: "flag",
-          localTransform: mtx.translate(position.x, position.y),
-          duration, // pathも渡したほうがいいんだろうか
-          direction,
+          style: { duration, direction },
+          width: bbox.right - bbox.left,
+          height: bbox.bottom - bbox.top,
+          bbox,
+          mtx: new DOMMatrix().translate(position.x, position.y),
         });
-        bboxes.push(offsetBBox(getPathBBox(path, UNIT), position));
+        bboxes.push(offsetBBox(bbox, position));
       }
     }
   } else {
@@ -431,198 +434,201 @@ const determineStemFlagStyle = ({
           x: stemCenter - bStemWidth / 2 + UNIT * path.stemDownSW.x,
           y: bottom + UNIT * path.stemDownSW.y,
         };
+        const bbox = getPathBBox(path, UNIT);
         elements.push({
           type: "flag",
-          localTransform: mtx.translate(position.x, position.y),
-          duration,
-          direction,
+          style: { duration, direction },
+          width: bbox.right - bbox.left,
+          height: bbox.bottom - bbox.top,
+          bbox,
+          mtx: new DOMMatrix().translate(position.x, position.y),
         });
-        bboxes.push(offsetBBox(getPathBBox(path, UNIT), position));
+        bboxes.push(offsetBBox(bbox, position));
       }
     }
   }
   const stemElPos = { x: stemCenter - bStemWidth / 2, y: top };
-  const stemEl: NoteStyleChildren = {
+  const bbox = { left: 0, top: 0, right: bStemWidth, bottom: bottom };
+  elements.push({
     type: "stem",
-    // stemの中心にtranslateしておく
-    localTransform: mtx.translate(stemElPos.x + bStemWidth / 2, stemElPos.y),
-    lineWidth: bStemWidth,
-    height: bottom - top,
-  };
-  elements.push(stemEl);
-  bboxes.push({
-    left: stemElPos.x,
-    top: stemElPos.y,
-    right: stemElPos.x + stemEl.lineWidth,
-    bottom: stemElPos.y + stemEl.height,
+    style: {},
+    width: bbox.right - bbox.left,
+    height: bbox.bottom - bbox.top,
+    bbox,
+    mtx: new DOMMatrix().translate(left + stemElPos.x, stemElPos.y),
   });
-  return { elements, bboxes };
+  bboxes.push(offsetBBox(bbox, stemElPos));
+  return { nodes: elements, bboxes };
 };
 
-const determineRestStyle = (
-  rest: Rest,
-  pointing?: Pointing
-): { element: RestStyle; bbox: BBox; mtx: DOMMatrix; width: number } => {
+const createRestNode = (rest: Rest): PaintNodeMap["rest"] => {
   const path = restPathMap().get(rest.duration)!;
   const y = UNIT * path.originUnits;
-  const bbox = offsetBBox(getPathBBox(path, UNIT), { y });
+  const bbox = getPathBBox(path, UNIT);
   return {
-    element: {
-      type: "rest",
-      rest,
-      ...(pointing ? { color: kPointingColor } : {}),
-    },
+    type: "rest",
+    style: { rest },
     bbox,
-    mtx: new DOMMatrix().translate(0, y),
     width: bbox.right - bbox.left,
+    height: bbox.bottom - bbox.top,
+    mtx: new DOMMatrix().translate(0, y),
   };
 };
 
-const determineBarStyle = (
-  bar: Bar,
-  mtx: DOMMatrix,
-  pointing?: Pointing
-): { element: BarStyle; bbox: BBox; mtx: DOMMatrix; width: number } => {
+const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
   const thinWidth = bThinBarlineThickness * UNIT;
   const barlineSeparation = bBarlineSeparation * UNIT;
   if (bar.subtype === "single") {
+    const bbox = { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight };
+    const width = bbox.right - bbox.left;
+    const height = bbox.bottom - bbox.top;
     return {
-      element: {
-        type: "bar",
-        bar,
-        ...(pointing ? { color: kPointingColor } : {}),
-        children: [
-          {
-            type: "line",
-            position: { x: 0, y: 0 },
-            height: bStaffHeight,
-            lineWidth: thinWidth,
-          },
-        ],
-      },
-      width: thinWidth,
-      bbox: {
-        left: 0,
-        top: 0,
-        right: thinWidth,
-        bottom: bStaffHeight,
-      },
-      mtx,
+      type: "bar",
+      style: { bar },
+      width,
+      height,
+      bbox,
+      mtx: new DOMMatrix().translate(position.x, position.y),
+      children: [
+        {
+          type: "barLine",
+          style: { lineWidth: thinWidth },
+          width,
+          height,
+          bbox,
+          mtx: new DOMMatrix(),
+        },
+      ],
     };
   } else if (bar.subtype === "double") {
+    const bbox = {
+      left: 0,
+      top: 0,
+      right: thinWidth * 2 + barlineSeparation,
+      bottom: bStaffHeight,
+    };
     return {
-      element: {
-        type: "bar",
-        bar,
-        ...(pointing ? { color: kPointingColor } : {}),
-        children: [
-          {
-            type: "line",
-            position: { x: 0, y: 0 },
-            height: bStaffHeight,
-            lineWidth: thinWidth,
-          },
-          {
-            type: "line",
-            position: { x: thinWidth + barlineSeparation, y: 0 }, // TODO x
-            height: bStaffHeight,
-            lineWidth: thinWidth,
-          },
-        ],
-      },
-      width: barlineSeparation + thinWidth * 2,
-      bbox: {
-        left: 0,
-        top: 0,
-        right: barlineSeparation + thinWidth * 2,
-        bottom: bStaffHeight,
-      },
-      mtx,
+      type: "bar",
+      style: { bar },
+      width: bbox.right - bbox.left,
+      height: bbox.bottom - bbox.top,
+      bbox,
+      mtx: new DOMMatrix().translate(position.x, position.y),
+      children: [
+        {
+          type: "barLine",
+          style: { lineWidth: thinWidth },
+          width: thinWidth,
+          height: bStaffHeight,
+          bbox: { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight },
+          mtx: new DOMMatrix(),
+        },
+        {
+          type: "barLine",
+          style: { lineWidth: thinWidth },
+          width: thinWidth,
+          height: bStaffHeight,
+          bbox: { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight },
+          mtx: new DOMMatrix().translate(thinWidth + barlineSeparation, 0),
+        },
+      ],
     };
   } else if (bar.subtype === "final") {
     const boldWidth = bThickBarlineThickness * UNIT;
-    const width = thinWidth + barlineSeparation + boldWidth;
+    const bbox = {
+      left: 0,
+      top: 0,
+      right: thinWidth + barlineSeparation + boldWidth,
+      bottom: bStaffHeight,
+    };
     return {
-      element: {
-        type: "bar",
-        bar,
-        ...(pointing ? { color: kPointingColor } : {}),
-        children: [
-          {
-            type: "line",
-            position: { x: 0, y: 0 },
-            height: bStaffHeight,
-            lineWidth: thinWidth,
-          },
-          {
-            type: "line",
-            position: {
-              x: thinWidth + barlineSeparation,
-              y: 0,
-            },
-            height: bStaffHeight,
-            lineWidth: boldWidth,
-          },
-        ],
-      },
-      width,
-      bbox: {
-        left: 0,
-        top: 0,
-        right: width,
-        bottom: bStaffHeight,
-      },
-      mtx,
+      type: "bar",
+      style: { bar },
+      width: bbox.right - bbox.left,
+      height: bbox.bottom - bbox.top,
+      bbox,
+      mtx: new DOMMatrix(),
+      children: [
+        {
+          type: "barLine",
+          style: { lineWidth: thinWidth },
+          width: thinWidth,
+          height: bStaffHeight,
+          bbox: { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight },
+          mtx: new DOMMatrix(),
+        },
+        {
+          type: "barLine",
+          style: { lineWidth: boldWidth },
+          width: boldWidth,
+          height: bStaffHeight,
+          bbox: { left: 0, top: 0, right: boldWidth, bottom: bStaffHeight },
+          mtx: new DOMMatrix().translate(thinWidth + barlineSeparation, 0),
+        },
+      ],
     };
   } else {
     // repeat
     const boldWidth = bThickBarlineThickness * UNIT;
     const dotToLineSeparation = bRepeatBarlineDotSeparation * UNIT;
-    const width =
-      repeatDotRadius * 2 +
-      dotToLineSeparation +
-      thinWidth +
-      barlineSeparation +
-      boldWidth;
+    const bbox = {
+      left: 0,
+      top: 0,
+      right:
+        repeatDotRadius * 2 +
+        dotToLineSeparation +
+        thinWidth +
+        barlineSeparation +
+        boldWidth,
+      bottom: bStaffHeight,
+    };
     return {
-      element: {
-        type: "bar",
-        bar,
-        ...(pointing ? { color: kPointingColor } : {}),
-        children: [
-          {
-            type: "dot",
-            position: { x: 0, y: UNIT + UNIT / 2 }, // 第2間
+      type: "bar",
+      style: { bar },
+      width: bbox.right - bbox.left,
+      height: bbox.bottom - bbox.top,
+      bbox,
+      mtx: new DOMMatrix(),
+      children: [
+        {
+          type: "barDot",
+          style: {},
+          width: repeatDotRadius * 2,
+          height: repeatDotRadius * 2,
+          bbox: {
+            left: 0,
+            top: 0,
+            right: repeatDotRadius * 2,
+            bottom: repeatDotRadius * 2,
           },
-          {
-            type: "line",
-            position: { x: repeatDotRadius * 2 + dotToLineSeparation, y: 0 },
-            height: bStaffHeight,
-            lineWidth: thinWidth,
-          },
-          {
-            type: "line",
-            position: {
-              x:
-                repeatDotRadius * 2 +
-                dotToLineSeparation +
-                thinWidth +
-                barlineSeparation,
-              y: 0,
-            },
-            height: bStaffHeight,
-            lineWidth: boldWidth,
-          },
-        ],
-      },
-      width,
-      bbox: {
-        left: 0,
-        top: 0,
-        right: width,
-        bottom: bStaffHeight,
-      },
-      mtx,
+          mtx: new DOMMatrix().translate(0, UNIT + UNIT / 2), // 第2間
+        },
+        {
+          type: "barLine",
+          style: { lineWidth: thinWidth },
+          width: thinWidth,
+          height: bStaffHeight,
+          bbox: { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight },
+          mtx: new DOMMatrix().translate(
+            repeatDotRadius * 2 + dotToLineSeparation,
+            0
+          ),
+        },
+        {
+          type: "barLine",
+          style: { lineWidth: boldWidth },
+          width: boldWidth,
+          height: bStaffHeight,
+          bbox: { left: 0, top: 0, right: boldWidth, bottom: bStaffHeight },
+          mtx: new DOMMatrix().translate(
+            repeatDotRadius * 2 +
+              dotToLineSeparation +
+              thinWidth +
+              barlineSeparation,
+            0
+          ),
+        },
+      ],
     };
   }
 };
@@ -803,15 +809,14 @@ const sortPitch = (p: PitchAcc[], dir: "asc" | "dsc"): PitchAcc[] => {
   });
 };
 
-const determineBeamStyle = (p: {
+const createBeamNode = (p: {
   beamedNotes: Note[];
   notePositions: { left: number; stemOffsetLeft: number }[];
   linearFunc: (x: number) => number;
   stemDirection: "up" | "down";
-  mtx: DOMMatrix;
   duration?: Duration;
   headOrTail?: "head" | "tail";
-}): PaintStyle<BeamStyle>[] => {
+}): PaintNodeMap["beam"][] => {
   const {
     beamedNotes,
     notePositions,
@@ -819,7 +824,6 @@ const determineBeamStyle = (p: {
     stemDirection,
     duration = 8,
     headOrTail,
-    mtx,
   } = p;
   console.log("determineBeamStyle", duration);
   let shouldExt = false;
@@ -844,7 +848,7 @@ const determineBeamStyle = (p: {
       beamLeft = beamRight - UNIT;
     }
   }
-  const beams: PaintStyle<BeamStyle>[] = [];
+  const beams: PaintNodeMap["beam"][] = [];
   const offsetY =
     (UNIT * bBeamThickness + UNIT * bBeamSpacing) *
     (numOfBeamsMap.get(duration)! - 1);
@@ -857,18 +861,17 @@ const determineBeamStyle = (p: {
     offsetY,
   });
   beams.push({
-    element: {
-      type: "beam",
-      ...shape,
-    },
-    width: beamRight - beamLeft,
+    type: "beam",
+    style: { ...shape },
+    width: shape.se.x - shape.nw.x,
+    height: shape.se.y - shape.nw.y,
     bbox: {
       left: shape.sw.x,
       top: shape.ne.y,
       right: shape.ne.x,
       bottom: shape.sw.y,
     },
-    mtx: mtx.translate(beamLeft),
+    mtx: new DOMMatrix().translate(beamLeft),
   });
   if (duration === 32) {
     return beams;
@@ -911,7 +914,7 @@ const determineBeamStyle = (p: {
   console.log(beamChunks);
   for (const { start, end, headOrTail } of beamChunks) {
     beams.push(
-      ...determineBeamStyle({
+      ...createBeamNode({
         ...p,
         beamedNotes: beamedNotes.slice(start, end),
         notePositions: notePositions.slice(start, end),
@@ -923,12 +926,11 @@ const determineBeamStyle = (p: {
   return beams;
 };
 
-const determineBeamedNotesStyle = (
+const createBeamedNoteNodes = (
   beamedNotes: Note[],
   duration: Duration,
   elementGap: number,
   startIdx: number,
-  mtx: DOMMatrix,
   _pointing?: Pointing
 ): PaintNodeMap["note" | "beam" | "gap"][] => {
   const allBeamedPitches = beamedNotes
@@ -940,34 +942,23 @@ const determineBeamedNotesStyle = (
   let left = 0;
   for (const _i in beamedNotes) {
     const i = Number(_i);
-    const pointing =
-      _pointing?.type === "note" && _pointing.index === i + startIdx
-        ? _pointing
-        : undefined;
-    const noteStyle = determineNoteStyle({
+    const note = createNoteNode({
       note: beamedNotes[i],
       stemDirection,
       beamed: true,
-      pointing,
-      mtx,
     });
-    notePositions.push({ left, stemOffsetLeft: noteStyle.stemOffsetLeft });
+    notePositions.push({ left, stemOffsetLeft: note.style.stemOffsetLeft });
     const caretOption = { index: i + startIdx };
-    ret.push({ caretOption, index: i + startIdx, ...noteStyle });
-    left += noteStyle.width;
+    ret.push({ caretOption, index: i + startIdx, ...note });
+    left += note.width;
     ret.push(
       createGapNode({
-        width: elementGap,
-        height: bStaffHeight,
-        caretOption: {
-          ...caretOption,
-          index: i + startIdx,
-          defaultWidth: true,
-        },
+        size: { width: elementGap, height: bStaffHeight },
+        position: { x: left, y: 0 },
+        caretOption: { ...caretOption, index: i + startIdx },
       })
     );
     left += elementGap;
-    mtx.translate(elementGap, 0);
   }
   // durationが変わろうが、始点・終点が変わろうが共通
   const linearFunc = getBeamLinearFunc({
@@ -976,12 +967,11 @@ const determineBeamedNotesStyle = (
     beamed: beamedNotes,
     arr: notePositions,
   });
-  const beams = determineBeamStyle({
+  const beams = createBeamNode({
     beamedNotes,
     notePositions,
     linearFunc,
     stemDirection,
-    mtx,
   });
   for (const i in beamedNotes) {
     const { pitches } = beamedNotes[i];
@@ -997,20 +987,18 @@ const determineBeamedNotesStyle = (
     }
     // TODO note側のsectionとmergeしないと正しいwidthにならない
     // beam noteだけgapが狭くなりそう。
-    const stemFlag = determineStemFlagStyle({
+    const stemFlag = createStemFlagNodes({
       left: notePositions[i].stemOffsetLeft,
       duration,
       direction: stemDirection,
       lowest: pitchAsc[0],
       highest: pitchAsc[pitchAsc.length - 1],
       beamed,
-      mtx,
     });
     // gapを考慮したindex
-    const parent = ret[Number(i) * 2];
-    const noteSyle = parent.element as NoteStyle;
+    const parent = ret[Number(i) * 2] as PaintNodeMap["note"];
     parent.bbox = mergeBBoxes([parent.bbox, ...stemFlag.bboxes]);
-    noteSyle.children.push(...stemFlag.elements);
+    parent.children.push(...stemFlag.nodes);
   }
   return [...beams, ...ret];
 };
@@ -1108,7 +1096,7 @@ export const createStaffNode = (p: {
           beamedNotes.push(nextEl);
           nextEl = elements[++nextIdx];
         }
-        const beamedStyles = determineBeamedNotesStyle(
+        const beamedStyles = createBeamedNoteNodes(
           beamedNotes,
           el.duration,
           gapWidth,
@@ -1120,7 +1108,7 @@ export const createStaffNode = (p: {
         index += beamedNotes.length;
       } else {
         const _pointing = pointing?.index === index ? pointing : undefined;
-        const note = determineNoteStyle({
+        const note = createNoteNode({
           note: el,
           mtx: staffMtx,
           pointing: _pointing,
@@ -1139,7 +1127,7 @@ export const createStaffNode = (p: {
       }
     } else if (el.type === "rest") {
       const _pointing = pointing?.index === index ? pointing : undefined;
-      const rest = determineRestStyle(el, _pointing);
+      const rest = createRestNode(el, _pointing);
       styles.push({ caretOption: { index }, index, ...rest });
       cursor += rest.width;
       staffMtx = staffMtx.translate(rest.width, 0);
@@ -1153,7 +1141,7 @@ export const createStaffNode = (p: {
       index++;
     } else if (el.type === "bar") {
       const _pointing = pointing?.index === index ? pointing : undefined;
-      const bar = determineBarStyle(el, staffMtx, _pointing);
+      const bar = createBarNode(el, staffMtx, _pointing);
       styles.push({ caretOption: { index }, index, ...bar });
       cursor += bar.width;
       staffMtx = staffMtx.translate(bar.width, 0);

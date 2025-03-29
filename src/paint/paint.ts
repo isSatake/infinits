@@ -9,6 +9,7 @@ import {
   bClefG,
   bLedgerLineThickness,
   bStaffLineWidth,
+  bStemWidth,
   Path,
   repeatDotRadius,
   UNIT,
@@ -110,8 +111,11 @@ const paintConnection = (
   }
 };
 
-const paintBarline = (ctx: CanvasRenderingContext2D, style: BarLineStyle) => {
-  const { lineWidth, height } = style;
+const paintBarline = (
+  ctx: CanvasRenderingContext2D,
+  lineWidth: number,
+  height: number
+) => {
   ctx.save();
   ctx.strokeStyle = "#000";
   ctx.lineWidth = lineWidth;
@@ -180,11 +184,10 @@ const paintFlag = (ctx: CanvasRenderingContext2D, style: FlagStyle) => {
   }
 };
 
-const paintStem = (ctx: CanvasRenderingContext2D, style: StemStyle) => {
-  const { lineWidth, height } = style;
+const paintStem = (ctx: CanvasRenderingContext2D, height: number) => {
   ctx.save();
   ctx.strokeStyle = "#000";
-  ctx.lineWidth = lineWidth;
+  ctx.lineWidth = bStemWidth;
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.lineTo(0, height);
@@ -239,13 +242,13 @@ export const paintNode = (ctx: CanvasRenderingContext2D, node: PaintNode) => {
   } else if (type === "flag") {
     paintFlag(ctx, style);
   } else if (type === "stem") {
-    paintStem(ctx, style);
+    paintStem(ctx, node.height);
   } else if (type === "rest") {
     paintRest(ctx, style);
   } else if (type === "clef") {
     paintGClef(ctx);
   } else if (type === "barLine") {
-    paintBarline(ctx, style);
+    paintBarline(ctx, style.lineWidth, node.height);
   } else if (type === "barDot") {
     paintBarDot(ctx);
   } else if (type === "beam") {

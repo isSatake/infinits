@@ -4,7 +4,7 @@
 
 import * as vi from "vitest";
 import { insertTieStyles } from "../tie";
-import { determineNoteStyle, createGapNode } from "../staff-element";
+import { createNoteNode, createGapNode } from "../staff-element";
 import { Note } from "@/core/types";
 
 vi.test("insertTieStyles", () => {
@@ -12,11 +12,11 @@ vi.test("insertTieStyles", () => {
   const gap = createGapNode({ width: 1, height: 1 });
   const styles = [
     gap,
-    determineNoteStyle({ note: { ...cNote, tie: "begin" } }),
+    createNoteNode({ note: { ...cNote, tie: "begin" } }),
     gap,
-    determineNoteStyle({ note: { ...cNote, tie: "continue" } }),
+    createNoteNode({ note: { ...cNote, tie: "continue" } }),
     gap,
-    determineNoteStyle({ note: { ...cNote, tie: "end" } }),
+    createNoteNode({ note: { ...cNote, tie: "end" } }),
   ];
   const expectedTypes = [
     "gap",
