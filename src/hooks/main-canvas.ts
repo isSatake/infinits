@@ -62,55 +62,55 @@ export const useMainPointerHandler = () => {
     return { objType: style.type, id, offset };
   };
 
-  desktopState.current.getRootObjOnPoint = dndStaff;
-  desktopState.current.getConnectionOnPoint = (desktopPoint: Point) => {
-    const connStyleMap = new Map<number, PaintStyle<ConnectionStyle>[]>();
-    for (const [id, styles] of styleMap) {
-      const connection = styles.filter(
-        (v: PaintStyle<PaintElement>): v is PaintStyle<ConnectionStyle> =>
-          v.element.type === "connection"
-      );
-      if (connection.length > 0) {
-        connStyleMap.set(id, connection);
-      }
-    }
-    for (const [id, v] of connStyleMap) {
-      for (const _v of v) {
-        if (_v.element.toId === undefined) {
-          continue;
-        }
-        const d = distanceToLineSegment({
-          point: desktopPoint,
-          start: addPoint(_v.element.position, { x: 0, y: bStaffHeight / 2 }),
-          end: addPoint(
-            _v.element.position,
-            addPoint(_v.element.to, { x: 0, y: bStaffHeight / 2 })
-          ),
-        });
-        if (!!d && d < bStaffHeight / 2) {
-          return { from: id, to: _v.element.toId };
-        }
-      }
-    }
-  };
-  desktopState.current.isPointingRootObjTail = (
-    desktopPoint: Point,
-    rootObjId: number
-  ) => {
-    const obj = rootObjs.get(rootObjId);
-    if (!obj) {
-      return false;
-    }
-    const objWidth =
-      styleMap.get(rootObjId)?.reduce((acc, style) => {
-        return style.element.type !== "staff" &&
-          style.element.type !== "beam" &&
-          style.element.type !== "tie"
-          ? (acc += style.width)
-          : 0;
-      }, 0) ?? 0;
-    return desktopPoint.x > obj.position.x + objWidth * 0.7;
-  };
+  // desktopState.current.getRootObjOnPoint = dndStaff;
+  // desktopState.current.getConnectionOnPoint = (desktopPoint: Point) => {
+  //   const connStyleMap = new Map<number, PaintStyle<ConnectionStyle>[]>();
+  //   for (const [id, styles] of styleMap) {
+  //     const connection = styles.filter(
+  //       (v: PaintStyle<PaintElement>): v is PaintStyle<ConnectionStyle> =>
+  //         v.element.type === "connection"
+  //     );
+  //     if (connection.length > 0) {
+  //       connStyleMap.set(id, connection);
+  //     }
+  //   }
+  //   for (const [id, v] of connStyleMap) {
+  //     for (const _v of v) {
+  //       if (_v.element.toId === undefined) {
+  //         continue;
+  //       }
+  //       const d = distanceToLineSegment({
+  //         point: desktopPoint,
+  //         start: addPoint(_v.element.position, { x: 0, y: bStaffHeight / 2 }),
+  //         end: addPoint(
+  //           _v.element.position,
+  //           addPoint(_v.element.to, { x: 0, y: bStaffHeight / 2 })
+  //         ),
+  //       });
+  //       if (!!d && d < bStaffHeight / 2) {
+  //         return { from: id, to: _v.element.toId };
+  //       }
+  //     }
+  //   }
+  // };
+  // desktopState.current.isPointingRootObjTail = (
+  //   desktopPoint: Point,
+  //   rootObjId: number
+  // ) => {
+  //   const obj = rootObjs.get(rootObjId);
+  //   if (!obj) {
+  //     return false;
+  //   }
+  //   const objWidth =
+  //     styleMap.get(rootObjId)?.reduce((acc, style) => {
+  //       return style.element.type !== "staff" &&
+  //         style.element.type !== "beam" &&
+  //         style.element.type !== "tie"
+  //         ? (acc += style.width)
+  //         : 0;
+  //     }, 0) ?? 0;
+  //   return desktopPoint.x > obj.position.x + objWidth * 0.7;
+  // };
 
   const onIdle = useCallback(() => {
     setUncommitedConnection(undefined);

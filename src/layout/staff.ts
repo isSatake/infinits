@@ -34,5 +34,6 @@ export const createConnectionNode: (p: {
       from.position.x + from.width,
       from.position.y
     ),
+    children: [],
   };
 };

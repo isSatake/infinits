@@ -39,6 +39,7 @@ import {
   offsetBBox,
   Point,
   Size,
+  transformBBox,
 } from "../lib/geometry";
 import { kDefaultCaretWidth } from "./score-preferences";
 import { insertTieStyles } from "./tie";
@@ -1024,7 +1025,7 @@ export const createGapNode = ({
   };
 };
 
-const createClefNode = (index: number): PaintNodeMap["clef"] => {
+const createClefNode = (x: number): PaintNodeMap["clef"] => {
   const path = getPathBBox(bClefG(), UNIT);
   const g = pitchToY(0, 4, 1);
   return {
@@ -1033,8 +1034,8 @@ const createClefNode = (index: number): PaintNodeMap["clef"] => {
     width: path.right - path.left,
     height: path.bottom - path.top,
     bbox: path,
-    mtx: new DOMMatrix().translate(0, g),
-    index,
+    mtx: new DOMMatrix().translate(x, g),
+    index: -1,
     children: [],
   };
 };
@@ -1056,7 +1057,7 @@ export const createStaffNode = (p: {
     cursor += gapEl.width;
   }
   // staffMtx = staffMtx.translate(gapWidth, 0);
-  const clef = createClefNode(-1);
+  const clef = createClefNode(cursor);
   children.push(clef);
   cursor += clef.width;
   // staffMtx = staffMtx.translate(clef.width, 0);
@@ -1154,7 +1155,7 @@ export const createStaffNode = (p: {
     }
   }
   children = insertTieStyles(children) as PaintNodeMap["staff"]["children"];
-  const bbox = expandBBoxes(children.map(({ bbox }) => bbox));
+  const bbox = expandBBoxes(children.map(({ bbox, mtx }) => transformBBox(bbox, mtx)));
   const ret: PaintNodeMap["staff"] = {
     type: "staff",
     style: {},
