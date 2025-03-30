@@ -1,30 +1,28 @@
-import { UNIT } from "@/font/bravura";
 import { useResizeHandler } from "@/hooks/hooks";
 import { useMainPointerHandler } from "@/hooks/main-canvas";
 import { useMapAtom } from "@/hooks/root-obj";
 import { determineFilePaintStyle } from "@/layout/file";
-import { buildConnectionStyle } from "@/layout/staff";
-import { determineCaretStyle, createStaffNode } from "@/layout/staff-element";
+import { createScoreNode } from "@/layout/score";
+import { createStaffNode } from "@/layout/staff-element";
 import { determineTextPaintStyle } from "@/layout/text";
-import { CaretStyle, PaintNode, PaintNodeMap } from "@/layout/types";
+import { PaintNode, PaintNodeMap, RootPaintNodeType } from "@/layout/types";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import { expandBBox, offsetBBox, scaleSize, Size } from "@/lib/geometry";
+import { scaleSize, Size } from "@/lib/geometry";
 import { StaffObject } from "@/object";
-import { paintBBox, paintCaret, paintNode, resetCanvas2 } from "@/paint/paint";
+import { paint } from "@/paint/paint";
 import {
-  bboxAtom,
   caretStyleAtom,
   connectionAtom,
-  staffElementsMapAtom,
   focusAtom,
   mtxAtom,
-  paintStyleMapAtom,
+  rootPaintNodeMapAtom,
   pointingAtom,
+  rootObjMapAtom,
+  scoreStaffMapAtom,
+  staffElementsMapAtom,
+  staffObjMapAtom,
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
-  rootObjMapAtom,
-  staffObjMapAtom,
-  scoreStaffMapAtom,
 } from "@/state/atom";
 import { useAtom, useAtomValue } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -32,11 +30,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const elements = useAtomValue(staffElementsMapAtom);
-  const [styleMap, setStyleMap] = useAtom(paintStyleMapAtom);
+  const [rootPaintNodeMap, setRootPaintNodeMap] = useAtom(rootPaintNodeMapAtom);
   const connectionMap = useAtomValue(connectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
-  const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
   const focus = useAtomValue(focusAtom);
   const focusHighlighted = useFocusHighlighted(focus);
@@ -69,10 +66,10 @@ export const MainCanvas = () => {
 
   // element style
   useEffect(() => {
-    const map = new Map<number, PaintNode>();
+    const map = new Map<number, PaintNodeMap[RootPaintNodeType]>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "score") {
-        const staffStyles =
+        const staffNodes =
           scoreStaffMap
             .get(id)
             ?.map((staffId) => staffs.get(staffId))
@@ -85,26 +82,7 @@ export const MainCanvas = () => {
               })
             )
             .flat() ?? [];
-        const scoreBBox = staffStyles
-          .filter(
-            (style): style is StaffStyle => style.element.type === "staff"
-          )
-          .reduce((acc, v) => expandBBox(acc, v.bbox), {
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-          });
-        const scoreStyle: PaintNodeMap["score"] = {
-          type: "score",
-          style: {},
-          width: scoreBBox.right - scoreBBox.left,
-          height: scoreBBox.bottom - scoreBBox.top,
-          bbox: scoreBBox,
-          mtx: new DOMMatrix().translate(obj.position.x, obj.position.y),
-          children: staffStyles,
-        };
-        map.set(id, [scoreStyle, ...staffStyles]);
+        map.set(id, createScoreNode(staffNodes, obj.position));
       } else if (obj.type === "text") {
         map.set(id, determineTextPaintStyle(obj));
       } else {
@@ -164,103 +142,70 @@ export const MainCanvas = () => {
     // }
 
     console.log("new style map", map);
-    setStyleMap(map);
+    setRootPaintNodeMap(map);
   }, [rootObjs.map, connectionMap, uncommitedConnection, elements, pointing]);
 
-  // caret style
-  useEffect(() => {
-    const id = focus.rootObjId;
-    const styles = styleMap.get(id);
-    if (!styles) {
-      return;
-    }
-    const caretStyles: CaretStyle[] = [];
-    let cursor = 0;
-    for (const style of styles) {
-      const {
-        width,
-        element: { type },
-        caretOption,
-        bbox: _bbox,
-        index: elIdx,
-      } = style;
-      const b = { bbox: offsetBBox(_bbox, { x: cursor }), elIdx };
-      bboxMap.get(id)?.push(b) ?? bboxMap.set(id, [b]);
-      setBBoxMap(new Map(bboxMap));
-      if (caretOption) {
-        const height = _bbox.bottom - _bbox.top;
-        const caret = determineCaretStyle({
-          option: caretOption,
-          elWidth: width,
-          height,
-          leftOfCaret: cursor,
-        });
-        caretStyles.push(caret);
-      }
-      if (
-        type !== "score" &&
-        type !== "staff" &&
-        type !== "beam" &&
-        type !== "tie"
-      ) {
-        cursor += width;
-      }
-    }
-    setCaretStyle(caretStyles);
-  }, [styleMap, focus]);
+  // TODO caret style
+  // useEffect(() => {
+  //   const id = focus.rootObjId;
+  //   const nodes = paintNodeMap.get(id);
+  //   if (!nodes) {
+  //     return;
+  //   }
+  //   const caretStyles: CaretStyle[] = [];
+  //   let cursor = 0;
+  //   for (const style of nodes) {
+  //     const {
+  //       width,
+  //       element: { type },
+  //       caretOption,
+  //       bbox: _bbox,
+  //       index: elIdx,
+  //     } = style;
+  //     if (caretOption) {
+  //       const height = _bbox.bottom - _bbox.top;
+  //       const caret = determineCaretStyle({
+  //         option: caretOption,
+  //         elWidth: width,
+  //         height,
+  //         leftOfCaret: cursor,
+  //       });
+  //       caretStyles.push(caret);
+  //     }
+  //     if (
+  //       type !== "score" &&
+  //       type !== "staff" &&
+  //       type !== "beam" &&
+  //       type !== "tie"
+  //     ) {
+  //       cursor += width;
+  //     }
+  //   }
+  //   setCaretStyle(caretStyles);
+  // }, [paintNodeMap, focus]);
 
   // paint
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d")!;
-    ctx.save();
-    resetCanvas2({ ctx, fillStyle: "white" });
-    // pointer handlerでdpr考慮しなくて済むように
-    ctx.scale(canvasScale, canvasScale);
-    const { a, b, c, d, e, f } = mtx;
-    ctx.transform(a, b, c, d, e, f);
-    for (const style of styleMap.values().toArray().flat()) {
-      ctx.save();
-      ctx.transform(
-        style.mtx.a,
-        style.mtx.b,
-        style.mtx.c,
-        style.mtx.d,
-        style.mtx.e,
-        style.mtx.f
-      );
-      paintNode(ctx, style);
-      paintBBox(ctx, style.bbox);
-      // 0, 0に+を描画(for debug)
-      ctx.save();
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.moveTo(-130, 0);
-      ctx.lineTo(130, 0);
-      ctx.moveTo(0, -130);
-      ctx.lineTo(0, 130);
-      ctx.stroke();
-      ctx.translate(30, 30);
-      ctx.font = "250px sans-serif";
-      ctx.textBaseline = "bottom";
-      ctx.fillStyle = "red";
-      ctx.fillText(style.element.type, 0, 0);
-      ctx.restore();
-      ctx.restore();
-    }
-    const obj = rootObjs.get(focus.rootObjId);
-    const caret = caretStyle.at(focus.idx);
-    if (obj && caret) {
-      ctx.save();
-      ctx.translate(obj.position.x, obj.position.y);
-      paintCaret({ ctx, scale: 1, caret, highlighted: focusHighlighted });
-      ctx.restore();
-    }
-    ctx.restore();
+    paint({
+      ctx,
+      canvasScale,
+      mtx,
+      rootNodes: rootPaintNodeMap.values().toArray().flat(),
+    });
+    // const obj = rootObjs.get(focus.rootObjId);
+    // const caret = caretStyle.at(focus.idx);
+    // if (obj && caret) {
+    //   ctx.save();
+    //   ctx.translate(obj.position.x, obj.position.y);
+    //   paintCaret({ ctx, scale: 1, caret, highlighted: focusHighlighted });
+    //   ctx.restore();
+    // }
+    // ctx.restore();
   }, [
     mtx,
     rootObjs,
-    styleMap,
+    rootPaintNodeMap,
     caretStyle,
     focus,
     focusHighlighted,

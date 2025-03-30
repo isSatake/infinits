@@ -16,7 +16,6 @@ import {
 } from "../font/bravura";
 import {
   AccidentalStyle,
-  BarLineStyle,
   BeamStyle,
   CaretStyle,
   ConnectionStyle,
@@ -24,8 +23,9 @@ import {
   LedgerStyle,
   NoteHeadStyle,
   PaintNode,
+  PaintNodeMap,
   RestStyle,
-  StemStyle,
+  RootPaintNodeType,
   TextStyle,
   TieStyle,
 } from "../layout/types";
@@ -359,5 +359,66 @@ export const resetCanvas2 = ({
   ctx.save();
   ctx.fillStyle = fillStyle;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.restore();
+};
+
+export const paint = ({
+  ctx,
+  canvasScale,
+  mtx,
+  rootNodes,
+}: {
+  ctx: CanvasRenderingContext2D;
+  canvasScale: number;
+  mtx: DOMMatrix;
+  rootNodes: PaintNodeMap[RootPaintNodeType][];
+}) => {
+  ctx.save();
+  resetCanvas2({ ctx, fillStyle: "white" });
+  // pointer handlerでdpr考慮しなくて済むように
+  ctx.scale(canvasScale, canvasScale);
+  const { a, b, c, d, e, f } = mtx;
+  ctx.transform(a, b, c, d, e, f);
+  rootNodes.forEach((node) => paint2({ ctx, node }));
+  ctx.restore();
+};
+
+export const paint2 = ({
+  ctx,
+  node,
+}: {
+  ctx: CanvasRenderingContext2D;
+  node: PaintNode;
+}) => {
+  ctx.save();
+  ctx.transform(
+    node.mtx.a,
+    node.mtx.b,
+    node.mtx.c,
+    node.mtx.d,
+    node.mtx.e,
+    node.mtx.f
+  );
+  paintNode(ctx, node);
+  paintBBox(ctx, node.bbox);
+  {
+    // 0, 0に+を描画(for debug)
+    ctx.save();
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(-130, 0);
+    ctx.lineTo(130, 0);
+    ctx.moveTo(0, -130);
+    ctx.lineTo(0, 130);
+    ctx.stroke();
+    ctx.translate(30, 30);
+    ctx.font = "250px sans-serif";
+    ctx.textBaseline = "bottom";
+    ctx.fillStyle = "red";
+    ctx.fillText(node.type, 0, 0);
+    ctx.restore();
+  }
+  node.children.forEach((child) => paint2({ ctx, node: child }));
   ctx.restore();
 };

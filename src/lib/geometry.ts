@@ -58,6 +58,15 @@ export const expandBBox = (a: BBox, b: BBox): BBox => {
   };
 };
 
+export const expandBBoxes = (bboxes: BBox[]): BBox => {
+  return bboxes.reduce((acc, bbox) => expandBBox(acc, bbox), {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+  });
+};
+
 export const scaleSize = (size: Size, scale: number): Size => {
   return { width: size.width * scale, height: size.height * scale };
 };

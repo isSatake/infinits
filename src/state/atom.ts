@@ -1,6 +1,12 @@
 import { ChordRoot, Duration, MusicalElement } from "@/core/types";
 import { BBox, Point } from "@/lib/geometry";
-import { CaretStyle, PaintNode, Pointing } from "@/layout/types";
+import {
+  CaretStyle,
+  PaintNode,
+  PaintNodeMap,
+  Pointing,
+  RootPaintNodeType,
+} from "@/layout/types";
 import { atom } from "jotai";
 import { useEffect, useRef, useState } from "react";
 import { RootObj, StaffObject } from "@/object";
@@ -87,13 +93,10 @@ export const tieModeAtom = atom<TieModes>("notie");
 
 export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());
 
-// obj id -> element style
-export const paintStyleMapAtom = atom<Map<number, PaintNode>>(new Map());
-
-// staff id -> element bboxes
-export const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(
-  new Map()
-);
+// obj id -> paint node
+export const rootPaintNodeMapAtom = atom<
+  Map<number, PaintNodeMap[RootPaintNodeType]>
+>(new Map());
 
 export const pointingAtom = atom<Pointing | undefined>(undefined);
 

@@ -1,35 +1,23 @@
-import {
-  PaintStyle,
-  PaintElement,
-  TieStyle,
-  NoteStyle,
-  NoteHeadStyle,
-} from "./types";
+import { PaintNode, PaintNodeMap } from "./types";
 
-export const insertTieStyles = (styles: PaintStyle<PaintElement>[]) => {
-  const ret = [...styles];
-  const ties: { index: number; style: PaintStyle<TieStyle> }[] = [];
+export const insertTieStyles = (nodes: PaintNode[]) => {
+  const ret = [...nodes];
+  const ties: { index: number; style: PaintNodeMap["tie"] }[] = [];
   let _i = 0;
   while (_i < ret.length) {
-    const style = ret[_i];
+    const node = ret[_i];
     if (
-      style.element.type === "note" &&
-      (style.element.note.tie === "begin" ||
-        style.element.note.tie === "continue")
+      node.type === "note" &&
+      (node.style.tie === "begin" || node.style.tie === "continue")
     ) {
-      let distance = style.width;
+      let distance = node.width;
       for (let j = _i + 1; j < ret.length; j++) {
         const _style = ret[j];
         if (
-          _style.element.type === "note" &&
-          (_style.element.note.tie === "end" ||
-            _style.element.note.tie === "continue")
+          _style.type === "note" &&
+          (_style.style.tie === "end" || _style.style.tie === "continue")
         ) {
-          ret.splice(
-            _i,
-            0,
-            determineTieStyle(style as PaintStyle<NoteStyle>, distance)
-          );
+          ret.splice(_i, 0, determineTieStyle(node, distance));
           _i = j;
           break;
         } else {
@@ -46,21 +34,28 @@ export const insertTieStyles = (styles: PaintStyle<PaintElement>[]) => {
 };
 
 export const determineTieStyle = (
-  start: PaintStyle<NoteStyle>,
+  start: PaintNodeMap["note"],
   width: number
-): PaintStyle<TieStyle> => {
-  const startHead = start.element.children.find(
-    (e) => e.type === "head"
-  ) as NoteHeadStyle;
+): PaintNodeMap["tie"] => {
+  const startHead = start.children.find((e) => e.type === "noteHead")!;
+  const position = { ...startHead.style.tie, y: startHead.style.tie.y - 70 };
+  const style = {
+    cpLow: { x: width / 2, y: 120 },
+    cpHigh: { x: width / 2, y: 180 },
+    end: { x: width, y: 0 },
+  };
+  const bbox = {
+    left: 0,
+    right: width,
+    top: 0,
+    bottom: 180,
+  };
   return {
-    element: {
-      type: "tie",
-      position: { ...startHead.tie, y: startHead.tie.y - 70 },
-      cpLow: { x: width / 2, y: 120 },
-      cpHigh: { x: width / 2, y: 180 },
-      end: { x: width, y: 0 },
-    },
+    type: "tie",
+    style,
     width,
-    bbox: { left: 0, top: 0, right: 0, bottom: 0 },
+    height: bbox.bottom - bbox.top,
+    bbox,
+    mtx: new DOMMatrix().translate(start.mtx.e, start.mtx.f),
   };
 };

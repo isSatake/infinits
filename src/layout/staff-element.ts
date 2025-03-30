@@ -32,7 +32,14 @@ import {
   repeatDotRadius,
   UNIT,
 } from "../font/bravura";
-import { BBox, getPathBBox, offsetBBox, Point, Size } from "../lib/geometry";
+import {
+  BBox,
+  expandBBoxes,
+  getPathBBox,
+  offsetBBox,
+  Point,
+  Size,
+} from "../lib/geometry";
 import { kDefaultCaretWidth } from "./score-preferences";
 import { insertTieStyles } from "./tie";
 import {
@@ -84,6 +91,7 @@ export const createNoteNode = ({
       height: bbox.bottom - bbox.top,
       bbox,
       mtx: new DOMMatrix().translate(0, y),
+      children: [],
     });
   }
   bboxes.push(...accBBoxes);
@@ -121,6 +129,7 @@ export const createNoteNode = ({
         height: bbox.bottom - bbox.top,
         bbox,
         mtx: new DOMMatrix().translate(leftOfLedgerLine, y),
+        children: [],
       });
       ledgerBBoxes.push(bbox);
     }
@@ -142,6 +151,7 @@ export const createNoteNode = ({
         height: bbox.bottom - bbox.top,
         bbox,
         mtx: new DOMMatrix().translate(leftOfLedgerLine, y),
+        children: [],
       });
       ledgerBBoxes.push(bbox);
     }
@@ -217,6 +227,7 @@ export const createNoteNode = ({
       height: bbox.bottom - bbox.top,
       bbox,
       mtx: new DOMMatrix().translate(position.x, position.y),
+      children: [],
     });
     noteheadStemFlagBBoxes.push(bbox);
   }
@@ -234,7 +245,6 @@ export const createNoteNode = ({
       direction: stemDirection,
       lowest: pitchAsc[0],
       highest: pitchAsc[pitchAsc.length - 1],
-      mtx: localMtx,
     });
     elements.push(...el);
     bboxes.push(...stemFlagBB);
@@ -255,13 +265,14 @@ export const createNoteNode = ({
       height: bbox.bottom - bbox.top,
       bbox,
       mtx: new DOMMatrix().translate(position.x, position.y),
+      children: [],
     });
     bboxes.push(bbox);
   }
-  const bbox = mergeBBoxes(bboxes);
+  const bbox = expandBBoxes(bboxes);
   const ret: PaintNodeMap["note"] = {
     type: "note",
-    style: { stemOffsetLeft: leftOfStemOrNotehead },
+    style: { stemOffsetLeft: leftOfStemOrNotehead, tie: note.tie },
     width: bbox.right - bbox.left,
     height: bbox.bottom - bbox.top,
     bbox,
@@ -269,29 +280,6 @@ export const createNoteNode = ({
     children: elements,
   };
   return ret;
-};
-
-const mergeBBoxes = (bboxes: BBox[]): BBox => {
-  let ret: BBox | undefined;
-  for (let b of bboxes) {
-    if (ret) {
-      if (b.left < ret.left) {
-        ret.left = b.left;
-      }
-      if (b.top < ret.top) {
-        ret.top = b.top;
-      }
-      if (b.right > ret.right) {
-        ret.right = b.right;
-      }
-      if (b.bottom > ret.bottom) {
-        ret.bottom = b.bottom;
-      }
-    } else {
-      ret = b;
-    }
-  }
-  return ret!;
 };
 
 // note headからはみ出る長さ(片方)
@@ -419,6 +407,7 @@ const createStemFlagNodes = ({
           height: bbox.bottom - bbox.top,
           bbox,
           mtx: new DOMMatrix().translate(position.x, position.y),
+          children: [],
         });
         bboxes.push(offsetBBox(bbox, position));
       }
@@ -442,6 +431,7 @@ const createStemFlagNodes = ({
           height: bbox.bottom - bbox.top,
           bbox,
           mtx: new DOMMatrix().translate(position.x, position.y),
+          children: [],
         });
         bboxes.push(offsetBBox(bbox, position));
       }
@@ -456,6 +446,7 @@ const createStemFlagNodes = ({
     height: bbox.bottom - bbox.top,
     bbox,
     mtx: new DOMMatrix().translate(left + stemElPos.x, stemElPos.y),
+    children: [],
   });
   bboxes.push(offsetBBox(bbox, stemElPos));
   return { nodes: elements, bboxes };
@@ -472,6 +463,7 @@ const createRestNode = (rest: Rest): PaintNodeMap["rest"] => {
     width: bbox.right - bbox.left,
     height: bbox.bottom - bbox.top,
     mtx: new DOMMatrix().translate(0, y),
+    children: [],
   };
 };
 
@@ -497,6 +489,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
           height,
           bbox,
           mtx: new DOMMatrix(),
+          children: [],
         },
       ],
     };
@@ -522,6 +515,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
           height: bStaffHeight,
           bbox: { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight },
           mtx: new DOMMatrix(),
+          children: [],
         },
         {
           type: "barLine",
@@ -530,6 +524,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
           height: bStaffHeight,
           bbox: { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight },
           mtx: new DOMMatrix().translate(thinWidth + barlineSeparation, 0),
+          children: [],
         },
       ],
     };
@@ -556,6 +551,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
           height: bStaffHeight,
           bbox: { left: 0, top: 0, right: thinWidth, bottom: bStaffHeight },
           mtx: new DOMMatrix(),
+          children: [],
         },
         {
           type: "barLine",
@@ -564,6 +560,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
           height: bStaffHeight,
           bbox: { left: 0, top: 0, right: boldWidth, bottom: bStaffHeight },
           mtx: new DOMMatrix().translate(thinWidth + barlineSeparation, 0),
+          children: [],
         },
       ],
     };
@@ -602,6 +599,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
             bottom: repeatDotRadius * 2,
           },
           mtx: new DOMMatrix().translate(0, UNIT + UNIT / 2), // 第2間
+          children: [],
         },
         {
           type: "barLine",
@@ -613,6 +611,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
             repeatDotRadius * 2 + dotToLineSeparation,
             0
           ),
+          children: [],
         },
         {
           type: "barLine",
@@ -627,6 +626,7 @@ const createBarNode = (bar: Bar, position: Point): PaintNodeMap["bar"] => {
               barlineSeparation,
             0
           ),
+          children: [],
         },
       ],
     };
@@ -872,6 +872,7 @@ const createBeamNode = (p: {
       bottom: shape.sw.y,
     },
     mtx: new DOMMatrix().translate(beamLeft),
+    children: [],
   });
   if (duration === 32) {
     return beams;
@@ -997,7 +998,7 @@ const createBeamedNoteNodes = (
     });
     // gapを考慮したindex
     const parent = ret[Number(i) * 2] as PaintNodeMap["note"];
-    parent.bbox = mergeBBoxes([parent.bbox, ...stemFlag.bboxes]);
+    parent.bbox = expandBBoxes([parent.bbox, ...stemFlag.bboxes]);
     parent.children.push(...stemFlag.nodes);
   }
   return [...beams, ...ret];
@@ -1019,6 +1020,7 @@ export const createGapNode = ({
     bbox: { left: 0, top: 0, right: size.width, bottom: size.height },
     mtx: new DOMMatrix().translate(position.x, position.y),
     caretOption,
+    children: [],
   };
 };
 
@@ -1033,6 +1035,7 @@ const createClefNode = (index: number): PaintNodeMap["clef"] => {
     bbox: path,
     mtx: new DOMMatrix().translate(0, g),
     index,
+    children: [],
   };
 };
 
@@ -1043,7 +1046,7 @@ export const createStaffNode = (p: {
   gap?: { idx: number; width: number };
 }): PaintNodeMap["staff"] => {
   const { elements, staffObj, pointing, gap } = p;
-  const children: PaintNodeMap["staff"]["children"] = [];
+  let children: PaintNodeMap["staff"]["children"] = [];
   let staffMtx = new DOMMatrix();
   const gapSize = { width: UNIT, height: bStaffHeight };
   let cursor = 0;
@@ -1096,78 +1099,70 @@ export const createStaffNode = (p: {
           beamedNotes.push(nextEl);
           nextEl = elements[++nextIdx];
         }
-        const beamedStyles = createBeamedNoteNodes(
+        const beamedNodes = createBeamedNoteNodes(
           beamedNotes,
           el.duration,
-          gapWidth,
-          index,
-          staffMtx,
-          _pointing
+          gapSize.width,
+          index
         );
-        styles.push(...beamedStyles);
+        children.push(...beamedNodes);
         index += beamedNotes.length;
       } else {
-        const _pointing = pointing?.index === index ? pointing : undefined;
-        const note = createNoteNode({
-          note: el,
-          mtx: staffMtx,
-          pointing: _pointing,
-        });
-        styles.push({ caretOption: { index }, index, ...note });
+        const note = createNoteNode({ note: el });
+        children.push({ caretOption: { index }, index, ...note });
         cursor += note.width;
         staffMtx = staffMtx.translate(note.width, 0);
-        styles.push({
-          ...gapEl,
-          mtx: staffMtx,
-          caretOption: { index, defaultWidth: true },
-        });
-        cursor += gapWidth;
-        staffMtx = staffMtx.translate(gapWidth, 0);
+        {
+          const gapEl = createGapNode({
+            size: gapSize,
+            position: { x: cursor, y: 0 },
+            caretOption: { index },
+          });
+          children.push(gapEl);
+          cursor += gapEl.width;
+        }
         index++;
       }
     } else if (el.type === "rest") {
-      const _pointing = pointing?.index === index ? pointing : undefined;
-      const rest = createRestNode(el, _pointing);
-      styles.push({ caretOption: { index }, index, ...rest });
+      const rest = createRestNode(el);
+      children.push({ caretOption: { index }, index, ...rest });
       cursor += rest.width;
-      staffMtx = staffMtx.translate(rest.width, 0);
-      styles.push({
-        ...gapEl,
-        mtx: staffMtx,
-        caretOption: { index, defaultWidth: true },
-      });
-      cursor += gapWidth;
-      staffMtx = staffMtx.translate(gapWidth, 0);
+      {
+        const gapEl = createGapNode({
+          size: gapSize,
+          position: { x: cursor, y: 0 },
+          caretOption: { index },
+        });
+        children.push(gapEl);
+        cursor += gapEl.width;
+      }
       index++;
     } else if (el.type === "bar") {
-      const _pointing = pointing?.index === index ? pointing : undefined;
-      const bar = createBarNode(el, staffMtx, _pointing);
-      styles.push({ caretOption: { index }, index, ...bar });
+      const bar = createBarNode(el, { x: cursor, y: 0 });
+      children.push({ caretOption: { index }, index, ...bar });
       cursor += bar.width;
-      staffMtx = staffMtx.translate(bar.width, 0);
-      styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
-      cursor += gapWidth;
-      staffMtx = staffMtx.translate(gapWidth, 0);
+      {
+        const gapEl = createGapNode({
+          size: gapSize,
+          position: { x: cursor, y: 0 },
+          caretOption: { index },
+        });
+        children.push(gapEl);
+        cursor += gapEl.width;
+      }
       index++;
     }
   }
-  styles = insertTieStyles(styles);
-  if (staffObj) {
-    styles.unshift({
-      element: { type: "staff" },
-      width: cursor,
-      bbox: { left: 0, top: 0, right: cursor, bottom: UNIT * 4 },
-      mtx: _mtx,
-    });
-  }
+  children = insertTieStyles(children) as PaintNodeMap["staff"]["children"];
+  const bbox = expandBBoxes(children.map(({ bbox }) => bbox));
   const ret: PaintNodeMap["staff"] = {
     type: "staff",
     style: {},
-    bbox: { left: 0, top: 0, right: 0, bottom: 0 }, // childrenを全部足す
-    width: cursor, // bboxから計算する
-    height: bStaffHeight, // 同上
+    width: bbox.right - bbox.left,
+    height: bbox.bottom - bbox.top,
+    bbox,
     mtx: new DOMMatrix().translate(staffObj.position.x, staffObj.position.y),
-    children: [],
+    children,
   };
   return ret;
 };
@@ -1179,14 +1174,14 @@ export const determineCaretStyle = ({
   height,
 }: {
   option: CaretOption;
-  elWidth: number;
+  elWidth?: number;
   height: number;
   leftOfCaret: number;
 }): CaretStyle => {
-  const { index: elIdx, defaultWidth } = option;
-  const caretWidth = defaultWidth ? kDefaultCaretWidth : elWidth;
+  const { index: elIdx } = option;
+  const caretWidth = elWidth ?? kDefaultCaretWidth;
   return {
-    x: leftOfCaret + (defaultWidth ? elWidth / 2 - caretWidth / 2 : 0),
+    x: leftOfCaret + caretWidth / 2,
     y: 0,
     width: caretWidth,
     height,

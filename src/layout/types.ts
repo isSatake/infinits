@@ -1,4 +1,4 @@
-import { Accidental, Duration, Rest } from "../core/types";
+import { Accidental, Duration, Rest, Tie } from "../core/types";
 import { BBox, Point, Size } from "../lib/geometry";
 
 export type CaretStyle = { elIdx: number } & Point & Size;
@@ -19,7 +19,7 @@ export type PaintNodeMap = {
     index?: number;
     caretOption?: CaretOption;
   } & (ChildrenMap[K] extends never
-    ? {}
+    ? { children: [] }
     : { children: PaintNodeMap[ChildrenMap[K]][] });
 };
 
@@ -29,7 +29,7 @@ export type StyleMap = {
   score: {};
   staff: {};
   connection: ConnectionStyle;
-  note: { stemOffsetLeft: number };
+  note: { stemOffsetLeft: number; tie?: Tie };
   noteHead: NoteHeadStyle;
   accidental: AccidentalStyle;
   ledger: LedgerStyle;
@@ -77,7 +77,7 @@ export type LedgerStyle = { ledgerWidth: number };
 export type FlagStyle = { duration: Duration; direction: "up" | "down" };
 export type RestStyle = { rest: Rest };
 export type BarLineStyle = { lineWidth: number };
-export type ConnectionStyle = { toId?: number; position: Point; to: Point };
+export type ConnectionStyle = { to: Point; toId?: number };
 export type BeamStyle = { nw: Point; ne: Point; sw: Point; se: Point };
 export type TieStyle = {
   cpLow: Point; // 弧線の曲率が小さい方
@@ -93,3 +93,5 @@ export type TextStyle = {
   offset: Point;
 };
 export type FileStyle = { file: File; duration: number };
+
+export type RootPaintNodeType = "score" | "text" | "file";

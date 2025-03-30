@@ -18,7 +18,7 @@ import {
   connectionAtom,
   uncommitedStaffConnectionAtom,
   mtxAtom,
-  paintStyleMapAtom,
+  rootPaintNodeMapAtom,
   rootObjMapAtom,
   staffObjMapAtom,
   scoreStaffMapAtom,
@@ -31,7 +31,7 @@ import { useMapAtom } from "./root-obj";
 
 export const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
-  const styleMap = useAtomValue(paintStyleMapAtom);
+  const styleMap = useAtomValue(rootPaintNodeMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
   const rootObjs = useMapAtom(rootObjMapAtom);
@@ -248,7 +248,7 @@ export const useMainPointerHandler = () => {
 };
 
 const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
-  const styleMap = useAtomValue(paintStyleMapAtom);
+  const styleMap = useAtomValue(rootPaintNodeMapAtom);
   const objs = useMapAtom(rootObjMapAtom);
   return (desktopPoint: Point): number => {
     return (
