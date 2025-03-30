@@ -1,37 +1,28 @@
-import { bStaffHeight } from "@/font/bravura";
-import {
-  PaintStyle,
-  ConnectionStyle,
-  PaintElement,
-  RootObjStyle,
-} from "@/layout/types";
 import {
   Point,
-  distanceToLineSegment,
-  addPoint,
-  offsetBBox,
   isPointInBBox,
+  transformBBox
 } from "@/lib/geometry";
 import {
+  connectionAtom,
   contextMenuAtom,
   focusAtom,
-  connectionAtom,
-  uncommitedStaffConnectionAtom,
   mtxAtom,
-  rootPaintNodeMapAtom,
   rootObjMapAtom,
-  staffObjMapAtom,
+  rootPaintNodeMapAtom,
   scoreStaffMapAtom,
+  staffObjMapAtom,
+  uncommitedStaffConnectionAtom,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useRef, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useMapAtom } from "./root-obj";
 
 export const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
-  const styleMap = useAtomValue(rootPaintNodeMapAtom);
+  const rootPaintNodeMap = useAtomValue(rootPaintNodeMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
   const rootObjs = useMapAtom(rootObjMapAtom);
@@ -51,30 +42,30 @@ export const useMainPointerHandler = () => {
 
   const dndStaff = (desktopPoint: Point) => {
     const id = getRootObjIdOnPoint(desktopPoint);
-    const style = rootObjs.get(id);
-    if (!style) {
+    const obj = rootObjs.get(id);
+    if (!obj) {
       return;
     }
     const offset = {
-      x: desktopPoint.x - style.position.x,
-      y: desktopPoint.y - style.position.y,
+      x: desktopPoint.x - obj.position.x,
+      y: desktopPoint.y - obj.position.y,
     };
-    return { objType: style.type, id, offset };
+    return { objType: obj.type, id, offset };
   };
 
-  // desktopState.current.getRootObjOnPoint = dndStaff;
+  desktopState.current.getRootObjOnPoint = dndStaff;
   // desktopState.current.getConnectionOnPoint = (desktopPoint: Point) => {
-  //   const connStyleMap = new Map<number, PaintStyle<ConnectionStyle>[]>();
-  //   for (const [id, styles] of styleMap) {
-  //     const connection = styles.filter(
+  //   const nodeMap = new Map<number, PaintNodeMap["connection"][]>();
+  //   for (const [id, nodes] of rootPaintNodeMap) {
+  //     const connection = nodes.filter(
   //       (v: PaintStyle<PaintElement>): v is PaintStyle<ConnectionStyle> =>
   //         v.element.type === "connection"
   //     );
   //     if (connection.length > 0) {
-  //       connStyleMap.set(id, connection);
+  //       nodeMap.set(id, connection);
   //     }
   //   }
-  //   for (const [id, v] of connStyleMap) {
+  //   for (const [id, v] of nodeMap) {
   //     for (const _v of v) {
   //       if (_v.element.toId === undefined) {
   //         continue;
@@ -102,7 +93,7 @@ export const useMainPointerHandler = () => {
   //     return false;
   //   }
   //   const objWidth =
-  //     styleMap.get(rootObjId)?.reduce((acc, style) => {
+  //     rootPaintNodeMap.get(rootObjId)?.reduce((acc, style) => {
   //       return style.element.type !== "staff" &&
   //         style.element.type !== "beam" &&
   //         style.element.type !== "tie"
@@ -248,27 +239,18 @@ export const useMainPointerHandler = () => {
 };
 
 const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
-  const styleMap = useAtomValue(rootPaintNodeMapAtom);
+  const rootPaintNodeMap = useAtomValue(rootPaintNodeMapAtom);
   const objs = useMapAtom(rootObjMapAtom);
   return (desktopPoint: Point): number => {
     return (
-      Array.from(objs.map).find(([id, obj]) => {
-        const styles = styleMap.get(id);
-        if (!styles) {
+      objs.map.keys().find((id) => {
+        const node = rootPaintNodeMap.get(id);
+        if (!node) {
           return false;
         }
-        const style = styles.find(
-          (style): style is PaintStyle<RootObjStyle> =>
-            style.element.type === "score" ||
-            style.element.type === "text" ||
-            style.element.type === "file"
-        );
-        if (style) {
-          const bb = offsetBBox(style.bbox, obj.position);
-          return isPointInBBox(desktopPoint, bb);
-        }
-        return false;
-      })?.[0] ?? -1
+        const bb = transformBBox(node.bbox, node.mtx);
+        return isPointInBBox(desktopPoint, bb);
+      }) ?? -1
     );
   };
 };
