@@ -1,6 +1,6 @@
+import { PointingRootObject } from "@/hooks/main-canvas";
 import { Point } from "../lib/geometry";
 import { PointerState } from "./pointer-state";
-import { RootObj } from "@/object";
 
 type DesktopState =
   | ({ type: "idle" } & DesktopStateProps["idle"])
@@ -19,19 +19,14 @@ type DesktopState =
 export type DesktopStateProps = {
   idle: {};
   downCanvas: { downMtx: DOMMatrix };
-  downRootObj: {
-    id: number;
-    objType: RootObj["type"];
-    point: Point;
-    offset: Point;
-  };
+  downRootObj: PointingRootObject & { point: Point; offset: Point };
   pan: { downMtx: DOMMatrix; translated: DOMMatrix };
   zoom: { downMtx: DOMMatrix; translated: DOMMatrix };
   addStaff: { point: Point };
   ctxMenu: { htmlPoint: Point; desktopPoint: Point };
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveRootObj: { id: number; offset: Point; point: Point };
-  focusRootObj: { rootObjId: number };
+  focusRootObj: PointingRootObject;
   moveConnection: { isNew: boolean; rootObjId: number; point: Point };
   connectRootObj: { from: number; to: number };
 };
@@ -51,12 +46,9 @@ export class DesktopStateMachine {
 
   private _getRootObjOnPoint: (
     point: Point
-  ) => { objType: RootObj["type"]; id: number; offset: Point } | void =
-    () => {};
+  ) => (PointingRootObject & { offset: Point }) | void = () => {};
   set getRootObjOnPoint(
-    fn: (
-      point: Point
-    ) => { objType: RootObj["type"]; id: number; offset: Point } | void
+    fn: (point: Point) => (PointingRootObject & { offset: Point }) | void
   ) {
     this._getRootObjOnPoint = fn;
   }
@@ -369,7 +361,7 @@ export class DesktopStateMachine {
         };
         break;
       case "click":
-        this.state = { type: "focusRootObj", rootObjId: this.state.id };
+        this.state = { ...this.state, type: "focusRootObj" };
         break;
     }
   };

@@ -1,4 +1,4 @@
-import { useMapAtom } from "@/hooks/root-obj";
+import { useObjMapAtom } from "@/hooks/root-obj";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
 import { contextMenuAtom, rootObjMapAtom } from "@/state/atom";
@@ -28,7 +28,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   desktopPoint,
   onClose,
 }) => {
-  const rootObjs = useMapAtom(rootObjMapAtom);
+  const rootObjs = useObjMapAtom(rootObjMapAtom);
   const [mode, setMode] = useState<"default" | "text">("default");
   const [text, setText] = useState("");
 
@@ -114,7 +114,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   staffId,
   onClose,
 }) => {
-  const rootObjs = useMapAtom(rootObjMapAtom);
+  const rootObjs = useObjMapAtom(rootObjMapAtom);
   const onClickDelete = () => {
     rootObjs.remove(staffId);
     onClose();

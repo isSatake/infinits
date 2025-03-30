@@ -1,6 +1,6 @@
 import { useResizeHandler } from "@/hooks/hooks";
 import { useMainPointerHandler } from "@/hooks/main-canvas";
-import { useMapAtom } from "@/hooks/root-obj";
+import { useObjMapAtom } from "@/hooks/root-obj";
 import { determineFilePaintStyle } from "@/layout/file";
 import { createScoreNode } from "@/layout/score";
 import { createStaffNode } from "@/layout/staff-element";
@@ -44,8 +44,8 @@ export const MainCanvas = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const rootObjs = useMapAtom(rootObjMapAtom);
-  const staffs = useMapAtom(staffObjMapAtom);
+  const rootObjs = useObjMapAtom(rootObjMapAtom);
+  const staffs = useObjMapAtom(staffObjMapAtom);
   const scoreStaffMap = useAtomValue(scoreStaffMapAtom);
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
@@ -145,9 +145,9 @@ export const MainCanvas = () => {
     setRootPaintNodeMap(map);
   }, [rootObjs.map, connectionMap, uncommitedConnection, elements, pointing]);
 
-  // TODO caret style
+  // caret style
   // useEffect(() => {
-  //   const id = focus.rootObjId;
+  //   const id = focus.objId;
   //   const nodes = paintNodeMap.get(id);
   //   if (!nodes) {
   //     return;

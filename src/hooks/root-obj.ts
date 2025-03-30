@@ -3,7 +3,8 @@ import { useAtom } from "jotai";
 import { PrimitiveAtom } from "jotai/vanilla";
 import { useCallback } from "react";
 
-export const useMapAtom = <T>(
+// 同じID providerを使うmap
+export const useObjMapAtom = <T>(
   mapAtom: PrimitiveAtom<Map<number, T>>
 ): {
   map: Map<number, T>;

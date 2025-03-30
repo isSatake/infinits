@@ -62,8 +62,8 @@ export const useBaseElements = () => {
   const elements = useAtomValue(staffElementsMapAtom);
   const caret = useAtomValue(focusAtom);
   return useMemo(
-    () => [...(elements.get(caret.rootObjId) ?? [])],
-    [elements, caret.rootObjId]
+    () => [...(elements.get(caret.objId) ?? [])],
+    [elements, caret.objId]
   );
 };
 
@@ -138,7 +138,7 @@ export const usePreviewHandlers = (duration: Duration) => {
   const composeElements = useElementsComposer(duration);
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(staffElementsMapAtom);
-  const staff = useAtomValue(staffObjMapAtom).get(caret.rootObjId);
+  const staff = useAtomValue(staffObjMapAtom).get(caret.objId);
   const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({
@@ -168,7 +168,7 @@ export const usePreviewHandlers = (duration: Duration) => {
         positionRef.current
       );
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
-      setElements(new Map(elMap).set(caret.rootObjId, elements));
+      setElements(new Map(elMap).set(caret.objId, elements));
       // 入力時のプレビューは8分音符固定
       tone.play([elements[insertedIndex]], 8);
     },

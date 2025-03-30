@@ -27,7 +27,7 @@ export type CaretOption = { index: number };
 
 export type StyleMap = {
   score: {};
-  staff: {};
+  staff: { id: number };
   connection: ConnectionStyle;
   note: { stemOffsetLeft: number; tie?: Tie };
   noteHead: NoteHeadStyle;

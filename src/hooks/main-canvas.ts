@@ -1,8 +1,4 @@
-import {
-  Point,
-  isPointInBBox,
-  transformBBox
-} from "@/lib/geometry";
+import { Point, isPointInBBox, transformBBox } from "@/lib/geometry";
 import {
   connectionAtom,
   contextMenuAtom,
@@ -18,16 +14,17 @@ import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef } from "react";
-import { useMapAtom } from "./root-obj";
+import { useObjMapAtom } from "./root-obj";
+import { PaintNodeMap } from "@/layout/types";
 
 export const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const rootPaintNodeMap = useAtomValue(rootPaintNodeMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
-  const rootObjs = useMapAtom(rootObjMapAtom);
-  const staffs = useMapAtom(staffObjMapAtom);
-  const scoreStaffMap = useMapAtom(scoreStaffMapAtom).map;
+  const rootObjs = useObjMapAtom(rootObjMapAtom);
+  const staffs = useObjMapAtom(staffObjMapAtom);
+  const scoreStaffMap = useObjMapAtom(scoreStaffMapAtom).map;
   const [connections, setConnections] = useAtom(connectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getRootObjIdOnPoint = usePointingRootObjId();
@@ -40,9 +37,12 @@ export const useMainPointerHandler = () => {
     desktopState.current.mtx = mtx;
   }, [mtx]);
 
-  const dndStaff = (desktopPoint: Point) => {
-    const id = getRootObjIdOnPoint(desktopPoint);
-    const obj = rootObjs.get(id);
+  const getRootObjOnPoint = (desktopPoint: Point) => {
+    const ret = getRootObjIdOnPoint(desktopPoint);
+    if (!ret) {
+      return;
+    }
+    const obj = rootObjs.get(ret.id);
     if (!obj) {
       return;
     }
@@ -50,10 +50,10 @@ export const useMainPointerHandler = () => {
       x: desktopPoint.x - obj.position.x,
       y: desktopPoint.y - obj.position.y,
     };
-    return { objType: obj.type, id, offset };
+    return { ...ret, offset };
   };
 
-  desktopState.current.getRootObjOnPoint = dndStaff;
+  desktopState.current.getRootObjOnPoint = getRootObjOnPoint;
   // desktopState.current.getConnectionOnPoint = (desktopPoint: Point) => {
   //   const nodeMap = new Map<number, PaintNodeMap["connection"][]>();
   //   for (const [id, nodes] of rootPaintNodeMap) {
@@ -144,14 +144,16 @@ export const useMainPointerHandler = () => {
     []
   );
 
-  const onFocusRootObj = useCallback(
-    ({ rootObjId }: DesktopStateProps["focusRootObj"]) => {
-      if (rootObjId > -1) {
-        setCarets({ rootObjId, idx: 0 });
+  const onFocusRootObj = useCallback((v: DesktopStateProps["focusRootObj"]) => {
+    const { id, objType } = v;
+    if (objType === "score") {
+      if (!!v.staffId) {
+        setCarets({ objType: "staff", objId: v.staffId, idx: 0 });
       }
-    },
-    []
-  );
+    } else {
+      setCarets({ objType, objId: id, idx: 0 });
+    }
+  }, []);
 
   const onCtxMenu = (props: DesktopStateProps["ctxMenu"]) => {
     setPopover({
@@ -238,19 +240,41 @@ export const useMainPointerHandler = () => {
   };
 };
 
-const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
+export type PointingRootObject =
+  | { objType: "text" | "file"; id: number }
+  | { objType: "score"; id: number; staffId?: number };
+
+const usePointingRootObjId = (): ((
+  desktopPoint: Point
+) => PointingRootObject | undefined) => {
   const rootPaintNodeMap = useAtomValue(rootPaintNodeMapAtom);
-  const objs = useMapAtom(rootObjMapAtom);
-  return (desktopPoint: Point): number => {
-    return (
-      objs.map.keys().find((id) => {
-        const node = rootPaintNodeMap.get(id);
-        if (!node) {
-          return false;
+  const objs = useObjMapAtom(rootObjMapAtom);
+  return (desktopPoint: Point) => {
+    for (const id of objs.map.keys().toArray()) {
+      const node = rootPaintNodeMap.get(id);
+      if (!node) {
+        return;
+      }
+      const bb = transformBBox(node.bbox, node.mtx);
+      if (isPointInBBox(desktopPoint, bb)) {
+        if (node.type === "score") {
+          const staffId = node.children.find((v: PaintNodeMap["staff"]) => {
+            if (
+              isPointInBBox(
+                desktopPoint,
+                transformBBox(v.bbox, node.mtx.multiply(v.mtx))
+              )
+            ) {
+              return true;
+            }
+          })?.style.id;
+          if (!!staffId) {
+            return { objType: "score", id, staffId };
+          }
+          return;
         }
-        const bb = transformBBox(node.bbox, node.mtx);
-        return isPointInBBox(desktopPoint, bb);
-      }) ?? -1
-    );
+        return { objType: node.type, id };
+      }
+    }
   };
 };
