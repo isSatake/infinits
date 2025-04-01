@@ -2,21 +2,22 @@
  * @jest-environment jsdom
  */
 
+import { Clef, Note } from "@/core/types";
 import * as vi from "vitest";
-import { insertTieStyles } from "../tie";
 import { determineNoteStyle, gapElementStyle } from "../staff-element";
-import { Note } from "@/core/types";
+import { insertTieStyles } from "../tie";
 
 vi.test("insertTieStyles", () => {
+  const clef: Clef = { type: "clef", pitch: "g" };
   const cNote: Note = { type: "note", duration: 1, pitches: [{ pitch: 0 }] };
   const gap = gapElementStyle({ width: 1, height: 1 });
   const styles = [
     gap,
-    determineNoteStyle({ note: { ...cNote, tie: "begin" } }),
+    determineNoteStyle({ clef, note: { ...cNote, tie: "begin" } }),
     gap,
-    determineNoteStyle({ note: { ...cNote, tie: "continue" } }),
+    determineNoteStyle({ clef, note: { ...cNote, tie: "continue" } }),
     gap,
-    determineNoteStyle({ note: { ...cNote, tie: "end" } }),
+    determineNoteStyle({ clef, note: { ...cNote, tie: "end" } }),
   ];
   const expectedTypes = [
     "gap",

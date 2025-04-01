@@ -55,7 +55,7 @@ import {
 } from "./types";
 import { insertTieStyles } from "./tie";
 import { StaffObject } from "@/object";
-import { pitchToYScale } from "./pitch";
+import { getClefPath, pitchToYScale } from "./pitch";
 
 const kPointingColor = "#FF0000";
 
@@ -68,11 +68,13 @@ const tiePosition = (noteHeadPos: Point, noteHeadBBox: BBox): Point => {
 };
 
 export const determineNoteStyle = ({
+  clef,
   note,
   stemDirection,
   beamed = false,
   pointing,
 }: {
+  clef: Clef;
   note: Note;
   stemDirection?: "up" | "down";
   beamed?: boolean;
@@ -93,7 +95,7 @@ export const determineNoteStyle = ({
       continue;
     }
     const { pitch, accidental } = p;
-    const y = pitchToYScale({ topOfStaff: 0, clef: pitch, pitch: 1 });
+    const y = pitchToYScale(clef.pitch, pitch) * UNIT;
     accBBoxes.push(getPathBBox(accidentalPathMap().get(accidental)!, UNIT));
     elements.push({
       type: "accidental",
@@ -122,7 +124,7 @@ export const determineNoteStyle = ({
   if (minPitch <= 0) {
     // C4
     for (let p = 0; p >= minPitch; p -= 2) {
-      const y = pitchToYScale({ topOfStaff: 0, clef: p, pitch: 1 });
+      const y = pitchToYScale(clef.pitch, p) * UNIT;
       elements.push({
         type: "ledger",
         width: ledgerWidth,
@@ -139,7 +141,7 @@ export const determineNoteStyle = ({
   if (maxPitch >= 12) {
     // A5
     for (let p = 12; p < maxPitch + 1; p += 2) {
-      const y = pitchToYScale({ topOfStaff: 0, clef: p, pitch: 1 });
+      const y = pitchToYScale(clef.pitch, p) * UNIT;
       elements.push({
         type: "ledger",
         width: ledgerWidth,
@@ -211,7 +213,7 @@ export const determineNoteStyle = ({
   for (const p of notesLeftOfStem) {
     const position = {
       x: leftOfNotehead,
-      y: pitchToYScale({ topOfStaff: 0, clef: p.pitch, pitch: 1 }),
+      y: pitchToYScale(clef.pitch, p.pitch) * UNIT,
     };
     const bbox = offsetBBox(
       getPathBBox(noteHeadByDuration(note.duration), UNIT),
@@ -234,6 +236,7 @@ export const determineNoteStyle = ({
   if (!beamed) {
     // stem, flag
     const { elements: el, bboxes: stemFlagBB } = determineStemFlagStyle({
+      clef,
       left: leftOfStemOrNotehead,
       duration: note.duration,
       direction: stemDirection,
@@ -246,7 +249,7 @@ export const determineNoteStyle = ({
   for (const p of notesRightOfStem) {
     const position = {
       x: leftOfNotehead,
-      y: pitchToYScale({ topOfStaff: 0, clef: p.pitch, pitch: 1 }),
+      y: pitchToYScale(clef.pitch, p.pitch) * UNIT,
     };
     const bbox = offsetBBox(
       getPathBBox(noteHeadByDuration(note.duration), UNIT),
@@ -325,12 +328,14 @@ const centerOfNotes = (pitches: Pitch[]): Pitch => {
   return Math.round(average);
 };
 const calcStemShape = ({
+  clef,
   dnp,
   direction,
   lowest,
   highest,
   extension = 0,
 }: {
+  clef: Clef;
   dnp: { topOfStaff: number; scale: number; duration: Duration };
   direction: "up" | "down";
   lowest: PitchAcc;
@@ -338,31 +343,30 @@ const calcStemShape = ({
   extension?: number;
 }): { top: number; bottom: number } => {
   const { topOfStaff, scale, duration } = dnp;
-  const heightOfB4 = topOfStaff + (bStaffHeight * scale) / 2;
+  const heightOfCenter = topOfStaff + (bStaffHeight * scale) / 2;
   let top: number;
   let bottom: number;
   if (direction === "up") {
     // 符頭の右に符幹がはみ出るのを補正
-    bottom =
-      pitchToYScale({ topOfStaff, clef: lowest.pitch, pitch: scale }) - 5;
+    bottom = pitchToYScale(clef.pitch, lowest.pitch) * UNIT - 5;
     if (highest.pitch < 0) {
       // C4より低い -> topはB4 (楽譜の書き方p17)
-      top = heightOfB4;
+      top = heightOfCenter;
     } else {
       // stemの長さは基本1オクターブ分 (楽譜の書き方p17)
       // 32分以降は1間ずつ長くする (楽譜の書き方p53)
       const index = duration < 32 ? highest.pitch + 7 : highest.pitch + 8;
-      top = pitchToYScale({ topOfStaff, clef: index, pitch: scale });
+      top = pitchToYScale(clef.pitch, index) * UNIT;
     }
     top -= extension;
   } else {
-    top = pitchToYScale({ topOfStaff, clef: highest.pitch, pitch: scale });
+    top = pitchToYScale(clef.pitch, highest.pitch);
     if (lowest.pitch > 12) {
       // A5より高い -> bottomはB3
-      bottom = heightOfB4;
+      bottom = heightOfCenter;
     } else {
       const index = duration < 32 ? lowest.pitch - 7 : lowest.pitch - 8;
-      bottom = pitchToYScale({ topOfStaff, clef: index, pitch: scale });
+      bottom = pitchToYScale(clef.pitch, index) * UNIT;
     }
     bottom += extension;
   }
@@ -374,6 +378,7 @@ const gapWithAccidental = (scale: number): number => {
 };
 
 const determineStemFlagStyle = ({
+  clef,
   left,
   duration,
   direction,
@@ -381,6 +386,7 @@ const determineStemFlagStyle = ({
   highest,
   beamed,
 }: {
+  clef: Clef;
   left: number;
   duration: Duration;
   direction: "up" | "down";
@@ -396,6 +402,7 @@ const determineStemFlagStyle = ({
   }
   const elements: NoteStyleElement[] = [];
   let { top, bottom } = calcStemShape({
+    clef,
     dnp: { topOfStaff: 0, scale: 1, duration },
     direction,
     lowest,
@@ -626,11 +633,13 @@ const determineBarStyle = (
 };
 
 const getBeamLinearFunc = ({
+  clef,
   dnp,
   stemDirection,
   beamed,
   arr,
 }: {
+  clef: Clef;
   dnp: { topOfStaff: number; scale: number; duration: Duration };
   stemDirection: "up" | "down";
   beamed: Note[];
@@ -651,16 +660,8 @@ const getBeamLinearFunc = ({
     } else {
       const pitchFirstHi = firstEl.pitches[firstEl.pitches.length - 1].pitch;
       const pitchLastHi = lastEl.pitches[lastEl.pitches.length - 1].pitch;
-      const yFirst = pitchToYScale({
-        topOfStaff: dnp.topOfStaff,
-        clef: pitchFirstHi,
-        pitch: dnp.scale,
-      });
-      const yLast = pitchToYScale({
-        topOfStaff: dnp.topOfStaff,
-        clef: pitchLastHi,
-        pitch: dnp.scale,
-      });
+      const yFirst = pitchToYScale(clef.pitch, pitchFirstHi) * UNIT;
+      const yLast = pitchToYScale(clef.pitch, pitchLastHi) * UNIT;
       const yDistance = yLast - yFirst;
       if (pitchFirstHi > pitchLastHi) {
         // 右肩下がり
@@ -685,6 +686,7 @@ const getBeamLinearFunc = ({
     )[0];
     const x = highest.leftOfStem;
     const y = calcStemShape({
+      clef,
       dnp,
       direction: stemDirection,
       lowest: { pitch: highest.note.pitches[0].pitch },
@@ -699,16 +701,8 @@ const getBeamLinearFunc = ({
     } else {
       const pitchFirstLo = firstEl.pitches[0].pitch;
       const pitchLastLo = lastEl.pitches[0].pitch;
-      const yFirst = pitchToYScale({
-        topOfStaff: dnp.topOfStaff,
-        clef: pitchFirstLo,
-        pitch: dnp.scale,
-      });
-      const yLast = pitchToYScale({
-        topOfStaff: dnp.topOfStaff,
-        clef: pitchLastLo,
-        pitch: dnp.scale,
-      });
+      const yFirst = pitchToYScale(clef.pitch, pitchFirstLo) * UNIT;
+      const yLast = pitchToYScale(clef.pitch, pitchLastLo) * UNIT;
       const yDistance = yLast - yFirst;
       if (pitchFirstLo > pitchLastLo) {
         // 右肩下がり
@@ -731,6 +725,7 @@ const getBeamLinearFunc = ({
     )[0];
     const x = lowest.leftOfStem;
     const y = calcStemShape({
+      clef,
       dnp,
       direction: stemDirection,
       lowest: { pitch: lowest.note.pitches[0].pitch },
@@ -923,13 +918,21 @@ const determineBeamStyle = (p: {
   return beams;
 };
 
-const determineBeamedNotesStyle = (
-  beamedNotes: Note[],
-  duration: Duration,
-  elementGap: number,
-  startIdx: number,
-  _pointing?: Pointing
-): PaintStyle<NoteStyle | BeamStyle | GapStyle>[] => {
+const determineBeamedNotesStyle = ({
+  clef,
+  beamedNotes,
+  duration,
+  elementGap,
+  startIdx,
+  _pointing,
+}: {
+  clef: Clef;
+  beamedNotes: Note[];
+  duration: Duration;
+  elementGap: number;
+  startIdx: number;
+  _pointing?: Pointing;
+}): PaintStyle<NoteStyle | BeamStyle | GapStyle>[] => {
   const allBeamedPitches = beamedNotes
     .flatMap((n) => n.pitches)
     .map((p) => p.pitch);
@@ -944,6 +947,7 @@ const determineBeamedNotesStyle = (
         ? _pointing
         : undefined;
     const noteStyle = determineNoteStyle({
+      clef,
       note: beamedNotes[i],
       stemDirection,
       beamed: true,
@@ -968,6 +972,7 @@ const determineBeamedNotesStyle = (
   }
   // durationが変わろうが、始点・終点が変わろうが共通
   const linearFunc = getBeamLinearFunc({
+    clef,
     dnp: { topOfStaff: 0, scale: 1, duration },
     stemDirection,
     beamed: beamedNotes,
@@ -994,6 +999,7 @@ const determineBeamedNotesStyle = (
     // TODO note側のsectionとmergeしないと正しいwidthにならない
     // beam noteだけgapが狭くなりそう。
     const stemFlag = determineStemFlagStyle({
+      clef,
       left: notePositions[i].stemOffsetLeft,
       duration,
       direction: stemDirection,
@@ -1032,16 +1038,16 @@ const determineClefStyle = (
   index: number,
   pointing?: Pointing
 ): PaintStyle<ClefStyle> => {
-  const path = getPathBBox(bClefG(), UNIT);
-  const g = pitchToYScale({ topOfStaff: 0, clef: 4, pitch: 1 });
+  const { path, y } = getClefPath(clef);
+  const bbox = getPathBBox(path, UNIT);
   return {
     element: {
       type: "clef",
       clef,
       ...(pointing ? { color: kPointingColor } : {}),
     },
-    width: path.right - path.left,
-    bbox: offsetBBox(path, { y: g }),
+    width: bbox.right - bbox.left,
+    bbox: offsetBBox(bbox, { y }),
     index,
   };
 };
@@ -1049,7 +1055,7 @@ const determineClefStyle = (
 export const determineStaffPaintStyle = (p: {
   elements: MusicalElement[];
   gapWidth: number;
-  staffObj?: StaffObject;
+  staffObj: StaffObject;
   pointing?: Pointing;
   gap?: { idx: number; width: number };
 }): PaintStyle<PaintElement>[] => {
@@ -1060,16 +1066,14 @@ export const determineStaffPaintStyle = (p: {
     height: bStaffHeight,
   });
   let cursor = 0;
-  if (staffObj) {
-    styles.push(gapEl);
-    cursor += gapWidth;
-    const { staff } = staffObj;
-    if (staff.clef) {
-      const _pointing = pointing?.index === -1 ? pointing : undefined;
-      const clef = determineClefStyle(staff.clef, -1, _pointing);
-      styles.push(clef);
-      cursor += clef.width;
-    }
+  styles.push(gapEl);
+  cursor += gapWidth;
+  const { staff } = staffObj;
+  if (staff.clef) {
+    const _pointing = pointing?.index === -1 ? pointing : undefined;
+    const clef = determineClefStyle(staff.clef, -1, _pointing);
+    styles.push(clef);
+    cursor += clef.width;
   }
   styles.push({ ...gapEl, caretOption: { index: -1, defaultWidth: true } });
   cursor += gapWidth;
@@ -1099,18 +1103,23 @@ export const determineStaffPaintStyle = (p: {
           beamedNotes.push(nextEl);
           nextEl = elements[++nextIdx];
         }
-        const beamedStyles = determineBeamedNotesStyle(
+        const beamedStyles = determineBeamedNotesStyle({
+          clef: staff.clef,
           beamedNotes,
-          el.duration,
-          gapWidth,
-          index,
-          _pointing
-        );
+          duration: el.duration,
+          elementGap: gapWidth,
+          startIdx: index,
+          _pointing,
+        });
         styles.push(...beamedStyles);
         index += beamedNotes.length;
       } else {
         const _pointing = pointing?.index === index ? pointing : undefined;
-        const note = determineNoteStyle({ note: el, pointing: _pointing });
+        const note = determineNoteStyle({
+          clef: staff.clef,
+          note: el,
+          pointing: _pointing,
+        });
         styles.push({ caretOption: { index }, index, ...note });
         cursor += note.width;
         styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
