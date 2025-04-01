@@ -329,7 +329,8 @@ const useMainPointerHandler = () => {
       styleMap.get(rootObjId)?.reduce((acc, style) => {
         return style.element.type !== "staff" &&
           style.element.type !== "beam" &&
-          style.element.type !== "tie"
+          style.element.type !== "tie" &&
+          style.element.type !== "connection"
           ? (acc += style.width)
           : 0;
       }, 0) ?? 0;
