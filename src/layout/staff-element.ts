@@ -121,9 +121,11 @@ export const determineNoteStyle = ({
   // min===max && min<=0 : minのみ描画
   // min===max && min>=12 : minのみ描画
   // min<=0 && max>=12 : min, max描画
-  if (minPitch <= 0) {
+  const firstLineBelowStaffPitch =
+    clef.pitch === "g" ? 0 : clef.pitch === "f" ? -12 : -6;
+  if (minPitch <= firstLineBelowStaffPitch) {
     // C4
-    for (let p = 0; p >= minPitch; p -= 2) {
+    for (let p = firstLineBelowStaffPitch; p >= minPitch; p -= 2) {
       const y = pitchToYScale(clef.pitch, p) * UNIT;
       elements.push({
         type: "ledger",
@@ -138,9 +140,10 @@ export const determineNoteStyle = ({
       });
     }
   }
-  if (maxPitch >= 12) {
+  const firstLineAboveStaffPitch = clef.pitch === "g" ? 12 : clef.pitch === "f" ? 0 : 6;
+  if (maxPitch >= firstLineAboveStaffPitch) {
     // A5
-    for (let p = 12; p < maxPitch + 1; p += 2) {
+    for (let p = firstLineAboveStaffPitch; p < maxPitch + 1; p += 2) {
       const y = pitchToYScale(clef.pitch, p) * UNIT;
       elements.push({
         type: "ledger",
