@@ -59,7 +59,7 @@ vi.describe("connectTie", () => {
       vi.expect(ret).toEqual(p.expected);
     });
   });
-  vi.describe("should connect: insert", () => {});
+  // vi.describe("should connect: insert", () => {});
   vi.describe("should not connect", () => {
     vi.test.each([
       { title: "no elements", newElement: c, elements: [] },

@@ -1,13 +1,4 @@
 import {
-  bClefG,
-  bLedgerLineThickness,
-  bStaffLineWidth,
-  Path,
-  repeatDotRadius,
-  UNIT,
-} from "../font/bravura";
-import { addPoint, BBox } from "../lib/geometry";
-import {
   accidentalPathMap,
   downFlagMap,
   noteHeadByDuration,
@@ -15,23 +6,31 @@ import {
   upFlagMap,
 } from "../core/constants";
 import {
-  FileStyle,
-  ConnectionStyle,
-  StaffStyle,
-  TextStyle,
-} from "../layout/types";
-import { pitchToY } from "../layout/staff-element";
+  bClefC,
+  bClefF,
+  bClefG,
+  bLedgerLineThickness,
+  bStaffLineWidth,
+  Path,
+  repeatDotRadius,
+  UNIT,
+} from "../font/bravura";
+import { getClefPath, pitchToYScale } from "../layout/pitch";
 import {
   BarStyle,
   BeamStyle,
   CaretStyle,
   ClefStyle,
+  ConnectionStyle,
+  FileStyle,
   NoteStyle,
   PaintElement,
   PaintStyle,
   RestStyle,
+  TextStyle,
   TieStyle,
 } from "../layout/types";
+import { addPoint, BBox } from "../lib/geometry";
 
 export const initCanvas = ({
   leftPx,
@@ -59,14 +58,21 @@ export const initCanvas = ({
   canvas.getContext("2d"); //?.scale(devicePixelRatio, devicePixelRatio);
 };
 
-const paintBravuraPath = (
-  ctx: CanvasRenderingContext2D,
-  left: number,
-  top: number,
-  scale: number,
-  path: Path,
-  color?: string
-) => {
+const paintBravuraPath = ({
+  ctx,
+  left,
+  top,
+  scale,
+  path,
+  color,
+}: {
+  ctx: CanvasRenderingContext2D;
+  left: number;
+  top: number;
+  scale: number;
+  path: Path;
+  color?: string;
+}) => {
   ctx.save();
   ctx.rotate((Math.PI / 180) * 180); // もとのパスは回転している
   ctx.translate(-left, -top); // 回転しているため負の値
@@ -76,14 +82,20 @@ const paintBravuraPath = (
   ctx.restore();
 };
 
-const paintGClef = (
+const paintClef = (
   ctx: CanvasRenderingContext2D,
-  element: ClefStyle,
-  left: number,
-  topOfStaff: number
+  clefStyle: ClefStyle,
+  left: number
 ) => {
-  const g = pitchToY(topOfStaff, 4, 1);
-  paintBravuraPath(ctx, left, g, 1, bClefG(), element.color);
+  const { path, y } = getClefPath(clefStyle.clef);
+  paintBravuraPath({
+    ctx,
+    left,
+    scale: 1,
+    color: clefStyle.color,
+    path,
+    top: y,
+  });
 };
 
 export const paintStaff = (
@@ -167,7 +179,7 @@ const paintNote = ({
       ctx.save();
       ctx.translate(position.x, position.y);
       const path = noteHeadByDuration(duration);
-      paintBravuraPath(ctx, 0, 0, 1, path, color);
+      paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color });
       ctx.restore();
     } else if (noteEl.type === "ledger") {
       const { width, position } = noteEl;
@@ -186,7 +198,7 @@ const paintNote = ({
       const path = accidentalPathMap().get(accidental)!;
       ctx.save();
       ctx.translate(position.x, position.y);
-      paintBravuraPath(ctx, 0, 0, 1, path, color);
+      paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color });
       ctx.restore();
     } else if (noteEl.type === "flag") {
       const { duration, direction, position } = noteEl;
@@ -195,7 +207,14 @@ const paintNote = ({
           ? upFlagMap().get(duration)
           : downFlagMap().get(duration);
       if (path) {
-        paintBravuraPath(ctx, position.x, position.y, 1, path, color);
+        paintBravuraPath({
+          ctx,
+          left: position.x,
+          top: position.y,
+          scale: 1,
+          path,
+          color,
+        });
       }
     } else if (noteEl.type === "stem") {
       const { position, width, height } = noteEl;
@@ -223,7 +242,7 @@ const paintRest = ({
   const path = restPathMap().get(rest.duration)!;
   ctx.save();
   ctx.translate(position.x, position.y);
-  paintBravuraPath(ctx, 0, 0, 1, path, color);
+  paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color });
   ctx.restore();
 };
 
@@ -263,7 +282,7 @@ export const paintStyle = (
   } else if (type === "connection") {
     paintConnection(ctx, element);
   } else if (type === "clef") {
-    paintGClef(ctx, element, 0, 0);
+    paintClef(ctx, element, 0);
   } else if (type === "note") {
     paintNote({ ctx, element });
   } else if (type === "rest") {
