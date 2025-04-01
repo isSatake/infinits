@@ -22,6 +22,7 @@ import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
 import * as tone from "@/tone";
 import { useRootObjects } from "./root-obj";
+import { pitchByDistance, yScaleToPitch } from "@/layout/pitch";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;
@@ -143,24 +144,35 @@ export const usePreviewHandlers = (duration: Duration) => {
 
   return usePointerHandler({
     onLongDown: (ev) => {
-      if (!staff || staff.type !== "staff") {
+      if (staff?.type !== "staff") {
         return;
       }
       const newPitch = {
-        pitch: pitchByDistance(getPreviewScale(), 0, 6),
+        pitch: pitchByDistance(
+          getPreviewScale(),
+          0,
+          yScaleToPitch(staff.staff.clef.pitch, 2)
+        ),
         accidental,
       };
       setPreview({
         canvasCenter: { x: ev.clientX, y: ev.clientY },
-        staff: { ...staff, position: { x: 0, y: 0 } },
+        staff,
         ...composeElements([newPitch]),
       });
     },
     onUp: (ev, down) => {
+      if (staff?.type !== "staff") {
+        return;
+      }
       setPreview(undefined);
       const dy = down.clientY - ev.clientY;
       const newPitch = {
-        pitch: pitchByDistance(getPreviewScale(), dy, 6),
+        pitch: pitchByDistance(
+          getPreviewScale(),
+          dy,
+          yScaleToPitch(staff.staff.clef.pitch, 2)
+        ),
         accidental,
       };
       const { elements, insertedIndex, caretAdvance } = composeElements(
@@ -173,12 +185,16 @@ export const usePreviewHandlers = (duration: Duration) => {
       tone.play([elements[insertedIndex]], 8);
     },
     onDrag: (ev, down) => {
-      if (!preview || !staff) {
+      if (!preview || staff?.type !== "staff") {
         return;
       }
       const dy = down.clientY - ev.clientY;
       const newPitch = {
-        pitch: pitchByDistance(getPreviewScale(), dy, 6),
+        pitch: pitchByDistance(
+          getPreviewScale(),
+          dy,
+          yScaleToPitch(staff.staff.clef.pitch, 2)
+        ),
         accidental,
       };
       const { canvasCenter } = preview;
@@ -198,9 +214,4 @@ export const usePreviewHandlers = (duration: Duration) => {
       });
     },
   });
-};
-
-const pitchByDistance = (scale: number, dy: number, origin: Pitch): Pitch => {
-  const unitY = (bravura.UNIT / 2) * scale;
-  return Math.round(dy / unitY + origin);
 };

@@ -1,5 +1,5 @@
 import * as vi from "vitest";
-import { pitchToYScale } from "../pitch";
+import { pitchToYScale, yScaleToPitch } from "../pitch";
 
 vi.describe("pitchToYScale", () => {
   vi.describe("g clef", () => {
@@ -60,6 +60,70 @@ vi.describe("pitchToYScale", () => {
       { desc: "F3", pitch: -4, expected: 4.0 },
     ])("$desc", ({ pitch, expected }) => {
       const result = pitchToYScale("c", pitch);
+      vi.expect(result).toBe(expected);
+    });
+  });
+});
+
+vi.describe("yScaleToPitch", () => {
+  vi.describe("g clef", () => {
+    vi.test.each<{ desc: string; y: number; expected: number }>([
+      { desc: "C6", y: -2.0, expected: 14 },
+      { desc: "B5", y: -1.5, expected: 13 },
+      { desc: "A5", y: -1.0, expected: 12 },
+      { desc: "G5", y: -0.5, expected: 11 },
+      { desc: "F5", y: 0.0, expected: 10 },
+      { desc: "E5", y: 0.5, expected: 9 },
+      { desc: "D5", y: 1.0, expected: 8 },
+      { desc: "C5", y: 1.5, expected: 7 },
+      { desc: "B4", y: 2.0, expected: 6 },
+      { desc: "A4", y: 2.5, expected: 5 },
+      { desc: "G4", y: 3.0, expected: 4 },
+      { desc: "F4", y: 3.5, expected: 3 },
+      { desc: "E4", y: 4.0, expected: 2 },
+      { desc: "D4", y: 4.5, expected: 1 },
+      { desc: "C4", y: 5.0, expected: 0 },
+    ])("$desc", ({ y, expected }) => {
+      const result = yScaleToPitch("g", y);
+      vi.expect(result).toBe(expected);
+    });
+  });
+  vi.describe("f clef", () => {
+    vi.test.each<{ desc: string; y: number; expected: number }>([
+      { desc: "C4", y: -1.0, expected: 0 },
+      { desc: "B3", y: -0.5, expected: -1 },
+      { desc: "A3", y: 0.0, expected: -2 },
+      { desc: "G3", y: 0.5, expected: -3 },
+      { desc: "F3", y: 1.0, expected: -4 },
+      { desc: "E3", y: 1.5, expected: -5 },
+      { desc: "D3", y: 2.0, expected: -6 },
+      { desc: "C3", y: 2.5, expected: -7 },
+      { desc: "B2", y: 3.0, expected: -8 },
+      { desc: "A2", y: 3.5, expected: -9 },
+      { desc: "G2", y: 4.0, expected: -10 },
+      { desc: "F2", y: 4.5, expected: -11 },
+      { desc: "E2", y: 5.0, expected: -12 },
+    ])("$desc", ({ y, expected }) => {
+      const result = yScaleToPitch("f", y);
+      vi.expect(result).toBe(expected);
+    });
+  });
+  vi.describe("c clef", () => {
+    vi.test.each<{ desc: string; y: number; expected: number }>([
+      { desc: "C5", y: -1.5, expected: 7 },
+      { desc: "B4", y: -1.0, expected: 6 },
+      { desc: "A4", y: -0.5, expected: 5 },
+      { desc: "G4", y: 0.0, expected: 4 },
+      { desc: "F4", y: 0.5, expected: 3 },
+      { desc: "E4", y: 1.0, expected: 2 },
+      { desc: "D4", y: 1.5, expected: 1 },
+      { desc: "C4", y: 2.0, expected: 0 },
+      { desc: "B3", y: 2.5, expected: -1 },
+      { desc: "A3", y: 3.0, expected: -2 },
+      { desc: "G3", y: 3.5, expected: -3 },
+      { desc: "F3", y: 4.0, expected: -4 },
+    ])("$desc", ({ y, expected }) => {
+      const result = yScaleToPitch("c", y);
       vi.expect(result).toBe(expected);
     });
   });
