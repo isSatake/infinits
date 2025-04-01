@@ -1,4 +1,6 @@
 import {
+  bClefC,
+  bClefF,
   bClefG,
   bLedgerLineThickness,
   bStaffLineWidth,
@@ -76,14 +78,22 @@ const paintBravuraPath = (
   ctx.restore();
 };
 
-const paintGClef = (
+const paintClef = (
   ctx: CanvasRenderingContext2D,
   element: ClefStyle,
   left: number,
   topOfStaff: number
 ) => {
-  const g = pitchToY(topOfStaff, 4, 1);
-  paintBravuraPath(ctx, left, g, 1, bClefG(), element.color);
+  if (element.clef.pitch === "g") {
+    const g = pitchToY(topOfStaff, 4, 1);
+    paintBravuraPath(ctx, left, g, 1, bClefG(), element.color);
+  } else if (element.clef.pitch === "f") {
+    const f = pitchToY(topOfStaff, 8, 1);
+    paintBravuraPath(ctx, left, f, 1, bClefF(), element.color);
+  } else if (element.clef.pitch === "c") {
+    const c = pitchToY(topOfStaff, 6, 1);
+    paintBravuraPath(ctx, left, c, 1, bClefC(), element.color);
+  }
 };
 
 export const paintStaff = (
@@ -263,7 +273,7 @@ export const paintStyle = (
   } else if (type === "connection") {
     paintConnection(ctx, element);
   } else if (type === "clef") {
-    paintGClef(ctx, element, 0, 0);
+    paintClef(ctx, element, 0, 0);
   } else if (type === "note") {
     paintNote({ ctx, element });
   } else if (type === "rest") {

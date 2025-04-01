@@ -48,9 +48,10 @@ export type Repeat = {
 
 export type MusicalElement = Note | Rest | Bar;
 
+export const kClefs = ["g", "f", "c"] as const;
 export type Clef = {
   type: "clef";
-  pitch: "g" | "f" | "c";
+  pitch: (typeof kClefs)[number];
 };
 
 export type Staff = { type: "staff"; clef: Clef };
