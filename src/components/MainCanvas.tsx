@@ -220,7 +220,7 @@ export const MainCanvas = () => {
         const { type } = style.element;
         paintStyle(ctx, style);
         paintBBox(ctx, style.bbox);
-        if (type !== "staff" && type !== "beam" && type !== "tie") {
+        if (type !== "staff" && type !== "beam" && type !== "tie" && type !== "connection") {
           ctx.translate(style.width, 0);
         }
       }
