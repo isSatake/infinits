@@ -350,7 +350,9 @@ const calcStemShape = ({
   if (direction === "up") {
     // 符頭の右に符幹がはみ出るのを補正
     bottom = pitchToYScale(clef.pitch, lowest.pitch) * UNIT - 5;
-    if (highest.pitch < 0) {
+    const firstLineAboveStaff =
+      clef.pitch === "g" ? 0 : clef.pitch === "f" ? -12 : -6;
+    if (highest.pitch < firstLineAboveStaff) {
       // C4より低い -> topはB4 (楽譜の書き方p17)
       top = heightOfCenter;
     } else {
@@ -361,8 +363,10 @@ const calcStemShape = ({
     }
     top -= extension;
   } else {
-    top = pitchToYScale(clef.pitch, highest.pitch);
-    if (lowest.pitch > 12) {
+    top = pitchToYScale(clef.pitch, highest.pitch) * UNIT;
+    const firstLineBelowStaff =
+      clef.pitch === "g" ? 12 : clef.pitch === "f" ? 0 : 6;
+    if (lowest.pitch > firstLineBelowStaff) {
       // A5より高い -> bottomはB3
       bottom = heightOfCenter;
     } else {
