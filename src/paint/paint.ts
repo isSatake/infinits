@@ -1,4 +1,11 @@
 import {
+  accidentalPathMap,
+  downFlagMap,
+  noteHeadByDuration,
+  restPathMap,
+  upFlagMap,
+} from "../core/constants";
+import {
   bClefC,
   bClefF,
   bClefG,
@@ -8,32 +15,22 @@ import {
   repeatDotRadius,
   UNIT,
 } from "../font/bravura";
-import { addPoint, BBox } from "../lib/geometry";
-import {
-  accidentalPathMap,
-  downFlagMap,
-  noteHeadByDuration,
-  restPathMap,
-  upFlagMap,
-} from "../core/constants";
-import {
-  FileStyle,
-  ConnectionStyle,
-  StaffStyle,
-  TextStyle,
-} from "../layout/types";
-import { pitchToY } from "../layout/staff-element";
+import { pitchToYScale } from "../layout/pitch";
 import {
   BarStyle,
   BeamStyle,
   CaretStyle,
   ClefStyle,
+  ConnectionStyle,
+  FileStyle,
   NoteStyle,
   PaintElement,
   PaintStyle,
   RestStyle,
+  TextStyle,
   TieStyle,
 } from "../layout/types";
+import { addPoint, BBox } from "../lib/geometry";
 
 export const initCanvas = ({
   leftPx,
@@ -80,20 +77,17 @@ const paintBravuraPath = (
 
 const paintClef = (
   ctx: CanvasRenderingContext2D,
-  element: ClefStyle,
-  left: number,
-  topOfStaff: number
+  clefStyle: ClefStyle,
+  left: number
 ) => {
-  if (element.clef.pitch === "g") {
-    const g = pitchToY(topOfStaff, 4, 1);
-    paintBravuraPath(ctx, left, g, 1, bClefG(), element.color);
-  } else if (element.clef.pitch === "f") {
-    const f = pitchToY(topOfStaff, 8, 1);
-    paintBravuraPath(ctx, left, f, 1, bClefF(), element.color);
-  } else if (element.clef.pitch === "c") {
-    const c = pitchToY(topOfStaff, 6, 1);
-    paintBravuraPath(ctx, left, c, 1, bClefC(), element.color);
-  }
+  const y = pitchToYScale(clefStyle.clef.pitch, 4) * UNIT;
+  const path =
+    clefStyle.clef.pitch === "g"
+      ? bClefG()
+      : clefStyle.clef.pitch === "f"
+      ? bClefF()
+      : bClefC();
+  paintBravuraPath(ctx, left, y, 1, path, clefStyle.color);
 };
 
 export const paintStaff = (
@@ -273,7 +267,7 @@ export const paintStyle = (
   } else if (type === "connection") {
     paintConnection(ctx, element);
   } else if (type === "clef") {
-    paintClef(ctx, element, 0, 0);
+    paintClef(ctx, element, 0);
   } else if (type === "note") {
     paintNote({ ctx, element });
   } else if (type === "rest") {

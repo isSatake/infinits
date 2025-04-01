@@ -55,6 +55,7 @@ import {
 } from "./types";
 import { insertTieStyles } from "./tie";
 import { StaffObject } from "@/object";
+import { pitchToYScale } from "./pitch";
 
 const kPointingColor = "#FF0000";
 
@@ -92,7 +93,7 @@ export const determineNoteStyle = ({
       continue;
     }
     const { pitch, accidental } = p;
-    const y = pitchToY(0, pitch, 1);
+    const y = pitchToYScale({ topOfStaff: 0, clef: pitch, pitch: 1 });
     accBBoxes.push(getPathBBox(accidentalPathMap().get(accidental)!, UNIT));
     elements.push({
       type: "accidental",
@@ -121,7 +122,7 @@ export const determineNoteStyle = ({
   if (minPitch <= 0) {
     // C4
     for (let p = 0; p >= minPitch; p -= 2) {
-      const y = pitchToY(0, p, 1);
+      const y = pitchToYScale({ topOfStaff: 0, clef: p, pitch: 1 });
       elements.push({
         type: "ledger",
         width: ledgerWidth,
@@ -138,7 +139,7 @@ export const determineNoteStyle = ({
   if (maxPitch >= 12) {
     // A5
     for (let p = 12; p < maxPitch + 1; p += 2) {
-      const y = pitchToY(0, p, 1);
+      const y = pitchToYScale({ topOfStaff: 0, clef: p, pitch: 1 });
       elements.push({
         type: "ledger",
         width: ledgerWidth,
@@ -210,7 +211,7 @@ export const determineNoteStyle = ({
   for (const p of notesLeftOfStem) {
     const position = {
       x: leftOfNotehead,
-      y: pitchToY(0, p.pitch, 1),
+      y: pitchToYScale({ topOfStaff: 0, clef: p.pitch, pitch: 1 }),
     };
     const bbox = offsetBBox(
       getPathBBox(noteHeadByDuration(note.duration), UNIT),
@@ -245,7 +246,7 @@ export const determineNoteStyle = ({
   for (const p of notesRightOfStem) {
     const position = {
       x: leftOfNotehead,
-      y: pitchToY(0, p.pitch, 1),
+      y: pitchToYScale({ topOfStaff: 0, clef: p.pitch, pitch: 1 }),
     };
     const bbox = offsetBBox(
       getPathBBox(noteHeadByDuration(note.duration), UNIT),
@@ -342,7 +343,8 @@ const calcStemShape = ({
   let bottom: number;
   if (direction === "up") {
     // 符頭の右に符幹がはみ出るのを補正
-    bottom = pitchToY(topOfStaff, lowest.pitch, scale) - 5;
+    bottom =
+      pitchToYScale({ topOfStaff, clef: lowest.pitch, pitch: scale }) - 5;
     if (highest.pitch < 0) {
       // C4より低い -> topはB4 (楽譜の書き方p17)
       top = heightOfB4;
@@ -350,17 +352,17 @@ const calcStemShape = ({
       // stemの長さは基本1オクターブ分 (楽譜の書き方p17)
       // 32分以降は1間ずつ長くする (楽譜の書き方p53)
       const index = duration < 32 ? highest.pitch + 7 : highest.pitch + 8;
-      top = pitchToY(topOfStaff, index, scale);
+      top = pitchToYScale({ topOfStaff, clef: index, pitch: scale });
     }
     top -= extension;
   } else {
-    top = pitchToY(topOfStaff, highest.pitch, scale);
+    top = pitchToYScale({ topOfStaff, clef: highest.pitch, pitch: scale });
     if (lowest.pitch > 12) {
       // A5より高い -> bottomはB3
       bottom = heightOfB4;
     } else {
       const index = duration < 32 ? lowest.pitch - 7 : lowest.pitch - 8;
-      bottom = pitchToY(topOfStaff, index, scale);
+      bottom = pitchToYScale({ topOfStaff, clef: index, pitch: scale });
     }
     bottom += extension;
   }
@@ -623,17 +625,6 @@ const determineBarStyle = (
   }
 };
 
-export const pitchToY = (
-  topOfStaff: number,
-  pitch: Pitch,
-  scale: number
-): number => {
-  // middleC(C4)=0とする
-  // y原点は符頭の中心(音程を示す高さ)
-  const halfOfNoteHeadHeight = (bStaffHeight * scale) / 8;
-  const c4y = topOfStaff + UNIT * 4.5 * scale + halfOfNoteHeadHeight;
-  return c4y - pitch * halfOfNoteHeadHeight;
-};
 const getBeamLinearFunc = ({
   dnp,
   stemDirection,
@@ -660,8 +651,16 @@ const getBeamLinearFunc = ({
     } else {
       const pitchFirstHi = firstEl.pitches[firstEl.pitches.length - 1].pitch;
       const pitchLastHi = lastEl.pitches[lastEl.pitches.length - 1].pitch;
-      const yFirst = pitchToY(dnp.topOfStaff, pitchFirstHi, dnp.scale);
-      const yLast = pitchToY(dnp.topOfStaff, pitchLastHi, dnp.scale);
+      const yFirst = pitchToYScale({
+        topOfStaff: dnp.topOfStaff,
+        clef: pitchFirstHi,
+        pitch: dnp.scale,
+      });
+      const yLast = pitchToYScale({
+        topOfStaff: dnp.topOfStaff,
+        clef: pitchLastHi,
+        pitch: dnp.scale,
+      });
       const yDistance = yLast - yFirst;
       if (pitchFirstHi > pitchLastHi) {
         // 右肩下がり
@@ -700,8 +699,16 @@ const getBeamLinearFunc = ({
     } else {
       const pitchFirstLo = firstEl.pitches[0].pitch;
       const pitchLastLo = lastEl.pitches[0].pitch;
-      const yFirst = pitchToY(dnp.topOfStaff, pitchFirstLo, dnp.scale);
-      const yLast = pitchToY(dnp.topOfStaff, pitchLastLo, dnp.scale);
+      const yFirst = pitchToYScale({
+        topOfStaff: dnp.topOfStaff,
+        clef: pitchFirstLo,
+        pitch: dnp.scale,
+      });
+      const yLast = pitchToYScale({
+        topOfStaff: dnp.topOfStaff,
+        clef: pitchLastLo,
+        pitch: dnp.scale,
+      });
       const yDistance = yLast - yFirst;
       if (pitchFirstLo > pitchLastLo) {
         // 右肩下がり
@@ -1026,7 +1033,7 @@ const determineClefStyle = (
   pointing?: Pointing
 ): PaintStyle<ClefStyle> => {
   const path = getPathBBox(bClefG(), UNIT);
-  const g = pitchToY(0, 4, 1);
+  const g = pitchToYScale({ topOfStaff: 0, clef: 4, pitch: 1 });
   return {
     element: {
       type: "clef",
