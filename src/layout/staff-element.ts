@@ -168,7 +168,7 @@ export const determineNoteStyle = ({
   }
   // stemの左右どちらに音符を描画するか
   if (!stemDirection) {
-    stemDirection = getStemDirection(pitches);
+    stemDirection = getStemDirection(clef, pitches);
   }
   const notesLeftOfStem: PitchAcc[] = [];
   const notesRightOfStem: PitchAcc[] = [];
@@ -309,18 +309,19 @@ const ledgerLineWidth = (duration: Duration): number => {
   return noteHeadWidth(duration) + ledgerLineExtension(1) * 2;
 };
 
-const getStemDirection = (pitches: Pitch[]): "up" | "down" => {
-  // B4から最も遠い音程を計算する
-  // B4未満 -> 上向き (楽譜の書き方p17)
-  const lowestToB4 = 6 - Math.min(...pitches);
-  const highestToB4 = Math.max(...pitches) - 6;
-  if (lowestToB4 > highestToB4) {
+const getStemDirection = (clef: Clef, pitches: Pitch[]): "up" | "down" => {
+  // 第3線から最も遠い音程を計算する
+  // ト音記号のときB4未満 -> 上向き (楽譜の書き方p17)
+  const middleLinePitch = clef.pitch === "g" ? 6 : clef.pitch === "f" ? -6 : 0;
+  const lowestToMid = middleLinePitch - Math.min(...pitches);
+  const highestToMid = Math.max(...pitches) - middleLinePitch;
+  if (lowestToMid > highestToMid) {
     return "up";
-  } else if (highestToB4 > lowestToB4) {
+  } else if (highestToMid > lowestToMid) {
     return "down";
   }
   // calc direction by center of pitches if lowest and highest are same
-  return centerOfNotes(pitches) < 6 ? "up" : "down";
+  return centerOfNotes(pitches) < middleLinePitch ? "up" : "down";
 };
 
 const centerOfNotes = (pitches: Pitch[]): Pitch => {
@@ -936,7 +937,7 @@ const determineBeamedNotesStyle = ({
   const allBeamedPitches = beamedNotes
     .flatMap((n) => n.pitches)
     .map((p) => p.pitch);
-  const stemDirection = getStemDirection(allBeamedPitches);
+  const stemDirection = getStemDirection(clef, allBeamedPitches);
   const notePositions: { left: number; stemOffsetLeft: number }[] = [];
   const elements: PaintStyle<NoteStyle | BeamStyle | GapStyle>[] = [];
   let left = 0;
