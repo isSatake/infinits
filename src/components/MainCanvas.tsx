@@ -220,7 +220,12 @@ export const MainCanvas = () => {
         const { type } = style.element;
         paintStyle(ctx, style);
         paintBBox(ctx, style.bbox);
-        if (type !== "staff" && type !== "beam" && type !== "tie" && type !== "connection") {
+        if (
+          type !== "staff" &&
+          type !== "beam" &&
+          type !== "tie" &&
+          type !== "connection"
+        ) {
           ctx.translate(style.width, 0);
         }
       }
@@ -326,15 +331,9 @@ const useMainPointerHandler = () => {
       return false;
     }
     const objWidth =
-      styleMap.get(rootObjId)?.reduce((acc, style) => {
-        return style.element.type !== "staff" &&
-          style.element.type !== "beam" &&
-          style.element.type !== "tie" &&
-          style.element.type !== "connection"
-          ? (acc += style.width)
-          : 0;
-      }, 0) ?? 0;
-    return desktopPoint.x > obj.position.x + objWidth * 0.7;
+      styleMap.get(rootObjId)?.find((style) => style.element.type === "staff")
+        ?.width ?? 0;
+    return desktopPoint.x > obj.position.x + objWidth - UNIT;
   };
 
   const onIdle = useCallback(() => {
