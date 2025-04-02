@@ -1120,6 +1120,10 @@ export const determineStaffPaintStyle = (p: {
           _pointing,
         });
         styles.push(...beamedStyles);
+        cursor += beamedStyles.reduce(
+          (acc, curr) => curr.element.type !== "beam" ?acc + curr.width : 0,
+          0
+        );
         index += beamedNotes.length;
       } else {
         const _pointing = pointing?.index === index ? pointing : undefined;
