@@ -33,6 +33,7 @@ import {
   connectionAtom,
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
+  beamModeAtom,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
@@ -42,6 +43,8 @@ import { buildConnectionStyle } from "@/layout/staff";
 import { useRootObjects } from "@/hooks/root-obj";
 import { determineTextPaintStyle } from "@/layout/text";
 import { determineFilePaintStyle } from "@/layout/file";
+import { usePrevious } from "@/lib/hooks";
+import { normalizeBeams } from "@/core/beam-2";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
@@ -59,7 +62,7 @@ const mtxAtom = atom<DOMMatrix>(
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const elements = useAtomValue(elementsAtom);
+  const [elements, setElements] = useAtom(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(paintStyleMapAtom);
   const connectionMap = useAtomValue(connectionAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
@@ -69,6 +72,7 @@ export const MainCanvas = () => {
   const focus = useAtomValue(focusAtom);
   const focusHighlighted = useFocusHighlighted(focus);
   const mtx = useAtomValue(mtxAtom);
+  const beamMode = useAtomValue(beamModeAtom);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
   const [windowSize, setWindowSize] = useState<Size>({
@@ -203,6 +207,19 @@ export const MainCanvas = () => {
     }
     setCaretStyle(caretStyles);
   }, [styleMap, focus]);
+
+  const prevBeamMode = usePrevious(beamMode);
+  useEffect(() => {
+    if (prevBeamMode !== beamMode) {
+      console.log("beam mode", prevBeamMode, "->", beamMode);
+      const newElements = elements.get(focus.rootObjId);
+      if (newElements) {
+        setElements(
+          new Map(elements).set(focus.rootObjId, normalizeBeams(newElements))
+        );
+      }
+    }
+  }, [beamMode, focus, elements]);
 
   // paint
   useEffect(() => {
