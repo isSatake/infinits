@@ -34,6 +34,9 @@ export const normalizeBeams = (
         // 一旦 placeholder（後で上書き）を入れる
         result.push(null as any);
         beamGroup.push({ index: result.length - 1, note });
+        if (note.beam === "end") {
+          flushBeamGroup();
+        }
       } else {
         flushBeamGroup();
         result.push(note);
