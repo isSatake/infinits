@@ -1,9 +1,8 @@
 import { MusicalElement } from "./types";
 import { sortPitches } from "./pitch";
 import { BeamModes } from "@/state/atom";
+import { normalizeBeams } from "./beam-2";
 
-// 直接score-stateを更新していいと思ったが、previewでも使ってるのでむずい
-// reducerみたいな人になるべきかな
 export function inputMusicalElement({
   caretIndex,
   elements,
@@ -15,7 +14,7 @@ export function inputMusicalElement({
   newElement: MusicalElement;
   beamMode: BeamModes;
 }) {
-  const _elements = [...elements];
+  let _elements = [...elements];
   let insertedIndex = 0;
   let caretAdvance = 0;
   if (caretIndex === 0) {
@@ -55,6 +54,12 @@ export function inputMusicalElement({
       insertedIndex = overrideIdx;
     }
   }
+  if (
+    (newElement.type === "note" && newElement.duration < 8) ||
+    newElement.type === "rest"
+  ) {
+    _elements = normalizeBeams(_elements);
+  }
   return { elements: _elements, insertedIndex, caretAdvance };
 }
 
@@ -71,7 +76,7 @@ function applyBeam(
   left?: MusicalElement,
   right?: MusicalElement
 ): void {
-  if (insert.type === "note" && beamMode !== "nobeam") {
+  if (insert.type === "note" && insert.duration >= 8 && beamMode !== "nobeam") {
     // beamを挿入
     if (
       left?.type === "note" &&

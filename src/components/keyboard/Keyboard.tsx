@@ -251,10 +251,7 @@ const useInputBar: () => (subtype: BarTypes) => void = () => {
       const { elements, caretAdvance } = inputMusicalElement({
         caretIndex: caret.idx,
         elements: baseElements,
-        newElement: {
-          type: "bar",
-          subtype,
-        },
+        newElement: { type: "bar", subtype },
         beamMode,
       });
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
