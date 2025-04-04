@@ -1140,6 +1140,9 @@ export const determineStaffPaintStyle = (p: {
           0
         );
         index += beamedNotes.length;
+        caretIdx += beamedStyles.filter(
+          (s) => s.element.type !== "beam"
+        ).length;
       } else {
         const _pointing = pointing?.index === index ? pointing : undefined;
         const note = determineNoteStyle({
