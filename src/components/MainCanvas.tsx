@@ -296,7 +296,11 @@ const useMainPointerHandler = () => {
   }, [mtx]);
 
   const dndStaff = (desktopPoint: Point) => {
-    const id = getRootObjIdOnPoint(desktopPoint);
+    const ret = getRootObjIdOnPoint(desktopPoint);
+    if (!ret) {
+      return;
+    }
+    const { rootObjId: id, caretIdx } = ret;
     const style = rootObjs.get(id);
     if (!style) {
       return;
@@ -305,7 +309,7 @@ const useMainPointerHandler = () => {
       x: desktopPoint.x - style.position.x,
       y: desktopPoint.y - style.position.y,
     };
-    return { objType: style.type, id, offset };
+    return { objType: style.type, id, offset, caretIdx };
   };
 
   desktopState.current.getRootObjOnPoint = dndStaff;
@@ -401,9 +405,9 @@ const useMainPointerHandler = () => {
   );
 
   const onFocusRootObj = useCallback(
-    ({ rootObjId }: DesktopStateProps["focusRootObj"]) => {
+    ({ rootObjId, caretIdx }: DesktopStateProps["focusRootObj"]) => {
       if (rootObjId > -1) {
-        setCarets({ rootObjId, idx: 0 });
+        setCarets({ rootObjId, idx: caretIdx ?? 0 });
       }
     },
     []
@@ -492,28 +496,55 @@ const useMainPointerHandler = () => {
   };
 };
 
-const usePointingRootObjId = (): ((desktopPoint: Point) => number) => {
+const usePointingRootObjId = (): ((desktopPoint: Point) => {
+  rootObjId: number;
+  caretIdx?: number;
+} | void) => {
   const styleMap = useAtomValue(paintStyleMapAtom);
   const objs = useRootObjects();
-  return (desktopPoint: Point): number => {
-    return (
-      Array.from(objs.map).find(([id, obj]) => {
-        const styles = styleMap.get(id);
-        if (!styles) {
-          return false;
+  return (
+    desktopPoint: Point
+  ): { rootObjId: number; caretIdx?: number } | void => {
+    for (const [id, obj] of objs.map) {
+      const styles = styleMap.get(id);
+      if (!styles) {
+        continue;
+      }
+      const style = styles.find(
+        (style): style is PaintStyle<RootObjStyle> =>
+          style.element.type === "staff" ||
+          style.element.type === "text" ||
+          style.element.type === "file"
+      );
+      if (style) {
+        const bb = offsetBBox(style.bbox, obj.position);
+        if (isPointInBBox(desktopPoint, bb)) {
+          let left = 0;
+          for (let i in styles) {
+            const s = styles[i];
+            if (
+              s.element.type !== "staff" &&
+              s.element.type !== "beam" &&
+              s.element.type !== "connection"
+            ) {
+              if (
+                s.caretOption &&
+                isPointInBBox(
+                  desktopPoint,
+                  offsetBBox(s.bbox, {
+                    x: obj.position.x + left,
+                    y: obj.position.y,
+                  })
+                )
+              ) {
+                return { rootObjId: id, caretIdx: s.caretOption.idx };
+              }
+              left += s.width;
+            }
+          }
+          return { rootObjId: id };
         }
-        const style = styles.find(
-          (style): style is PaintStyle<RootObjStyle> =>
-            style.element.type === "staff" ||
-            style.element.type === "text" ||
-            style.element.type === "file"
-        );
-        if (style) {
-          const bb = offsetBBox(style.bbox, obj.position);
-          return isPointInBBox(desktopPoint, bb);
-        }
-        return false;
-      })?.[0] ?? -1
-    );
+      }
+    }
   };
 };

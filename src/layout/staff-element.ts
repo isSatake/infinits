@@ -140,7 +140,8 @@ export const determineNoteStyle = ({
       });
     }
   }
-  const firstLineAboveStaffPitch = clef.pitch === "g" ? 12 : clef.pitch === "f" ? 0 : 6;
+  const firstLineAboveStaffPitch =
+    clef.pitch === "g" ? 12 : clef.pitch === "f" ? 0 : 6;
   if (maxPitch >= firstLineAboveStaffPitch) {
     // A5
     for (let p = firstLineAboveStaffPitch; p < maxPitch + 1; p += 2) {
@@ -932,6 +933,7 @@ const determineBeamedNotesStyle = ({
   duration,
   elementGap,
   startIdx,
+  startCaretIdx,
   _pointing,
 }: {
   clef: Clef;
@@ -939,6 +941,7 @@ const determineBeamedNotesStyle = ({
   duration: Duration;
   elementGap: number;
   startIdx: number;
+  startCaretIdx: number;
   _pointing?: Pointing;
 }): PaintStyle<NoteStyle | BeamStyle | GapStyle>[] => {
   const allBeamedPitches = beamedNotes
@@ -948,6 +951,7 @@ const determineBeamedNotesStyle = ({
   const notePositions: { left: number; stemOffsetLeft: number }[] = [];
   const elements: PaintStyle<NoteStyle | BeamStyle | GapStyle>[] = [];
   let left = 0;
+  let caretIdx = startCaretIdx;
   for (const _i in beamedNotes) {
     const i = Number(_i);
     const pointing =
@@ -962,16 +966,19 @@ const determineBeamedNotesStyle = ({
       pointing,
     });
     notePositions.push({ left, stemOffsetLeft: noteStyle.stemOffsetLeft });
-    const caretOption = { index: i + startIdx };
-    elements.push({ caretOption, index: i + startIdx, ...noteStyle });
+    elements.push({
+      caretOption: { elIdx: i + startIdx, idx: ++caretIdx },
+      index: i + startIdx,
+      ...noteStyle,
+    });
     left += noteStyle.width;
     elements.push(
       gapElementStyle({
         width: elementGap,
         height: bStaffHeight,
         caretOption: {
-          ...caretOption,
-          index: i + startIdx,
+          elIdx: i + startIdx,
+          idx: ++caretIdx,
           defaultWidth: true,
         },
       })
@@ -1083,14 +1090,21 @@ export const determineStaffPaintStyle = (p: {
     styles.push(clef);
     cursor += clef.width;
   }
-  styles.push({ ...gapEl, caretOption: { index: -1, defaultWidth: true } });
+  let caretIdx = -1;
+  styles.push({
+    ...gapEl,
+    caretOption: { elIdx: -1, idx: ++caretIdx, defaultWidth: true },
+  });
   cursor += gapWidth;
   let index = 0;
   while (index < elements.length) {
     if (gap?.idx === index) {
       styles.push(gapElementStyle({ width: gap.width, height: bStaffHeight }));
       cursor += gap.width;
-      styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+      styles.push({
+        ...gapEl,
+        caretOption: { elIdx: index, idx: ++caretIdx, defaultWidth: true },
+      });
       cursor += gapWidth;
     }
     const el = elements[index];
@@ -1117,11 +1131,12 @@ export const determineStaffPaintStyle = (p: {
           duration: el.duration,
           elementGap: gapWidth,
           startIdx: index,
+          startCaretIdx: caretIdx,
           _pointing,
         });
         styles.push(...beamedStyles);
         cursor += beamedStyles.reduce(
-          (acc, curr) => curr.element.type !== "beam" ?acc + curr.width : 0,
+          (acc, curr) => (curr.element.type !== "beam" ? acc + curr.width : 0),
           0
         );
         index += beamedNotes.length;
@@ -1132,26 +1147,47 @@ export const determineStaffPaintStyle = (p: {
           note: el,
           pointing: _pointing,
         });
-        styles.push({ caretOption: { index }, index, ...note });
+        styles.push({
+          caretOption: { elIdx: index, idx: ++caretIdx },
+          index,
+          ...note,
+        });
         cursor += note.width;
-        styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+        styles.push({
+          ...gapEl,
+          caretOption: { elIdx: index, idx: ++caretIdx, defaultWidth: true },
+        });
         cursor += gapWidth;
         index++;
       }
     } else if (el.type === "rest") {
       const _pointing = pointing?.index === index ? pointing : undefined;
       const rest = determineRestStyle(el, _pointing);
-      styles.push({ caretOption: { index }, index, ...rest });
+      styles.push({
+        caretOption: { elIdx: index, idx: ++caretIdx },
+        index,
+        ...rest,
+      });
       cursor += rest.width;
-      styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+      styles.push({
+        ...gapEl,
+        caretOption: { elIdx: index, idx: ++caretIdx, defaultWidth: true },
+      });
       cursor += gapWidth;
       index++;
     } else if (el.type === "bar") {
       const _pointing = pointing?.index === index ? pointing : undefined;
       const bar = determineBarStyle(el, _pointing);
-      styles.push({ caretOption: { index }, index, ...bar });
+      styles.push({
+        caretOption: { elIdx: index, idx: ++caretIdx },
+        index,
+        ...bar,
+      });
       cursor += bar.width;
-      styles.push({ ...gapEl, caretOption: { index, defaultWidth: true } });
+      styles.push({
+        ...gapEl,
+        caretOption: { elIdx: index, idx: ++caretIdx, defaultWidth: true },
+      });
       cursor += gapWidth;
       index++;
     }
@@ -1178,7 +1214,7 @@ export const determineCaretStyle = ({
   height: number;
   leftOfCaret: number;
 }): CaretStyle => {
-  const { index: elIdx, defaultWidth } = option;
+  const { elIdx: elIdx, defaultWidth } = option;
   const caretWidth = defaultWidth ? kDefaultCaretWidth : elWidth;
   return {
     x: leftOfCaret + (defaultWidth ? elWidth / 2 - caretWidth / 2 : 0),
