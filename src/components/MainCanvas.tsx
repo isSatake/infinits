@@ -348,8 +348,14 @@ const useMainPointerHandler = () => {
       return false;
     }
     const objWidth =
-      styleMap.get(rootObjId)?.find((style) => style.element.type === "staff")
-        ?.width ?? 0;
+      styleMap
+        .get(rootObjId)
+        ?.find(
+          (style) =>
+            style.element.type === "staff" ||
+            style.element.type === "text" ||
+            style.element.type === "file"
+        )?.width ?? 0;
     return desktopPoint.x > obj.position.x + objWidth - UNIT;
   };
 
