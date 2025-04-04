@@ -116,7 +116,8 @@ export type ConnectionStyle = {
 export type Pointing = { index: number; type: PointingType };
 type PointingType = "note" | "rest" | "bar" | "clef";
 export type CaretOption = {
-  index: number;
+  elIdx: number;
+  idx: number;
   defaultWidth?: boolean;
 };
 export type PaintStyle<T> = {

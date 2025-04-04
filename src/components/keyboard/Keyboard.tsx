@@ -197,7 +197,6 @@ const ArrowLeft = () => {
   return (
     <GrayKey
       onClick={() => {
-        // TODO applyBeamForLastEdited
         const idx = Math.max(caret.idx - 1, 0);
         setCaret({ ...caret, idx });
       }}
@@ -213,7 +212,6 @@ const ArrowRight = () => {
   return (
     <GrayKey
       onClick={() => {
-        // TODO applyBeamForLastEdited
         const idx = Math.min(caret.idx + 1, carets.length - 1);
         setCaret({ ...caret, idx });
       }}

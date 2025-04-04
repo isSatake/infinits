@@ -28,6 +28,6 @@ export const determineTextPaintStyle = (
     element,
     width,
     bbox: { left: 0, right: width, top: 0, bottom: height },
-    caretOption: { index: 0 },
+    caretOption: { elIdx: 0 },
   };
 };

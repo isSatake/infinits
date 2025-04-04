@@ -24,6 +24,7 @@ export type DesktopStateProps = {
     objType: RootObj["type"];
     point: Point;
     offset: Point;
+    caretIdx?: number;
   };
   pan: { downMtx: DOMMatrix; translated: DOMMatrix };
   zoom: { downMtx: DOMMatrix; translated: DOMMatrix };
@@ -31,7 +32,7 @@ export type DesktopStateProps = {
   ctxMenu: { htmlPoint: Point; desktopPoint: Point };
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveRootObj: { id: number; offset: Point; point: Point };
-  focusRootObj: { rootObjId: number };
+  focusRootObj: { rootObjId: number; caretIdx?: number };
   moveConnection: { isNew: boolean; rootObjId: number; point: Point };
   connectRootObj: { from: number; to: number };
 };
@@ -49,14 +50,19 @@ export class DesktopStateMachine {
 
   constructor() {}
 
-  private _getRootObjOnPoint: (
-    point: Point
-  ) => { objType: RootObj["type"]; id: number; offset: Point } | void =
-    () => {};
+  private _getRootObjOnPoint: (point: Point) => {
+    objType: RootObj["type"];
+    id: number;
+    offset: Point;
+    caretIdx?: number;
+  } | void = () => {};
   set getRootObjOnPoint(
-    fn: (
-      point: Point
-    ) => { objType: RootObj["type"]; id: number; offset: Point } | void
+    fn: (point: Point) => {
+      objType: RootObj["type"];
+      id: number;
+      offset: Point;
+      caretIdx?: number;
+    } | void
   ) {
     this._getRootObjOnPoint = fn;
   }
@@ -369,7 +375,11 @@ export class DesktopStateMachine {
         };
         break;
       case "click":
-        this.state = { type: "focusRootObj", rootObjId: this.state.id };
+        this.state = {
+          type: "focusRootObj",
+          rootObjId: this.state.id,
+          caretIdx: this.state.caretIdx,
+        };
         break;
     }
   };
