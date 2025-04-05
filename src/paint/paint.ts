@@ -1,3 +1,4 @@
+import { Accidental } from "@/core/types";
 import {
   accidentalPathMap,
   downFlagMap,
@@ -6,16 +7,13 @@ import {
   upFlagMap,
 } from "../core/constants";
 import {
-  bClefC,
-  bClefF,
-  bClefG,
   bLedgerLineThickness,
   bStaffLineWidth,
   Path,
   repeatDotRadius,
   UNIT,
 } from "../font/bravura";
-import { getClefPath, pitchToYScale } from "../layout/pitch";
+import { getClefPath } from "../layout/pitch";
 import {
   BarStyle,
   BeamStyle,
@@ -30,7 +28,7 @@ import {
   TextStyle,
   TieStyle,
 } from "../layout/types";
-import { addPoint, BBox } from "../lib/geometry";
+import { addPoint, BBox, Point } from "../lib/geometry";
 
 export const initCanvas = ({
   leftPx,
@@ -194,12 +192,7 @@ const paintNote = ({
       ctx.stroke();
       ctx.restore();
     } else if (noteEl.type === "accidental") {
-      const { position, accidental } = noteEl;
-      const path = accidentalPathMap().get(accidental)!;
-      ctx.save();
-      ctx.translate(position.x, position.y);
-      paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color });
-      ctx.restore();
+      paintAccidental({ ctx, ...noteEl });
     } else if (noteEl.type === "flag") {
       const { duration, direction, position } = noteEl;
       const path =
@@ -229,6 +222,22 @@ const paintNote = ({
       ctx.restore();
     }
   }
+};
+
+const paintAccidental = ({
+  ctx,
+  accidental,
+  position,
+}: {
+  ctx: CanvasRenderingContext2D;
+  accidental: Accidental;
+  position: Point;
+}) => {
+  const path = accidentalPathMap().get(accidental)!;
+  ctx.save();
+  ctx.translate(position.x, position.y);
+  paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color: "#000" });
+  ctx.restore();
 };
 
 const paintRest = ({
@@ -283,6 +292,12 @@ export const paintStyle = (
     paintConnection(ctx, element);
   } else if (type === "clef") {
     paintClef(ctx, element, 0);
+  } else if (type === "keySignature") {
+    ctx.save();
+    for (const acc of element.accs) {
+      paintAccidental({ ctx, accidental: acc.type, position: {x:acc.position.x,y:acc.position.y} });
+    }
+    ctx.restore();
   } else if (type === "note") {
     paintNote({ ctx, element });
   } else if (type === "rest") {

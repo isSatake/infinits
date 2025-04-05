@@ -36,7 +36,7 @@ import {
   Staff,
 } from "../core/types";
 import { kDefaultCaretWidth } from "./score-preferences";
-import { StaffStyle } from "./types";
+import { KeySigStyle, StaffStyle } from "./types";
 import {
   BarStyle,
   BeamStyle,
@@ -1084,11 +1084,38 @@ export const determineStaffPaintStyle = (p: {
   styles.push(gapEl);
   cursor += gapWidth;
   const { staff } = staffObj;
-  if (staff.clef) {
-    const _pointing = pointing?.index === -1 ? pointing : undefined;
-    const clef = determineClefStyle(staff.clef, -1, _pointing);
-    styles.push(clef);
-    cursor += clef.width;
+  const _pointing = pointing?.index === -1 ? pointing : undefined;
+  const clef = determineClefStyle(staff.clef, -1, _pointing);
+  styles.push(clef);
+  cursor += clef.width;
+  styles.push(gapEl);
+  cursor += gapWidth;
+  if (staff.keySignature.notes.length > 0) {
+    const keySig: KeySigStyle = { type: "keySignature", accs: [] };
+    const path = accidentalPathMap().get(staff.keySignature.acc)!;
+    const bboxes: BBox[] = [];
+    let sigCursor = 0;
+    for (const accPitch of staff.keySignature.notes ?? []) {
+      const y = pitchToYScale(staff.clef.pitch, accPitch) * UNIT;
+      keySig.accs.push({
+        type: staff.keySignature.acc,
+        position: { x: sigCursor, y },
+      });
+      const bbox = getPathBBox(path, UNIT);
+      const width = bbox.right - bbox.left;
+      bboxes.push(offsetBBox(bbox, { x: sigCursor, y }));
+      sigCursor += width + width / 3;
+    }
+    const bbox = mergeBBoxes(bboxes);
+    styles.push({
+      element: keySig,
+      width: bbox.right - bbox.left,
+      bbox,
+      index: -1,
+    });
+    cursor += bbox.right - bbox.left;
+    styles.push(gapEl);
+    cursor += gapWidth;
   }
   let caretIdx = -1;
   styles.push({
