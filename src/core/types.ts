@@ -54,7 +54,7 @@ export type Clef = {
   pitch: (typeof kClefs)[number];
 };
 
-export type Staff = { type: "staff"; clef: Clef };
+export type Staff = { type: "staff"; clef: Clef; keySignature: KeySignature };
 
 export type KeySignature = {
   root: {

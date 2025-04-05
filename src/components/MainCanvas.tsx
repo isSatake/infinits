@@ -45,6 +45,7 @@ import { determineTextPaintStyle } from "@/layout/text";
 import { determineFilePaintStyle } from "@/layout/file";
 import { usePrevious } from "@/lib/hooks";
 import { normalizeBeams } from "@/core/beam-2";
+import { keySignatures } from "@/core/types";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
@@ -436,7 +437,11 @@ const useMainPointerHandler = () => {
       rootObjs.add({
         type: "staff",
         position,
-        staff: { type: "staff", clef: { type: "clef", pitch: "g" } },
+        staff: {
+          type: "staff",
+          clef: { type: "clef", pitch: "g" },
+          keySignature: keySignatures.C,
+        },
       });
     },
     [rootObjs]
