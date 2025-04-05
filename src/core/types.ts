@@ -62,7 +62,7 @@ export type KeySignature = {
     accidental?: Accidental;
   };
   acc: "sharp" | "flat";
-  notes: number[];
+  pitches: Pitch[];
 };
 
 const keys = [
@@ -86,32 +86,32 @@ export const keySignatures: Record<
   {
     root: { pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6; accidental?: Accidental };
     acc: "sharp" | "flat";
-    notes: number[];
+    pitches: Pitch[];
   }
 > = {
-  C: { root: { pitch: 0 }, acc: "sharp", notes: [] },
-  G: { root: { pitch: 4 }, acc: "sharp", notes: [10] },
-  D: { root: { pitch: 1 }, acc: "sharp", notes: [10, 7] },
-  A: { root: { pitch: 5 }, acc: "sharp", notes: [10, 7, 11] },
-  E: { root: { pitch: 2 }, acc: "sharp", notes: [10, 7, 11, 8] },
-  B: { root: { pitch: 6 }, acc: "sharp", notes: [10, 7, 11, 8, 6] },
+  C: { root: { pitch: 0 }, acc: "sharp", pitches: [] },
+  G: { root: { pitch: 4 }, acc: "sharp", pitches: [10] },
+  D: { root: { pitch: 1 }, acc: "sharp", pitches: [10, 7] },
+  A: { root: { pitch: 5 }, acc: "sharp", pitches: [10, 7, 11] },
+  E: { root: { pitch: 2 }, acc: "sharp", pitches: [10, 7, 11, 8] },
+  B: { root: { pitch: 6 }, acc: "sharp", pitches: [10, 7, 11, 8, 6] },
   "F#": {
     root: { pitch: 3, accidental: "sharp" },
     acc: "sharp",
-    notes: [10, 7, 11, 8, 6, 9],
+    pitches: [10, 7, 11, 8, 6, 9],
   },
-  F: { root: { pitch: 3 }, acc: "flat", notes: [6] },
-  Bb: { root: { pitch: 6, accidental: "flat" }, acc: "flat", notes: [6, 9] },
-  Eb: { root: { pitch: 2, accidental: "flat" }, acc: "flat", notes: [6, 9, 5] },
+  F: { root: { pitch: 3 }, acc: "flat", pitches: [6] },
+  Bb: { root: { pitch: 6, accidental: "flat" }, acc: "flat", pitches: [6, 9] },
+  Eb: { root: { pitch: 2, accidental: "flat" }, acc: "flat", pitches: [6, 9, 5] },
   Ab: {
     root: { pitch: 5, accidental: "flat" },
     acc: "flat",
-    notes: [6, 9, 5, 8],
+    pitches: [6, 9, 5, 8],
   },
   Db: {
     root: { pitch: 1, accidental: "flat" },
     acc: "flat",
-    notes: [6, 9, 5, 8, 4],
+    pitches: [6, 9, 5, 8, 4],
   },
 };
 

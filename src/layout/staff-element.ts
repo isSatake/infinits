@@ -1090,12 +1090,12 @@ export const determineStaffPaintStyle = (p: {
   cursor += clef.width;
   styles.push(gapEl);
   cursor += gapWidth;
-  if (staff.keySignature.notes.length > 0) {
+  if (staff.keySignature.pitches.length > 0) {
     const keySig: KeySigStyle = { type: "keySignature", accs: [] };
     const path = accidentalPathMap().get(staff.keySignature.acc)!;
     const bboxes: BBox[] = [];
     let sigCursor = 0;
-    for (const accPitch of staff.keySignature.notes ?? []) {
+    for (const accPitch of staff.keySignature.pitches ?? []) {
       const y = pitchToYScale(staff.clef.pitch, accPitch) * UNIT;
       keySig.accs.push({
         type: staff.keySignature.acc,

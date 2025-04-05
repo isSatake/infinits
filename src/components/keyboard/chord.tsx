@@ -14,7 +14,7 @@ import {
 import { usePointerHandler } from "@/hooks/hooks";
 import { convertPitchToRoot } from "@/core/pitch";
 import { chordToPitchAcc } from "@/core/chord";
-import * as tone from "@/tone";
+import * as tone from "@/player/tone";
 import { useElementsComposer } from "@/hooks/input";
 import { useRootObjects } from "@/hooks/root-obj";
 

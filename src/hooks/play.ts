@@ -1,7 +1,7 @@
-import { MusicalElement } from "@/core/types";
+import { KeySignature, MusicalElement } from "@/core/types";
 import { connectionAtom, elementsAtom, focusAtom } from "@/state/atom";
 import { FileStyle } from "@/layout/types";
-import * as tone from "@/tone";
+import * as tone from "@/player/tone";
 import { useAtomValue } from "jotai";
 import { useRootObjects } from "./root-obj";
 
@@ -16,7 +16,7 @@ export const usePlayTone = () => {
       number, // prevId
       Map<
         number, // startId
-        { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[] // currentId -> elements
+        tone.PlayFragment[] // currentId -> elements
       >
     >();
     const processedIds: number[] = [];
@@ -25,10 +25,15 @@ export const usePlayTone = () => {
       if (!obj) return;
       const elements: (MusicalElement | FileStyle)[] = [];
       if (obj?.type === "file") {
-        elements.push(obj);
+        return { type: "file", rootObjId, element: obj };
       }
       if (obj?.type === "staff") {
-        elements.push(...(elementsMap.get(rootObjId) ?? []));
+        return {
+          type: "staff",
+          rootObjId,
+          keySig: obj.staff.keySignature,
+          elements: elementsMap.get(rootObjId) ?? [],
+        };
       }
       return { rootObjId, elements };
     };

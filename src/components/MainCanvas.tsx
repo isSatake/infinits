@@ -440,7 +440,7 @@ const useMainPointerHandler = () => {
         staff: {
           type: "staff",
           clef: { type: "clef", pitch: "g" },
-          keySignature: keySignatures["Db"],
+          keySignature: keySignatures["G"],
         },
       });
     },

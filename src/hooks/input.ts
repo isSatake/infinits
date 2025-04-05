@@ -20,7 +20,7 @@ import { useAtomValue, useAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
-import * as tone from "@/tone";
+import * as tone from "@/player/tone";
 import { useRootObjects } from "./root-obj";
 import { pitchByDistance, yScaleToPitch } from "@/layout/pitch";
 
