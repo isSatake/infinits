@@ -23,9 +23,10 @@ import {
   beamModeAtom,
   tieModeAtom,
   TieModes,
+  lastKeySigAtom,
 } from "@/state/atom";
 import { getPreviewScale, getPreviewWidth } from "@/layout/score-preferences";
-import { useAtomValue, useAtom } from "jotai";
+import { useAtomValue, useAtom, useSetAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
@@ -232,6 +233,7 @@ export const useChangeKeyPreviewHandlers = () => {
   const elMap = useAtomValue(elementsAtom);
   const objs = useRootObjects();
   const staff = objs.get(caret.rootObjId);
+  const setLastKeySig = useSetAtom(lastKeySigAtom);
 
   return usePointerHandler({
     onDown: (ev) => {
@@ -270,6 +272,7 @@ export const useChangeKeyPreviewHandlers = () => {
       setPreview(undefined);
       const dy = down.clientY - ev.clientY;
       const newKeySig = calcNewKeySig(staff.staff, dy);
+      setLastKeySig(newKeySig);
       objs.update(caret.rootObjId, (s) => {
         if (s.type !== "staff") {
           return s;

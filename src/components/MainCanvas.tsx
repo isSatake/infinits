@@ -34,6 +34,8 @@ import {
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
   beamModeAtom,
+  lastKeySigAtom,
+  lastClefAtom,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
@@ -287,6 +289,8 @@ const useMainPointerHandler = () => {
   const [connections, setConnections] = useAtom(connectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getRootObjIdOnPoint = usePointingRootObjId();
+  const lastKeySig = useAtomValue(lastKeySigAtom);
+  const lastClef = useAtomValue(lastClefAtom);
   const desktopState = useRef(new DesktopStateMachine());
   const canvasHandler = useRef(
     new PointerEventStateMachine(desktopState.current.on)
@@ -439,8 +443,8 @@ const useMainPointerHandler = () => {
         position,
         staff: {
           type: "staff",
-          clef: clefs.G,
-          keySignature: keySignatures["G"],
+          clef: lastClef ?? clefs.G,
+          keySignature: lastKeySig ?? keySignatures.C,
         },
       });
     },

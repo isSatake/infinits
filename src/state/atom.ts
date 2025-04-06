@@ -1,4 +1,10 @@
-import { ChordRoot, Duration, MusicalElement } from "@/core/types";
+import {
+  ChordRoot,
+  Clef,
+  Duration,
+  KeySignature,
+  MusicalElement,
+} from "@/core/types";
 import { Point } from "@/lib/geometry";
 import { CaretStyle } from "@/layout/types";
 import { atom } from "jotai";
@@ -77,3 +83,6 @@ export type TieModes = "tie" | "notie";
 export const tieModeAtom = atom<TieModes>("notie");
 
 export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());
+
+export const lastKeySigAtom = atom<KeySignature | undefined>(undefined);
+export const lastClefAtom = atom<Clef | undefined>(undefined);

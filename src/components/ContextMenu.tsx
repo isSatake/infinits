@@ -3,8 +3,8 @@ import { useChangeKeyPreviewHandlers } from "@/hooks/input";
 import { useRootObjects } from "@/hooks/root-obj";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
-import { contextMenuAtom } from "@/state/atom";
-import { useAtom } from "jotai";
+import { contextMenuAtom, lastClefAtom } from "@/state/atom";
+import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback, useState } from "react";
 
 export const ContextMenu = () => {
@@ -116,6 +116,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   staffId,
   onClose,
 }) => {
+  const setLastClef = useSetAtom(lastClefAtom);
   const rootObjs = useRootObjects();
   const staff = rootObjs.get(staffId);
   const onClickDelete = () => {
@@ -126,12 +127,15 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     if (staff?.type !== "staff") return;
     const { clef } = staff.staff;
     const nextClef =
-      clefPitches[(clefPitches.indexOf(clef.pitch) + 1) % clefPitches.length];
+      clefs[
+        clefPitches[(clefPitches.indexOf(clef.pitch) + 1) % clefPitches.length]
+      ];
+    setLastClef(nextClef);
     rootObjs.update(staffId, (staff) => {
       if (staff.type !== "staff") return staff;
       return {
         ...staff,
-        staff: { ...staff.staff, clef: clefs[nextClef] },
+        staff: { ...staff.staff, clef: nextClef },
       };
     });
   };
