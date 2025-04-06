@@ -12,12 +12,10 @@ export const convert = (keySig: KeySignature, pa: PitchAcc): Frequency => {
     throw new Error("invalid pitch");
   }
 
-  
   let acc = accs[accidental ?? "natural"];
   keySig.pitches.forEach((p) => {
     const interval = Math.abs(p - pitch);
     if (interval === 0 || interval % 7 === 0) {
-      console.log("int", pitch, p)
       if (!accidental) {
         acc = accs[keySig.acc];
       }

@@ -89,7 +89,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
   const staff = useRootObjects().get(caret.rootObjId);
   const handlers = usePointerHandler({
     onUp: () => {
-      if (!staff) return;
+      if (staff?.type !== "staff") return;
       console.log(`${rootName}${root.accidental ?? ""}${type}`);
       // composeElements
       const pitches = chordToPitchAcc({ root, type }, keySignatures.C);
@@ -100,7 +100,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
         idx: caret.idx + caretAdvance,
       });
       setElements(new Map(elMap).set(caret.rootObjId, elements));
-      tone.play([elements[insertedIndex]], 8);
+      tone.play(staff.staff.keySignature, [elements[insertedIndex]], 8);
     },
   });
   return (

@@ -182,7 +182,7 @@ export const usePreviewHandlers = (duration: Duration) => {
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.rootObjId, elements));
       // 入力時のプレビューは8分音符固定
-      tone.play([elements[insertedIndex]], 8);
+      tone.play(staff.staff.keySignature, [elements[insertedIndex]], 8);
     },
     onDrag: (ev, down) => {
       if (!preview || staff?.type !== "staff") {
