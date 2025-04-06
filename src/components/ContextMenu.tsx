@@ -1,9 +1,10 @@
-import { kClefs } from "@/core/types";
+import { clefPitches, clefs } from "@/core/types";
+import { useChangeKeyPreviewHandlers } from "@/hooks/input";
 import { useRootObjects } from "@/hooks/root-obj";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
-import { contextMenuAtom } from "@/state/atom";
-import { useAtom } from "jotai";
+import { contextMenuAtom, lastClefAtom } from "@/state/atom";
+import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback, useState } from "react";
 
 export const ContextMenu = () => {
@@ -59,7 +60,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   return (
     <>
       <div className="header">
-        {mode === "default" && <button onClick={onClose}>Cancel</button>}
+        {mode === "default" && <button onClick={onClose}>Done</button>}
         {mode === "text" && (
           <>
             <button onClick={() => setMode("default")}>Cancel</button>
@@ -115,36 +116,42 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   staffId,
   onClose,
 }) => {
+  const setLastClef = useSetAtom(lastClefAtom);
   const rootObjs = useRootObjects();
+  const staff = rootObjs.get(staffId);
   const onClickDelete = () => {
     rootObjs.remove(staffId);
     onClose();
   };
   const onClickChangeClef = () => {
-    const staff = rootObjs.get(staffId);
-    if (!staff || staff.type !== "staff") return;
+    if (staff?.type !== "staff") return;
     const { clef } = staff.staff;
-    const clefs = kClefs;
-    const nextClef = clefs[(clefs.indexOf(clef.pitch) + 1) % clefs.length];
+    const nextClef =
+      clefs[
+        clefPitches[(clefPitches.indexOf(clef.pitch) + 1) % clefPitches.length]
+      ];
+    setLastClef(nextClef);
     rootObjs.update(staffId, (staff) => {
       if (staff.type !== "staff") return staff;
       return {
         ...staff,
-        staff: {
-          ...staff.staff,
-          clef: { ...staff.staff.clef, pitch: nextClef },
-        },
+        staff: { ...staff.staff, clef: nextClef },
       };
     });
   };
   return (
     <>
       <div className="header">
-        <button onClick={onClose}>Cancel</button>
+        <button onClick={onClose}>Done</button>
       </div>
       <div className="body">
+        {staff?.type === "staff" && (
+          <>
+            <button {...useChangeKeyPreviewHandlers()}>Change Key</button>
+            <button onClick={onClickChangeClef}>Change Clef</button>
+          </>
+        )}
         <button onClick={onClickDelete}>Delete</button>
-        <button onClick={onClickChangeClef}>Change Clef</button>
       </div>
     </>
   );

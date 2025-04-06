@@ -14,7 +14,7 @@ import {
 import { usePointerHandler } from "@/hooks/hooks";
 import { convertPitchToRoot } from "@/core/pitch";
 import { chordToPitchAcc } from "@/core/chord";
-import * as tone from "@/tone";
+import * as tone from "@/player/tone";
 import { useElementsComposer } from "@/hooks/input";
 import { useRootObjects } from "@/hooks/root-obj";
 
@@ -89,10 +89,10 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
   const staff = useRootObjects().get(caret.rootObjId);
   const handlers = usePointerHandler({
     onUp: () => {
-      if (!staff) return;
+      if (staff?.type !== "staff") return;
       console.log(`${rootName}${root.accidental ?? ""}${type}`);
       // composeElements
-      const pitches = chordToPitchAcc({ root, type }, keySignatures.C);
+      const pitches = chordToPitchAcc({ root, type }, staff.staff.keySignature);
       const { elements, insertedIndex, caretAdvance } =
         composeElements(pitches);
       setCaret({
@@ -100,7 +100,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
         idx: caret.idx + caretAdvance,
       });
       setElements(new Map(elMap).set(caret.rootObjId, elements));
-      tone.play([elements[insertedIndex]], 8);
+      tone.play(staff.staff.keySignature, [elements[insertedIndex]], 8);
     },
   });
   return (

@@ -4,7 +4,7 @@ import * as vi from "vitest";
 
 vi.describe("chordToPitchAcc", () => {
   vi.describe("C major key:", () => {
-    const key: KeySignature = { root: { pitch: 0 }, acc: "sharp" };
+    const key: KeySignature = { root: { pitch: 0 }, acc: "sharp", pitches: [] };
     vi.test.each<{
       title: string;
       chord: Chord;

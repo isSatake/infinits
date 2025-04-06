@@ -18,16 +18,16 @@ export const yScaleToPitch = (clef: Clef["pitch"], y: number): Pitch => {
 };
 
 // clefそれぞれのC4の位置
-const c4YScale = { g: 5.0, f: -1.0, c: 2.0 };
+const c4YScale = { G: 5.0, F: -1.0, C: 2.0 };
 
 export const getClefPath = (clef: Clef): { path: Path; y: number } => {
   const y =
     pitchToYScale(
       clef.pitch,
-      clef.pitch === "g" ? 4 : clef.pitch === "f" ? -4 : 0
+      clef.pitch === "G" ? 4 : clef.pitch === "F" ? -4 : 0
     ) * UNIT;
   const path =
-    clef.pitch === "g" ? bClefG() : clef.pitch === "f" ? bClefF() : bClefC();
+    clef.pitch === "G" ? bClefG() : clef.pitch === "F" ? bClefF() : bClefC();
   return { path, y };
 };
 

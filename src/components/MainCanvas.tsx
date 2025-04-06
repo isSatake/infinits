@@ -34,6 +34,8 @@ import {
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
   beamModeAtom,
+  lastKeySigAtom,
+  lastClefAtom,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
@@ -45,6 +47,7 @@ import { determineTextPaintStyle } from "@/layout/text";
 import { determineFilePaintStyle } from "@/layout/file";
 import { usePrevious } from "@/lib/hooks";
 import { normalizeBeams } from "@/core/beam-2";
+import { clefs, keySignatures } from "@/core/types";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
@@ -286,6 +289,8 @@ const useMainPointerHandler = () => {
   const [connections, setConnections] = useAtom(connectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getRootObjIdOnPoint = usePointingRootObjId();
+  const lastKeySig = useAtomValue(lastKeySigAtom);
+  const lastClef = useAtomValue(lastClefAtom);
   const desktopState = useRef(new DesktopStateMachine());
   const canvasHandler = useRef(
     new PointerEventStateMachine(desktopState.current.on)
@@ -436,7 +441,11 @@ const useMainPointerHandler = () => {
       rootObjs.add({
         type: "staff",
         position,
-        staff: { type: "staff", clef: { type: "clef", pitch: "g" } },
+        staff: {
+          type: "staff",
+          clef: lastClef ?? clefs.G,
+          keySignature: lastKeySig ?? keySignatures.C,
+        },
       });
     },
     [rootObjs]

@@ -1,4 +1,10 @@
-import { Duration, MusicalElement, PitchAcc, rootNotes } from "@/core/types";
+import {
+  Duration,
+  KeySignature,
+  MusicalElement,
+  PitchAcc,
+  rootNotes,
+} from "@/core/types";
 import {
   Part,
   Player,
@@ -9,9 +15,25 @@ import {
   start,
 } from "tone";
 import { Frequency, Seconds, Time } from "tone/build/esm/core/type/Units";
-import { FileStyle } from "./layout/types";
+import { FileStyle } from "../layout/types";
+import { convert } from "./convert";
 
-type CallBackElement = { time: Time; el: MusicalElement | FileStyle };
+type CallBackElement =
+  | {
+      type: "musicalElement";
+      time: Time;
+      keySig: KeySignature;
+      el: MusicalElement;
+    }
+  | { type: "file"; time: Time; el: FileStyle };
+export type PlayFragment =
+  | {
+      type: "staff";
+      rootObjId: number;
+      keySig: KeySignature;
+      elements: MusicalElement[];
+    }
+  | { type: "file"; rootObjId: number; element: FileStyle };
 
 // 複数パート対応
 export const multiPlay = async (
@@ -19,7 +41,7 @@ export const multiPlay = async (
     number, // prevId
     Map<
       number, // startId
-      { rootObjId: number; elements: (MusicalElement | FileStyle)[] }[] // currentId -> elements
+      PlayFragment[]
     >
   >
 ) => {
@@ -31,19 +53,28 @@ export const multiPlay = async (
     for (const [startId, elel] of _elements) {
       const arr: CallBackElement[] = [];
       let currentPPQ = ppqMap.get(prevFragmentId) ?? 0;
-      for (const { rootObjId, elements } of elel) {
-        for (const el of elements) {
-          if (el.type === "file") {
-            arr.push({ time: `${currentPPQ}i`, el });
-            currentPPQ += await calcPPQFromDurationSec(el.duration);
-          } else if (el.type !== "bar") {
-            arr.push({
-              time: `${currentPPQ}i`,
-              el: { ...el, duration: el.duration },
-            });
-            currentPPQ += (Transport.PPQ * 4) / el.duration;
+      for (const hoge of elel) {
+        if (hoge.type === "file") {
+          arr.push({
+            type: "file",
+            time: `${currentPPQ}i`,
+            el: hoge.element,
+          });
+          currentPPQ += await calcPPQFromDurationSec(hoge.element.duration);
+          ppqMap.set(hoge.rootObjId, currentPPQ);
+        } else {
+          for (const el of hoge.elements) {
+            if (el.type !== "bar") {
+              arr.push({
+                type: "musicalElement",
+                time: `${currentPPQ}i`,
+                keySig: hoge.keySig,
+                el: { ...el, duration: el.duration },
+              });
+              currentPPQ += (Transport.PPQ * 4) / el.duration;
+            }
+            ppqMap.set(hoge.rootObjId, currentPPQ);
           }
-          ppqMap.set(rootObjId, currentPPQ);
         }
       }
       const part = new Part<CallBackElement>(partCallback, arr);
@@ -56,19 +87,22 @@ export const multiPlay = async (
 };
 
 export const play = async (
+  keySig: KeySignature,
   elements: (MusicalElement | FileStyle)[],
   duration?: Duration
 ) => {
-  const arr: { time: Time; el: MusicalElement | FileStyle }[] = [];
+  const arr: CallBackElement[] = [];
   let currentPPQ = 0;
   for (const el of elements) {
     if (el.type === "file") {
-      arr.push({ time: `${currentPPQ}i`, el });
+      arr.push({ type: "file", time: `${currentPPQ}i`, el });
       // FIXME: fileの再生時間からPPQを計算するべきか、他の方法があるのか
       currentPPQ += await calcPPQFromDurationSec(el.duration);
     } else if (el.type !== "bar") {
       arr.push({
+        type: "musicalElement",
         time: `${currentPPQ}i`,
+        keySig,
         el: { ...el, duration: el.duration ?? duration },
       });
       currentPPQ += (Transport.PPQ * 4) / el.duration;
@@ -80,15 +114,18 @@ export const play = async (
   Transport.start();
 };
 
-const partCallback: ToneEventCallback<CallBackElement> = (time, { el }) => {
+const partCallback: ToneEventCallback<CallBackElement> = (time, el) => {
   if (el.type === "file") {
-    playFile(el.file);
-  } else if (el.type === "note") {
-    sampler.triggerAttackRelease(
-      el.pitches.map(convert),
-      `${el.duration}n`,
-      time
-    );
+    playFile(el.el.file);
+  } else {
+    const { keySig } = el;
+    if (el.el.type === "note") {
+      sampler.triggerAttackRelease(
+        el.el.pitches.map((v) => convert(keySig, v)),
+        `${el.el.duration}n`,
+        time
+      );
+    }
   }
 };
 
@@ -128,20 +165,6 @@ const sampler = new Sampler({
   release: 1,
   baseUrl: "https://tonejs.github.io/audio/salamander/",
 }).toDestination();
-
-const accs = { sharp: "#", dSharp: "##", natural: "", flat: "b", dFlat: "bb" };
-const convert = (pa: PitchAcc): Frequency => {
-  const { pitch, accidental } = pa;
-  const oct = Math.floor(pitch / 7) + 4;
-  const mod = pitch % rootNotes.length;
-  const note =
-    mod < 0 ? rootNotes.at(rootNotes.length + mod) : rootNotes.at(mod);
-  if (!note) {
-    throw new Error("invalid pitch");
-  }
-  const acc = accs[accidental ?? "natural"];
-  return `${note}${acc}${oct}`;
-};
 
 const playFile = async (file: File) => {
   const url = URL.createObjectURL(file);

@@ -19,6 +19,7 @@ export type PaintElement =
   | BeamStyle
   | BarStyle
   | ClefStyle
+  | KeySigStyle
   | GapStyle
   | TieStyle
   | TextStyle
@@ -73,7 +74,6 @@ export type BeamStyle = {
   se: Point;
 } & OptionalColor;
 export type ClefStyle = {
-  // paintとの分担を考えるとposition持っとくほうがいいかもしれん
   type: "clef";
   clef: Clef;
 } & OptionalColor;
@@ -97,6 +97,10 @@ export type TextStyle = {
   offset: Point;
 };
 export type StaffStyle = { type: "staff" };
+export type KeySigStyle = {
+  type: "keySignature";
+  accs: { type: "sharp" | "flat"; position: Point }[];
+};
 export type FileStyle = {
   type: "file";
   file: File;

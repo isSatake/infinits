@@ -48,24 +48,36 @@ export type Repeat = {
 
 export type MusicalElement = Note | Rest | Bar;
 
-export const kClefs = ["g", "f", "c"] as const;
+export const clefPitches = ["G", "F", "C"] as const;
 export type Clef = {
   type: "clef";
-  pitch: (typeof kClefs)[number];
+  pitch: (typeof clefPitches)[number];
+  keySigOffset: Pitch;
+};
+export const clefs: Record<(typeof clefPitches)[number], Clef> = {
+  G: { type: "clef", pitch: "G", keySigOffset: 0 },
+  C: { type: "clef", pitch: "C", keySigOffset: -7 },
+  F: { type: "clef", pitch: "F", keySigOffset: -14 },
 };
 
-export type Staff = { type: "staff"; clef: Clef };
+export type Staff = { type: "staff"; clef: Clef; keySignature: KeySignature };
 
 export type KeySignature = {
+  name: Key;
   root: {
     pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6;
     accidental?: Accidental;
   };
   acc: "sharp" | "flat";
-  notes?: number[];
+  pitches: Pitch[];
 };
 
-const keys = [
+export const keys = [
+  "Db",
+  "Ab",
+  "Eb",
+  "Bb",
+  "F",
   "C",
   "G",
   "D",
@@ -73,45 +85,58 @@ const keys = [
   "E",
   "B",
   "F#",
-  "F",
-  "Bb",
-  "Eb",
-  "Ab",
-  "Db",
 ] as const;
 export type Key = (typeof keys)[number];
-
 export const keySignatures: Record<
   Key,
   {
+    name: Key;
     root: { pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6; accidental?: Accidental };
     acc: "sharp" | "flat";
-    notes?: number[];
+    pitches: Pitch[];
   }
 > = {
-  C: { root: { pitch: 0 }, acc: "sharp" },
-  G: { root: { pitch: 4 }, acc: "sharp", notes: [3] },
-  D: { root: { pitch: 1 }, acc: "sharp", notes: [0, 3] },
-  A: { root: { pitch: 5 }, acc: "sharp", notes: [0, 3, 4] },
-  E: { root: { pitch: 2 }, acc: "sharp", notes: [0, 1, 3, 4] },
-  B: { root: { pitch: 6 }, acc: "sharp", notes: [0, 1, 3, 4, 6] },
+  C: { name: "C", root: { pitch: 0 }, acc: "sharp", pitches: [] },
+  G: { name: "G", root: { pitch: 4 }, acc: "sharp", pitches: [10] },
+  D: { name: "D", root: { pitch: 1 }, acc: "sharp", pitches: [10, 7] },
+  A: { name: "A", root: { pitch: 5 }, acc: "sharp", pitches: [10, 7, 11] },
+  E: { name: "E", root: { pitch: 2 }, acc: "sharp", pitches: [10, 7, 11, 8] },
+  B: {
+    name: "B",
+    root: { pitch: 6 },
+    acc: "sharp",
+    pitches: [10, 7, 11, 8, 6],
+  },
   "F#": {
+    name: "F#",
     root: { pitch: 3, accidental: "sharp" },
     acc: "sharp",
-    notes: [0, 1, 2, 3, 4, 6],
+    pitches: [10, 7, 11, 8, 6, 9],
   },
-  F: { root: { pitch: 3 }, acc: "flat", notes: [6] },
-  Bb: { root: { pitch: 6, accidental: "flat" }, acc: "flat", notes: [2, 6] },
-  Eb: { root: { pitch: 2, accidental: "flat" }, acc: "flat", notes: [2, 5, 6] },
+  F: { name: "F", root: { pitch: 3 }, acc: "flat", pitches: [6] },
+  Bb: {
+    name: "Bb",
+    root: { pitch: 6, accidental: "flat" },
+    acc: "flat",
+    pitches: [6, 9],
+  },
+  Eb: {
+    name: "Eb",
+    root: { pitch: 2, accidental: "flat" },
+    acc: "flat",
+    pitches: [6, 9, 5],
+  },
   Ab: {
+    name: "Ab",
     root: { pitch: 5, accidental: "flat" },
     acc: "flat",
-    notes: [1, 2, 5, 6],
+    pitches: [6, 9, 5, 8],
   },
   Db: {
+    name: "Db",
     root: { pitch: 1, accidental: "flat" },
     acc: "flat",
-    notes: [1, 2, 4, 5, 6],
+    pitches: [6, 9, 5, 8, 4],
   },
 };
 

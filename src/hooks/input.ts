@@ -1,6 +1,15 @@
 import { sortPitches } from "@/core/pitch";
 import { connectTie, inputMusicalElement } from "@/core/score-updater";
-import { Duration, PitchAcc, MusicalElement, Pitch } from "@/core/types";
+import {
+  Duration,
+  PitchAcc,
+  MusicalElement,
+  Pitch,
+  KeySignature,
+  keys,
+  keySignatures,
+  Staff,
+} from "@/core/types";
 import { kAccidentalModes } from "@/input";
 import {
   focusAtom,
@@ -14,15 +23,17 @@ import {
   beamModeAtom,
   tieModeAtom,
   TieModes,
+  lastKeySigAtom,
 } from "@/state/atom";
 import { getPreviewScale, getPreviewWidth } from "@/layout/score-preferences";
-import { useAtomValue, useAtom } from "jotai";
+import { useAtomValue, useAtom, useSetAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
 import * as bravura from "@/font/bravura";
-import * as tone from "@/tone";
+import * as tone from "@/player/tone";
 import { useRootObjects } from "./root-obj";
 import { pitchByDistance, yScaleToPitch } from "@/layout/pitch";
+import { clamp } from "@/lib/number";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;
@@ -182,7 +193,7 @@ export const usePreviewHandlers = (duration: Duration) => {
       setCaret({ ...caret, idx: caret.idx + caretAdvance });
       setElements(new Map(elMap).set(caret.rootObjId, elements));
       // 入力時のプレビューは8分音符固定
-      tone.play([elements[insertedIndex]], 8);
+      tone.play(staff.staff.keySignature, [elements[insertedIndex]], 8);
     },
     onDrag: (ev, down) => {
       if (!preview || staff?.type !== "staff") {
@@ -214,4 +225,71 @@ export const usePreviewHandlers = (duration: Duration) => {
       });
     },
   });
+};
+
+export const useChangeKeyPreviewHandlers = () => {
+  const [preview, setPreview] = useAtom(previewAtom);
+  const caret = useAtomValue(focusAtom);
+  const elMap = useAtomValue(elementsAtom);
+  const objs = useRootObjects();
+  const staff = objs.get(caret.rootObjId);
+  const setLastKeySig = useSetAtom(lastKeySigAtom);
+
+  return usePointerHandler({
+    onDown: (ev) => {
+      if (staff?.type !== "staff") {
+        return;
+      }
+      setPreview({
+        canvasCenter: { x: ev.clientX, y: ev.clientY },
+        staff,
+        elements: elMap.get(caret.rootObjId) ?? [],
+        insertedIndex: 0,
+        offsetted: false,
+      });
+    },
+    onDrag: (ev, down) => {
+      if (!preview || staff?.type !== "staff") {
+        return;
+      }
+      const dy = down.clientY - ev.clientY;
+      const newKeySig = calcNewKeySig(staff.staff, dy);
+      setPreview({
+        ...preview,
+        staff: {
+          ...preview.staff,
+          staff: {
+            ...preview.staff.staff,
+            keySignature: newKeySig,
+          },
+        },
+      });
+    },
+    onUp: (ev, down) => {
+      if (staff?.type !== "staff") {
+        return;
+      }
+      setPreview(undefined);
+      const dy = down.clientY - ev.clientY;
+      const newKeySig = calcNewKeySig(staff.staff, dy);
+      setLastKeySig(newKeySig);
+      objs.update(caret.rootObjId, (s) => {
+        if (s.type !== "staff") {
+          return s;
+        }
+        return { ...s, staff: { ...s.staff, keySignature: newKeySig } };
+      });
+    },
+  });
+};
+
+const calcNewKeySig = (currentStaff: Staff, dy: number): KeySignature => {
+  const pd = pitchByDistance(
+    getPreviewScale(),
+    dy,
+    0 // pitchはなんでもよい。note入力時とフィーリングを合わせたいのでpitchByDistanceを使用している
+  );
+  const idx = keys.findIndex((v) => v === currentStaff.keySignature.name);
+  const nextIdx = clamp(idx + pd, 0, keys.length - 1);
+  return keySignatures[keys[nextIdx]];
 };
