@@ -122,7 +122,7 @@ export const determineNoteStyle = ({
   // min===max && min>=12 : minのみ描画
   // min<=0 && max>=12 : min, max描画
   const firstLineBelowStaffPitch =
-    clef.pitch === "g" ? 0 : clef.pitch === "f" ? -12 : -6;
+    clef.pitch === "G" ? 0 : clef.pitch === "F" ? -12 : -6;
   if (minPitch <= firstLineBelowStaffPitch) {
     // C4
     for (let p = firstLineBelowStaffPitch; p >= minPitch; p -= 2) {
@@ -141,7 +141,7 @@ export const determineNoteStyle = ({
     }
   }
   const firstLineAboveStaffPitch =
-    clef.pitch === "g" ? 12 : clef.pitch === "f" ? 0 : 6;
+    clef.pitch === "G" ? 12 : clef.pitch === "F" ? 0 : 6;
   if (maxPitch >= firstLineAboveStaffPitch) {
     // A5
     for (let p = firstLineAboveStaffPitch; p < maxPitch + 1; p += 2) {
@@ -316,7 +316,7 @@ const ledgerLineWidth = (duration: Duration): number => {
 const getStemDirection = (clef: Clef, pitches: Pitch[]): "up" | "down" => {
   // 第3線から最も遠い音程を計算する
   // ト音記号のときB4未満 -> 上向き (楽譜の書き方p17)
-  const middleLinePitch = clef.pitch === "g" ? 6 : clef.pitch === "f" ? -6 : 0;
+  const middleLinePitch = clef.pitch === "G" ? 6 : clef.pitch === "F" ? -6 : 0;
   const lowestToMid = middleLinePitch - Math.min(...pitches);
   const highestToMid = Math.max(...pitches) - middleLinePitch;
   if (lowestToMid > highestToMid) {
@@ -355,7 +355,7 @@ const calcStemShape = ({
     // 符頭の右に符幹がはみ出るのを補正
     bottom = pitchToYScale(clef.pitch, lowest.pitch) * UNIT - 5;
     const firstLineAboveStaff =
-      clef.pitch === "g" ? 0 : clef.pitch === "f" ? -12 : -6;
+      clef.pitch === "G" ? 0 : clef.pitch === "F" ? -12 : -6;
     if (highest.pitch < firstLineAboveStaff) {
       // C4より低い -> topはB4 (楽譜の書き方p17)
       top = heightOfCenter;
@@ -369,7 +369,7 @@ const calcStemShape = ({
   } else {
     top = pitchToYScale(clef.pitch, highest.pitch) * UNIT;
     const firstLineBelowStaff =
-      clef.pitch === "g" ? 12 : clef.pitch === "f" ? 0 : 6;
+      clef.pitch === "G" ? 12 : clef.pitch === "F" ? 0 : 6;
     if (lowest.pitch > firstLineBelowStaff) {
       // A5より高い -> bottomはB3
       bottom = heightOfCenter;
@@ -1096,7 +1096,9 @@ export const determineStaffPaintStyle = (p: {
     const bboxes: BBox[] = [];
     let sigCursor = 0;
     for (const accPitch of staff.keySignature.pitches ?? []) {
-      const y = pitchToYScale(staff.clef.pitch, accPitch) * UNIT;
+      const y =
+        pitchToYScale(staff.clef.pitch, accPitch + staff.clef.keySigOffset) *
+        UNIT;
       keySig.accs.push({
         type: staff.keySignature.acc,
         position: { x: sigCursor, y },

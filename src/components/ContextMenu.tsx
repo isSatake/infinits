@@ -1,4 +1,4 @@
-import { kClefs } from "@/core/types";
+import { clefPitches, clefs } from "@/core/types";
 import { useRootObjects } from "@/hooks/root-obj";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
@@ -124,15 +124,15 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     const staff = rootObjs.get(staffId);
     if (!staff || staff.type !== "staff") return;
     const { clef } = staff.staff;
-    const clefs = kClefs;
-    const nextClef = clefs[(clefs.indexOf(clef.pitch) + 1) % clefs.length];
+    const nextClef =
+      clefPitches[(clefPitches.indexOf(clef.pitch) + 1) % clefPitches.length];
     rootObjs.update(staffId, (staff) => {
       if (staff.type !== "staff") return staff;
       return {
         ...staff,
         staff: {
           ...staff.staff,
-          clef: { ...staff.staff.clef, pitch: nextClef },
+          clef: clefs[nextClef],
         },
       };
     });

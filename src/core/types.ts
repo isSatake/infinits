@@ -48,10 +48,16 @@ export type Repeat = {
 
 export type MusicalElement = Note | Rest | Bar;
 
-export const kClefs = ["g", "f", "c"] as const;
+export const clefPitches = ["G", "F", "C"] as const;
 export type Clef = {
   type: "clef";
-  pitch: (typeof kClefs)[number];
+  pitch: (typeof clefPitches)[number];
+  keySigOffset: Pitch;
+};
+export const clefs: Record<(typeof clefPitches)[number], Clef> = {
+  G: { type: "clef", pitch: "G", keySigOffset: 0 },
+  C: { type: "clef", pitch: "C", keySigOffset: -7 },
+  F: { type: "clef", pitch: "F", keySigOffset: -14 },
 };
 
 export type Staff = { type: "staff"; clef: Clef; keySignature: KeySignature };
@@ -102,7 +108,11 @@ export const keySignatures: Record<
   },
   F: { root: { pitch: 3 }, acc: "flat", pitches: [6] },
   Bb: { root: { pitch: 6, accidental: "flat" }, acc: "flat", pitches: [6, 9] },
-  Eb: { root: { pitch: 2, accidental: "flat" }, acc: "flat", pitches: [6, 9, 5] },
+  Eb: {
+    root: { pitch: 2, accidental: "flat" },
+    acc: "flat",
+    pitches: [6, 9, 5],
+  },
   Ab: {
     root: { pitch: 5, accidental: "flat" },
     acc: "flat",
