@@ -60,7 +60,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   return (
     <>
       <div className="header">
-        {mode === "default" && <button onClick={onClose}>Cancel</button>}
+        {mode === "default" && <button onClick={onClose}>Done</button>}
         {mode === "text" && (
           <>
             <button onClick={() => setMode("default")}>Cancel</button>
@@ -117,13 +117,13 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   onClose,
 }) => {
   const rootObjs = useRootObjects();
+  const staff = rootObjs.get(staffId);
   const onClickDelete = () => {
     rootObjs.remove(staffId);
     onClose();
   };
   const onClickChangeClef = () => {
-    const staff = rootObjs.get(staffId);
-    if (!staff || staff.type !== "staff") return;
+    if (staff?.type !== "staff") return;
     const { clef } = staff.staff;
     const nextClef =
       clefPitches[(clefPitches.indexOf(clef.pitch) + 1) % clefPitches.length];
@@ -138,11 +138,15 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   return (
     <>
       <div className="header">
-        <button onClick={onClose}>Cancel</button>
+        <button onClick={onClose}>Done</button>
       </div>
       <div className="body">
-        <button {...useChangeKeyPreviewHandlers()}>Change Key</button>
-        <button onClick={onClickChangeClef}>Change Clef</button>
+        {staff?.type === "staff" && (
+          <>
+            <button {...useChangeKeyPreviewHandlers()}>Change Key</button>
+            <button onClick={onClickChangeClef}>Change Clef</button>
+          </>
+        )}
         <button onClick={onClickDelete}>Delete</button>
       </div>
     </>
