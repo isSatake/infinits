@@ -3,13 +3,12 @@ import { Point } from "@/lib/geometry";
 import { CaretStyle } from "@/layout/types";
 import { atom } from "jotai";
 import { useEffect, useRef, useState } from "react";
-import { StaffStyle } from "../layout/types";
-import { RootObj } from "@/object";
+import { RootObj, StaffObject } from "@/object";
 
 // PreviewCanvasの表示
 export type PreviewState = {
   canvasCenter: Point;
-  staff: StaffStyle;
+  staff: StaffObject;
   elements: MusicalElement[];
   insertedIndex: number;
   offsetted: boolean;

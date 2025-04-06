@@ -1,4 +1,5 @@
 import { clefPitches, clefs } from "@/core/types";
+import { useChangeKeyPreviewHandlers } from "@/hooks/input";
 import { useRootObjects } from "@/hooks/root-obj";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
@@ -130,10 +131,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
       if (staff.type !== "staff") return staff;
       return {
         ...staff,
-        staff: {
-          ...staff.staff,
-          clef: clefs[nextClef],
-        },
+        staff: { ...staff.staff, clef: clefs[nextClef] },
       };
     });
   };
@@ -143,8 +141,9 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
         <button onClick={onClose}>Cancel</button>
       </div>
       <div className="body">
-        <button onClick={onClickDelete}>Delete</button>
+        <button {...useChangeKeyPreviewHandlers()}>Change Key</button>
         <button onClick={onClickChangeClef}>Change Clef</button>
+        <button onClick={onClickDelete}>Delete</button>
       </div>
     </>
   );
