@@ -92,7 +92,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
       if (staff?.type !== "staff") return;
       console.log(`${rootName}${root.accidental ?? ""}${type}`);
       // composeElements
-      const pitches = chordToPitchAcc({ root, type }, keySignatures.C);
+      const pitches = chordToPitchAcc({ root, type }, staff.staff.keySignature);
       const { elements, insertedIndex, caretAdvance } =
         composeElements(pitches);
       setCaret({
