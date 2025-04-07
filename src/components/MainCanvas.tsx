@@ -36,18 +36,19 @@ import {
   beamModeAtom,
   lastKeySigAtom,
   lastClefAtom,
+  rootObjMapAtom,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { buildConnectionStyle } from "@/layout/staff";
-import { useRootObjects } from "@/hooks/root-obj";
 import { determineTextPaintStyle } from "@/layout/text";
 import { determineFilePaintStyle } from "@/layout/file";
 import { usePrevious } from "@/lib/hooks";
 import { normalizeBeams } from "@/core/beam-2";
 import { clefs, keySignatures } from "@/core/types";
+import { useMapAtom } from "@/hooks/map-atom";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
@@ -82,7 +83,7 @@ export const MainCanvas = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const rootObjs = useRootObjects();
+  const rootObjs = useMapAtom(rootObjMapAtom);
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -122,7 +123,7 @@ export const MainCanvas = () => {
     for (const [id, { position }] of rootObjs.map) {
       let toPos;
       if (uncommitedConnection?.from === id) {
-        toPos = uncommitedConnection.position;
+        toPos = uncommitedConnection.toPosition;
         const fromStyle = map
           .get(id)
           ?.find(
@@ -285,7 +286,7 @@ const useMainPointerHandler = () => {
   const styleMap = useAtomValue(paintStyleMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
-  const rootObjs = useRootObjects();
+  const rootObjs = useMapAtom(rootObjMapAtom);
   const [connections, setConnections] = useAtom(connectionAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getRootObjIdOnPoint = usePointingRootObjId();
@@ -382,12 +383,12 @@ const useMainPointerHandler = () => {
   );
 
   const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
-    const { isNew, rootObjId: from, point: position } = args;
+    const { isNew, rootObjId: from, point: toPosition } = args;
     if (!isNew) {
       connections.delete(from);
       setConnections(connections);
     }
-    setUncommitedConnection({ from, position });
+    setUncommitedConnection({ from, toPosition });
   };
 
   const onConnectRootObj = (args: DesktopStateProps["connectRootObj"]) => {
@@ -510,11 +511,11 @@ const usePointingRootObjId = (): ((desktopPoint: Point) => {
   caretIdx?: number;
 } | void) => {
   const styleMap = useAtomValue(paintStyleMapAtom);
-  const objs = useRootObjects();
+  const rootObjs = useMapAtom(rootObjMapAtom);
   return (
     desktopPoint: Point
   ): { rootObjId: number; caretIdx?: number } | void => {
-    for (const [id, obj] of objs.map) {
+    for (const [id, obj] of rootObjs.map) {
       const styles = styleMap.get(id);
       if (!styles) {
         continue;
