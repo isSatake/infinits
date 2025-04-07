@@ -33,7 +33,7 @@ export type DesktopStateProps = {
   ctxMenuStaff: { staffId: number; htmlPoint: Point };
   moveRootObj: { id: number; offset: Point; point: Point };
   focusRootObj: { rootObjId: number; caretIdx?: number };
-  moveConnection: { isNew: boolean; rootObjId: number; point: Point };
+  moveConnection: { rootObjId: number; point: Point; id?: number };
   connectRootObj: { from: number; to: number };
 };
 
@@ -69,9 +69,9 @@ export class DesktopStateMachine {
 
   private _getConnectionOnPoint: (
     point: Point
-  ) => { from: number; to: number } | void = () => {};
+  ) => { id: number; from: number; to: number } | void = () => {};
   set getConnectionOnPoint(
-    fn: (point: Point) => { from: number; to: number } | void
+    fn: (point: Point) => { id: number; from: number; to: number } | void
   ) {
     this._getConnectionOnPoint = fn;
   }
@@ -144,9 +144,9 @@ export class DesktopStateMachine {
         if (connection) {
           this.state = {
             type: "moveConnection",
-            isNew: false,
             rootObjId: connection.from,
             point,
+            id: connection.id,
           };
         } else {
           const ret = this._getRootObjOnPoint(point);
@@ -159,7 +159,6 @@ export class DesktopStateMachine {
             if (this._isPointingRootObjTail(point, ret?.id)) {
               this.state = {
                 type: "moveConnection",
-                isNew: true,
                 rootObjId: ret.id,
                 point,
               };

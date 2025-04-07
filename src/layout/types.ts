@@ -113,10 +113,12 @@ export type FileStyle = {
 export type RootObjStyle = StaffStyle | TextStyle | FileStyle;
 export type ConnectionStyle = {
   type: "connection";
-  toId?: number;
   position: Point;
   to: Point;
-};
+} & (
+  | { isUncommited: true }
+  | { isUncommited: false; id: number; toId: number }
+);
 export type Pointing = { index: number; type: PointingType };
 type PointingType = "note" | "rest" | "bar" | "clef";
 export type CaretOption = {

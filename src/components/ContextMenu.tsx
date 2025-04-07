@@ -1,6 +1,6 @@
 import { clefPitches, clefs } from "@/core/types";
 import { useChangeKeyPreviewHandlers } from "@/hooks/input";
-import { useMapAtom } from "@/hooks/map-atom";
+import { useObjIdMapAtom } from "@/hooks/map-atom";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
 import { contextMenuAtom, lastClefAtom, rootObjMapAtom } from "@/state/atom";
@@ -30,7 +30,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   desktopPoint,
   onClose,
 }) => {
-  const rootObjs = useMapAtom(rootObjMapAtom);
+  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
   const [mode, setMode] = useState<"default" | "text">("default");
   const [text, setText] = useState("");
 
@@ -117,7 +117,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   onClose,
 }) => {
   const setLastClef = useSetAtom(lastClefAtom);
-  const rootObjs = useMapAtom(rootObjMapAtom);
+  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
   const staff = rootObjs.get(staffId);
   const onClickDelete = () => {
     rootObjs.remove(staffId);

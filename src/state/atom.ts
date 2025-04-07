@@ -46,8 +46,6 @@ export const connectionsAtom = atom<Map<number, { from: number; to: number }>>(
 );
 export const rootObjIdConnectionsAtom = atom<Map<number, number[]>>(new Map());
 
-export const connectionAtom = atom<Map<number, number[]>>(new Map());
-
 export const uncommitedStaffConnectionAtom = atom<
   { from: number; toPosition: Point } | undefined
 >(undefined);

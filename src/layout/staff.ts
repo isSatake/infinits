@@ -2,10 +2,20 @@ import { bStaffHeight } from "@/font/bravura";
 import { Point } from "@/lib/geometry";
 import { ConnectionStyle, PaintStyle } from "./types";
 
-export const buildConnectionStyle: (p: {
-  from: { position: Point; width: number };
-  to: { position: Point; id?: number };
-}) => PaintStyle<ConnectionStyle> = (p) => {
+export const buildConnectionStyle: (
+  p:
+    | {
+        isUncommited: false;
+        id: number;
+        from: { position: Point; width: number };
+        to: { position: Point; id: number };
+      }
+    | {
+        isUncommited: true;
+        from: { position: Point; width: number };
+        to: { position: Point };
+      }
+) => PaintStyle<ConnectionStyle> = (p) => {
   const { from, to } = p;
   // fromObjPosからの相対座標
   const toPoint: Point = {
@@ -15,9 +25,11 @@ export const buildConnectionStyle: (p: {
   const connectionStyle: PaintStyle<ConnectionStyle> = {
     element: {
       type: "connection",
-      toId: to.id,
       position: { x: from.position.x + from.width, y: from.position.y },
       to: toPoint,
+      ...(p.isUncommited
+        ? { isUncommited: true }
+        : { isUncommited: false, id: p.id, toId: p.to.id }),
     },
     width: toPoint.x,
     bbox: {

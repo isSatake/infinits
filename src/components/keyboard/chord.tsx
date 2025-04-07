@@ -20,7 +20,7 @@ import { convertPitchToRoot } from "@/core/pitch";
 import { chordToPitchAcc } from "@/core/chord";
 import * as tone from "@/player/tone";
 import { useElementsComposer } from "@/hooks/input";
-import { useMapAtom } from "@/hooks/map-atom";
+import { useObjIdMapAtom } from "@/hooks/map-atom";
 
 export const ChordSelector = () => {
   const [chordSelection, setChordSelection] = useAtom(chordSelectionAtom);
@@ -90,7 +90,7 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
   const composeElements = useElementsComposer(duration);
-  const staff = useMapAtom(rootObjMapAtom).get(caret.rootObjId);
+  const staff = useObjIdMapAtom(rootObjMapAtom).get(caret.rootObjId);
   const handlers = usePointerHandler({
     onUp: () => {
       if (staff?.type !== "staff") return;

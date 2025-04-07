@@ -4,19 +4,21 @@ import { useCallback } from "react";
 
 let id = 0;
 
-export const useMapAtom = <T>(
+export const useObjIdMapAtom = <T>(
   atom: PrimitiveAtom<Map<number, T>>
 ): {
   map: Map<number, T>;
   get: (id: number) => T | undefined;
-  add: (obj: T) => void;
+  add: (obj: T) => number;
   update: (id: number, fn: (obj: T) => T) => void;
   remove: (id: number) => void;
 } => {
   const [map, setMap] = useAtom(atom);
   const add = (obj: T) => {
-    map.set(id++, obj);
+    const _id = id++;
+    map.set(_id, obj);
     setMap(new Map(map));
+    return _id;
   };
   const get = useCallback((id: number) => map.get(id), [map]);
   const update = useCallback(
