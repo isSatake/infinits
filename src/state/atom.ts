@@ -41,10 +41,13 @@ export const caretStyleAtom = atom<CaretStyle[]>([]);
 // staff id -> elements
 export const elementsAtom = atom<Map<number, MusicalElement[]>>(new Map());
 
-export const connectionAtom = atom<Map<number, number[]>>(new Map());
+export const connectionsAtom = atom<Map<number, { from: number; to: number }>>(
+  new Map()
+);
+export const rootObjIdConnectionsAtom = atom<Map<number, number[]>>(new Map());
 
 export const uncommitedStaffConnectionAtom = atom<
-  { from: number; position: Point } | undefined
+  { from: number; toPosition: Point } | undefined
 >(undefined);
 
 export type ContextMenu = {

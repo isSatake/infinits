@@ -30,24 +30,26 @@ import {
   contextMenuAtom,
   elementsAtom,
   focusAtom,
-  connectionAtom,
   uncommitedStaffConnectionAtom,
   useFocusHighlighted,
   beamModeAtom,
   lastKeySigAtom,
   lastClefAtom,
+  rootObjMapAtom,
+  connectionsAtom,
+  rootObjIdConnectionsAtom,
 } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
 import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
 import { buildConnectionStyle } from "@/layout/staff";
-import { useRootObjects } from "@/hooks/root-obj";
 import { determineTextPaintStyle } from "@/layout/text";
 import { determineFilePaintStyle } from "@/layout/file";
 import { usePrevious } from "@/lib/hooks";
 import { normalizeBeams } from "@/core/beam-2";
 import { clefs, keySignatures } from "@/core/types";
+import { useObjIdMapAtom } from "@/hooks/map-atom";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
@@ -67,7 +69,8 @@ export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [elements, setElements] = useAtom(elementsAtom);
   const [styleMap, setStyleMap] = useAtom(paintStyleMapAtom);
-  const connectionMap = useAtomValue(connectionAtom);
+  const connections = useObjIdMapAtom(connectionsAtom);
+  const rootObjIdConnections = useObjIdMapAtom(rootObjIdConnectionsAtom);
   const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
   const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
@@ -82,7 +85,7 @@ export const MainCanvas = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const rootObjs = useRootObjects();
+  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -122,7 +125,7 @@ export const MainCanvas = () => {
     for (const [id, { position }] of rootObjs.map) {
       let toPos;
       if (uncommitedConnection?.from === id) {
-        toPos = uncommitedConnection.position;
+        toPos = uncommitedConnection.toPosition;
         const fromStyle = map
           .get(id)
           ?.find(
@@ -136,17 +139,22 @@ export const MainCanvas = () => {
         }
         map.get(id)?.push(
           buildConnectionStyle({
+            isUncommited: true,
             from: { position, width: fromStyle.width },
             to: { position: toPos },
           })
         );
       }
-      const connections = connectionMap.get(id);
-      if (connections === undefined) {
+      const connectionIds = rootObjIdConnections.get(id);
+      if (connectionIds === undefined) {
         continue;
       }
-      for (const toId of connections) {
-        const toPos = rootObjs.get(toId)?.position;
+      for (const connectionId of connectionIds) {
+        const connection = connections.get(connectionId);
+        if (!connection) {
+          continue;
+        }
+        const toPos = rootObjs.get(connection.to)?.position;
         if (!toPos) {
           continue;
         }
@@ -163,8 +171,10 @@ export const MainCanvas = () => {
         }
         map.get(id)?.push(
           buildConnectionStyle({
+            isUncommited: false,
+            id: connectionId,
             from: { position, width: fromStyle.width },
-            to: { position: toPos, id: toId },
+            to: { position: toPos, id: connection.to },
           })
         );
       }
@@ -172,7 +182,14 @@ export const MainCanvas = () => {
 
     console.log("new style map", map);
     setStyleMap(map);
-  }, [rootObjs.map, connectionMap, uncommitedConnection, elements, pointing]);
+  }, [
+    rootObjs.map,
+    connections.map,
+    rootObjIdConnections.map,
+    uncommitedConnection,
+    elements,
+    pointing,
+  ]);
 
   // caret style
   useEffect(() => {
@@ -285,8 +302,9 @@ const useMainPointerHandler = () => {
   const styleMap = useAtomValue(paintStyleMapAtom);
   const setPopover = useSetAtom(contextMenuAtom);
   const setCarets = useSetAtom(focusAtom);
-  const rootObjs = useRootObjects();
-  const [connections, setConnections] = useAtom(connectionAtom);
+  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
+  const connections = useObjIdMapAtom(connectionsAtom);
+  const rootObjIdConnections = useAtomValue(rootObjIdConnectionsAtom);
   const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
   const getRootObjIdOnPoint = usePointingRootObjId();
   const lastKeySig = useAtomValue(lastKeySigAtom);
@@ -331,7 +349,7 @@ const useMainPointerHandler = () => {
     }
     for (const [id, v] of connStyleMap) {
       for (const _v of v) {
-        if (_v.element.toId === undefined) {
+        if (_v.element.isUncommited) {
           continue;
         }
         const d = distanceToLineSegment({
@@ -343,7 +361,7 @@ const useMainPointerHandler = () => {
           ),
         });
         if (!!d && d < bStaffHeight / 2) {
-          return { from: id, to: _v.element.toId };
+          return { id: _v.element.id, from: id, to: _v.element.toId };
         }
       }
     }
@@ -382,23 +400,17 @@ const useMainPointerHandler = () => {
   );
 
   const onMoveConnection = (args: DesktopStateProps["moveConnection"]) => {
-    const { isNew, rootObjId: from, point: position } = args;
-    if (!isNew) {
-      connections.delete(from);
-      setConnections(connections);
+    const { id, rootObjId: from, point: toPosition } = args;
+    if (!!id) {
+      connections.remove(id);
     }
-    setUncommitedConnection({ from, position });
+    setUncommitedConnection({ from, toPosition });
   };
 
   const onConnectRootObj = (args: DesktopStateProps["connectRootObj"]) => {
-    const { from, to } = args;
-    const v: number[] = connections.get(from) ?? [];
-    if (v.includes(to)) {
-      return;
-    }
-    v.push(to);
-    connections.set(from, v);
-    setConnections(connections);
+    const cId = connections.add(args);
+    const r = rootObjIdConnections.get(args.from);
+    rootObjIdConnections.set(args.from, [...(r ?? []), cId]);
     setUncommitedConnection(undefined);
   };
 
@@ -510,11 +522,11 @@ const usePointingRootObjId = (): ((desktopPoint: Point) => {
   caretIdx?: number;
 } | void) => {
   const styleMap = useAtomValue(paintStyleMapAtom);
-  const objs = useRootObjects();
+  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
   return (
     desktopPoint: Point
   ): { rootObjId: number; caretIdx?: number } | void => {
-    for (const [id, obj] of objs.map) {
+    for (const [id, obj] of rootObjs.map) {
       const styles = styleMap.get(id);
       if (!styles) {
         continue;

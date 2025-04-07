@@ -24,16 +24,16 @@ import {
   tieModeAtom,
   TieModes,
   lastKeySigAtom,
+  rootObjMapAtom,
 } from "@/state/atom";
 import { getPreviewScale, getPreviewWidth } from "@/layout/score-preferences";
 import { useAtomValue, useAtom, useSetAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { usePointerHandler } from "./hooks";
-import * as bravura from "@/font/bravura";
 import * as tone from "@/player/tone";
-import { useRootObjects } from "./root-obj";
 import { pitchByDistance, yScaleToPitch } from "@/layout/pitch";
 import { clamp } from "@/lib/number";
+import { useObjIdMapAtom } from "./map-atom";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;
@@ -150,7 +150,7 @@ export const usePreviewHandlers = (duration: Duration) => {
   const composeElements = useElementsComposer(duration);
   const [caret, setCaret] = useAtom(focusAtom);
   const [elMap, setElements] = useAtom(elementsAtom);
-  const staff = useRootObjects().get(caret.rootObjId);
+  const staff = useObjIdMapAtom(rootObjMapAtom).get(caret.rootObjId);
   const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({
@@ -231,8 +231,8 @@ export const useChangeKeyPreviewHandlers = () => {
   const [preview, setPreview] = useAtom(previewAtom);
   const caret = useAtomValue(focusAtom);
   const elMap = useAtomValue(elementsAtom);
-  const objs = useRootObjects();
-  const staff = objs.get(caret.rootObjId);
+  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
+  const staff = rootObjs.get(caret.rootObjId);
   const setLastKeySig = useSetAtom(lastKeySigAtom);
 
   return usePointerHandler({
@@ -273,7 +273,7 @@ export const useChangeKeyPreviewHandlers = () => {
       const dy = down.clientY - ev.clientY;
       const newKeySig = calcNewKeySig(staff.staff, dy);
       setLastKeySig(newKeySig);
-      objs.update(caret.rootObjId, (s) => {
+      rootObjs.update(caret.rootObjId, (s) => {
         if (s.type !== "staff") {
           return s;
         }

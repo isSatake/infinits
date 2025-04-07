@@ -1,25 +1,28 @@
-import { rootObjMapAtom } from "@/state/atom";
-import { RootObj } from "@/object";
 import { useAtom } from "jotai";
+import { PrimitiveAtom } from "jotai/vanilla";
 import { useCallback } from "react";
 
 let id = 0;
 
-export const useRootObjects = (): {
-  map: Map<number, RootObj>;
-  get: (id: number) => RootObj | undefined;
-  add: (obj: RootObj) => void;
-  update: (id: number, fn: (obj: RootObj) => RootObj) => void;
+export const useObjIdMapAtom = <T>(
+  atom: PrimitiveAtom<Map<number, T>>
+): {
+  map: Map<number, T>;
+  get: (id: number) => T | undefined;
+  add: (obj: T) => number;
+  update: (id: number, fn: (obj: T) => T) => void;
   remove: (id: number) => void;
 } => {
-  const [map, setMap] = useAtom(rootObjMapAtom);
-  const add = (obj: RootObj) => {
-    map.set(id++, obj);
+  const [map, setMap] = useAtom(atom);
+  const add = (obj: T) => {
+    const _id = id++;
+    map.set(_id, obj);
     setMap(new Map(map));
+    return _id;
   };
   const get = useCallback((id: number) => map.get(id), [map]);
   const update = useCallback(
-    (id: number, fn: (obj: RootObj) => RootObj) => {
+    (id: number, fn: (obj: T) => T) => {
       const obj = map.get(id);
       if (obj) {
         map.set(id, fn(obj));

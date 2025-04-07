@@ -1,15 +1,22 @@
-import { KeySignature, MusicalElement } from "@/core/types";
-import { connectionAtom, elementsAtom, focusAtom } from "@/state/atom";
+import { MusicalElement } from "@/core/types";
+import {
+  connectionsAtom,
+  elementsAtom,
+  focusAtom,
+  rootObjIdConnectionsAtom,
+  rootObjMapAtom,
+} from "@/state/atom";
 import { FileStyle } from "@/layout/types";
 import * as tone from "@/player/tone";
 import { useAtomValue } from "jotai";
-import { useRootObjects } from "./root-obj";
+import { useObjIdMapAtom } from "./map-atom";
 
 export const usePlayTone = () => {
-  const { map: rootObjs } = useRootObjects();
+  const { map: rootObjs } = useObjIdMapAtom(rootObjMapAtom);
   const { rootObjId } = useAtomValue(focusAtom);
   const elementsMap = useAtomValue(elementsAtom);
-  const connection = useAtomValue(connectionAtom);
+  const connections = useObjIdMapAtom(connectionsAtom);
+  const rootObjIdConnections = useAtomValue(rootObjIdConnectionsAtom);
 
   return () => {
     const fragments = new Map<
@@ -49,9 +56,10 @@ export const usePlayTone = () => {
       const fragment = fragments.get(prevId) ?? new Map();
       fragment.set(startId, (fragment.get(startId) ?? []).concat(elements));
       fragments.set(prevId, fragment);
-      const connectionIds = connection.get(currentId);
-      if (!connectionIds) return;
-      const [nextId, ...others] = connectionIds;
+      const connectedRootObjIds = (rootObjIdConnections.get(currentId) ?? [])
+        .map((id) => connections.get(id)?.to)
+        .filter((id) => id !== undefined);
+      const [nextId, ...others] = connectedRootObjIds;
       searchFragments(prevId, startId, nextId);
       others.map((_id) => searchFragments(currentId, _id, _id));
     };
