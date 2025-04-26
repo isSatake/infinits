@@ -1,10 +1,4 @@
-import {
-  Duration,
-  KeySignature,
-  MusicalElement,
-  PitchAcc,
-  rootNotes,
-} from "@/core/types";
+import { Duration, KeySignature, MusicalElement } from "@/core/types";
 import {
   Part,
   Player,
@@ -14,7 +8,7 @@ import {
   loaded,
   start,
 } from "tone";
-import { Frequency, Seconds, Time } from "tone/build/esm/core/type/Units";
+import { Time } from "tone/build/esm/core/type/Units";
 import { FileStyle } from "../layout/types";
 import { convert } from "./convert";
 
@@ -25,56 +19,52 @@ type CallBackElement =
       keySig: KeySignature;
       el: MusicalElement;
     }
-  | { type: "file"; time: Time; el: FileStyle };
-export type PlayFragment =
+  | { type: "file"; time: Time; el: File };
+export type PlaySegment =
   | {
       type: "staff";
       rootObjId: number;
       keySig: KeySignature;
       elements: MusicalElement[];
     }
-  | { type: "file"; rootObjId: number; element: FileStyle };
+  | {
+      type: "file";
+      rootObjId: number;
+      element: Pick<FileStyle, "file" | "duration">;
+    };
 
 // 複数パート対応
 export const multiPlay = async (
-  fragments: Map<
-    number, // prevId
-    Map<
-      number, // startId
-      PlayFragment[]
-    >
-  >
+  segmentsByPrevId: Map<number, PlaySegment[]>
 ) => {
   const parts: Part<CallBackElement>[] = [];
   // id -> ppq
   const ppqMap = new Map<number, number>();
 
-  for (const [prevFragmentId, _elements] of fragments) {
-    for (const [startId, elel] of _elements) {
-      const arr: CallBackElement[] = [];
-      let currentPPQ = ppqMap.get(prevFragmentId) ?? 0;
-      for (const hoge of elel) {
-        if (hoge.type === "file") {
-          arr.push({
-            type: "file",
-            time: `${currentPPQ}i`,
-            el: hoge.element,
-          });
-          currentPPQ += await calcPPQFromDurationSec(hoge.element.duration);
-          ppqMap.set(hoge.rootObjId, currentPPQ);
-        } else {
-          for (const el of hoge.elements) {
-            if (el.type !== "bar") {
-              arr.push({
-                type: "musicalElement",
-                time: `${currentPPQ}i`,
-                keySig: hoge.keySig,
-                el: { ...el, duration: el.duration },
-              });
-              currentPPQ += (Transport.PPQ * 4) / el.duration;
-            }
-            ppqMap.set(hoge.rootObjId, currentPPQ);
+  for (const [prevSegmentId, segments] of segmentsByPrevId) {
+    const arr: CallBackElement[] = [];
+    let currentPPQ = ppqMap.get(prevSegmentId) ?? 0;
+    for (const segment of segments) {
+      if (segment.type === "file") {
+        arr.push({
+          type: "file",
+          time: `${currentPPQ}i`,
+          el: segment.element.file,
+        });
+        currentPPQ += await calcPPQFromDurationSec(segment.element.duration);
+        ppqMap.set(segment.rootObjId, currentPPQ);
+      } else {
+        for (const musicalElement of segment.elements) {
+          if (musicalElement.type !== "bar") {
+            arr.push({
+              type: "musicalElement",
+              time: `${currentPPQ}i`,
+              keySig: segment.keySig,
+              el: musicalElement,
+            });
+            currentPPQ += (Transport.PPQ * 4) / musicalElement.duration;
           }
+          ppqMap.set(segment.rootObjId, currentPPQ);
         }
       }
       const part = new Part<CallBackElement>(partCallback, arr);
@@ -95,7 +85,7 @@ export const play = async (
   let currentPPQ = 0;
   for (const el of elements) {
     if (el.type === "file") {
-      arr.push({ type: "file", time: `${currentPPQ}i`, el });
+      arr.push({ type: "file", time: `${currentPPQ}i`, el: el.file });
       // FIXME: fileの再生時間からPPQを計算するべきか、他の方法があるのか
       currentPPQ += await calcPPQFromDurationSec(el.duration);
     } else if (el.type !== "bar") {
@@ -116,7 +106,7 @@ export const play = async (
 
 const partCallback: ToneEventCallback<CallBackElement> = (time, el) => {
   if (el.type === "file") {
-    playFile(el.el.file);
+    playFile(el.el);
   } else {
     const { keySig } = el;
     if (el.el.type === "note") {

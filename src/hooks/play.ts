@@ -1,4 +1,4 @@
-import { MusicalElement } from "@/core/types";
+import * as tone from "@/player/tone";
 import {
   connectionsAtom,
   elementsAtom,
@@ -6,31 +6,24 @@ import {
   rootObjIdConnectionsAtom,
   rootObjMapAtom,
 } from "@/state/atom";
-import { FileStyle } from "@/layout/types";
-import * as tone from "@/player/tone";
 import { useAtomValue } from "jotai";
 import { useObjIdMapAtom } from "./map-atom";
 
-export const usePlayTone = () => {
+export const usePlayTone: () => () => void = () => {
   const { map: rootObjs } = useObjIdMapAtom(rootObjMapAtom);
   const { rootObjId } = useAtomValue(focusAtom);
   const elementsMap = useAtomValue(elementsAtom);
   const connections = useObjIdMapAtom(connectionsAtom);
   const rootObjIdConnections = useAtomValue(rootObjIdConnectionsAtom);
 
-  return () => {
-    const fragments = new Map<
-      number, // prevId
-      Map<
-        number, // startId
-        tone.PlayFragment[] // currentId -> elements
-      >
-    >();
+  const play = () => {
+    const segmentsByPrevId = new Map<number, tone.PlaySegment[]>();
     const processedIds: number[] = [];
-    const processId = (rootObjId: number) => {
+    const processId: (rootObjId: number) => tone.PlaySegment | undefined = (
+      rootObjId: number
+    ) => {
       const obj = rootObjs.get(rootObjId);
       if (!obj) return;
-      const elements: (MusicalElement | FileStyle)[] = [];
       if (obj?.type === "file") {
         return { type: "file", rootObjId, element: obj };
       }
@@ -42,7 +35,6 @@ export const usePlayTone = () => {
           elements: elementsMap.get(rootObjId) ?? [],
         };
       }
-      return { rootObjId, elements };
     };
     const searchFragments = (
       prevId: number,
@@ -53,9 +45,8 @@ export const usePlayTone = () => {
       processedIds.push(currentId);
       const elements = processId(currentId);
       if (!elements) return;
-      const fragment = fragments.get(prevId) ?? new Map();
-      fragment.set(startId, (fragment.get(startId) ?? []).concat(elements));
-      fragments.set(prevId, fragment);
+      const segment = segmentsByPrevId.get(prevId);
+      segmentsByPrevId.set(prevId, (segment ?? []).concat(elements));
       const connectedRootObjIds = (rootObjIdConnections.get(currentId) ?? [])
         .map((id) => connections.get(id)?.to)
         .filter((id) => id !== undefined);
@@ -64,6 +55,7 @@ export const usePlayTone = () => {
       others.map((_id) => searchFragments(currentId, _id, _id));
     };
     searchFragments(-1, rootObjId, rootObjId);
-    tone.multiPlay(fragments);
+    tone.multiPlay(segmentsByPrevId);
   };
+  return play;
 };
