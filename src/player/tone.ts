@@ -1,10 +1,4 @@
-import {
-  Duration,
-  KeySignature,
-  MusicalElement,
-  PitchAcc,
-  rootNotes,
-} from "@/core/types";
+import { Duration, KeySignature, MusicalElement, Note } from "@/core/types";
 import {
   Part,
   Player,
@@ -14,67 +8,93 @@ import {
   loaded,
   start,
 } from "tone";
-import { Frequency, Seconds, Time } from "tone/build/esm/core/type/Units";
+import { Subdivision, Time, TimeObject } from "tone/build/esm/core/type/Units";
 import { FileStyle } from "../layout/types";
 import { convert } from "./convert";
 
 type CallBackElement =
-  | {
-      type: "musicalElement";
-      time: Time;
-      keySig: KeySignature;
-      el: MusicalElement;
-    }
-  | { type: "file"; time: Time; el: FileStyle };
-export type PlayFragment =
+  | { type: "file"; time: Time; el: File }
+  | ({ type: "note"; time: Time; duration: Time; keySig: KeySignature } & Pick<
+      Note,
+      "pitches"
+    >)
+  | { type: "rest"; time: Time };
+export type PlaySegment =
   | {
       type: "staff";
       rootObjId: number;
       keySig: KeySignature;
       elements: MusicalElement[];
     }
-  | { type: "file"; rootObjId: number; element: FileStyle };
+  | {
+      type: "file";
+      rootObjId: number;
+      element: Pick<FileStyle, "file" | "duration">;
+    };
 
 // 複数パート対応
 export const multiPlay = async (
-  fragments: Map<
-    number, // prevId
-    Map<
-      number, // startId
-      PlayFragment[]
-    >
-  >
+  segmentsByPrevId: Map<number, PlaySegment[]>
 ) => {
   const parts: Part<CallBackElement>[] = [];
   // id -> ppq
   const ppqMap = new Map<number, number>();
 
-  for (const [prevFragmentId, _elements] of fragments) {
-    for (const [startId, elel] of _elements) {
-      const arr: CallBackElement[] = [];
-      let currentPPQ = ppqMap.get(prevFragmentId) ?? 0;
-      for (const hoge of elel) {
-        if (hoge.type === "file") {
-          arr.push({
-            type: "file",
-            time: `${currentPPQ}i`,
-            el: hoge.element,
-          });
-          currentPPQ += await calcPPQFromDurationSec(hoge.element.duration);
-          ppqMap.set(hoge.rootObjId, currentPPQ);
-        } else {
-          for (const el of hoge.elements) {
-            if (el.type !== "bar") {
-              arr.push({
-                type: "musicalElement",
-                time: `${currentPPQ}i`,
-                keySig: hoge.keySig,
-                el: { ...el, duration: el.duration },
-              });
-              currentPPQ += (Transport.PPQ * 4) / el.duration;
+  for (const [prevSegmentId, segments] of segmentsByPrevId) {
+    const arr: CallBackElement[] = [];
+    let currentPPQ = ppqMap.get(prevSegmentId) ?? 0;
+    for (const segment of segments) {
+      if (segment.type === "file") {
+        arr.push({
+          type: "file",
+          time: `${currentPPQ}i`,
+          el: segment.element.file,
+        });
+        currentPPQ += await calcPPQFromDurationSec(segment.element.duration);
+        ppqMap.set(segment.rootObjId, currentPPQ);
+      } else {
+        let tiedDuration: TimeObject | undefined = undefined;
+        let tiedPPQ = 0;
+        for (const musicalElement of segment.elements) {
+          if (musicalElement.type === "note") {
+            if (musicalElement.tie) {
+              const key: Subdivision = `${musicalElement.duration}n`;
+              if (tiedDuration?.[key]) {
+                tiedDuration[key] += 1;
+              } else {
+                tiedDuration = { ...(tiedDuration ?? {}), [key]: 1 };
+              }
+              tiedPPQ += (Transport.PPQ * 4) / musicalElement.duration;
+              if (musicalElement.tie === "end") {
+                arr.push({
+                  type: "note",
+                  time: `${currentPPQ}i`,
+                  keySig: segment.keySig,
+                  pitches: musicalElement.pitches,
+                  duration: tiedDuration,
+                });
+                currentPPQ += tiedPPQ;
+                tiedDuration = undefined;
+                tiedPPQ = 0;
+              }
+              continue;
             }
-            ppqMap.set(hoge.rootObjId, currentPPQ);
+            arr.push({
+              type: "note",
+              time: `${currentPPQ}i`,
+              keySig: segment.keySig,
+              pitches: musicalElement.pitches,
+              duration: `${musicalElement.duration}n`,
+            });
+            currentPPQ += (Transport.PPQ * 4) / musicalElement.duration;
+          } else if (musicalElement.type === "rest") {
+            arr.push({
+              type: "rest",
+              time: `${currentPPQ}i`,
+            });
+            currentPPQ += (Transport.PPQ * 4) / musicalElement.duration;
           }
+          ppqMap.set(segment.rootObjId, currentPPQ);
         }
       }
       const part = new Part<CallBackElement>(partCallback, arr);
@@ -86,6 +106,7 @@ export const multiPlay = async (
   Transport.start();
 };
 
+// keyboardしか参照していないので実質単音プレビュー
 export const play = async (
   keySig: KeySignature,
   elements: (MusicalElement | FileStyle)[],
@@ -93,18 +114,46 @@ export const play = async (
 ) => {
   const arr: CallBackElement[] = [];
   let currentPPQ = 0;
+  let tiedDuration: TimeObject | undefined = undefined;
+  let tiedPPQ = 0;
   for (const el of elements) {
     if (el.type === "file") {
-      arr.push({ type: "file", time: `${currentPPQ}i`, el });
+      arr.push({ type: "file", time: `${currentPPQ}i`, el: el.file });
       // FIXME: fileの再生時間からPPQを計算するべきか、他の方法があるのか
       currentPPQ += await calcPPQFromDurationSec(el.duration);
-    } else if (el.type !== "bar") {
+    } else if (el.type === "note") {
+      if (el.tie) {
+        const key: Subdivision = `${el.duration}n`;
+        if (tiedDuration?.[key]) {
+          tiedDuration[key] += 1;
+        } else {
+          tiedDuration = { ...(tiedDuration ?? {}), [key]: 1 };
+        }
+        tiedPPQ += (Transport.PPQ * 4) / el.duration;
+        if (el.tie === "end") {
+          arr.push({
+            type: "note",
+            time: `${currentPPQ}i`,
+            keySig,
+            pitches: el.pitches,
+            duration: tiedDuration,
+          });
+          currentPPQ += tiedPPQ;
+          tiedDuration = undefined;
+          tiedPPQ = 0;
+        }
+        continue;
+      }
       arr.push({
-        type: "musicalElement",
+        type: "note",
         time: `${currentPPQ}i`,
         keySig,
-        el: { ...el, duration: el.duration ?? duration },
+        pitches: el.pitches,
+        duration: `${duration ?? el.duration}n`,
       });
+      currentPPQ += (Transport.PPQ * 4) / el.duration;
+    } else if (el.type === "rest") {
+      arr.push({ type: "rest", time: `${currentPPQ}i` });
       currentPPQ += (Transport.PPQ * 4) / el.duration;
     }
   }
@@ -116,16 +165,14 @@ export const play = async (
 
 const partCallback: ToneEventCallback<CallBackElement> = (time, el) => {
   if (el.type === "file") {
-    playFile(el.el.file);
-  } else {
+    playFile(el.el);
+  } else if (el.type === "note") {
     const { keySig } = el;
-    if (el.el.type === "note") {
-      sampler.triggerAttackRelease(
-        el.el.pitches.map((v) => convert(keySig, v)),
-        `${el.el.duration}n`,
-        time
-      );
-    }
+    sampler.triggerAttackRelease(
+      el.pitches.map((v) => convert(keySig, v)),
+      el.duration,
+      time
+    );
   }
 };
 
