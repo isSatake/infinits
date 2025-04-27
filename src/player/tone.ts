@@ -1,4 +1,4 @@
-import { Duration, KeySignature, MusicalElement } from "@/core/types";
+import { Duration, KeySignature, MusicalElement, Note } from "@/core/types";
 import {
   Part,
   Player,
@@ -13,13 +13,12 @@ import { FileStyle } from "../layout/types";
 import { convert } from "./convert";
 
 type CallBackElement =
-  | {
-      type: "musicalElement";
-      time: Time;
-      keySig: KeySignature;
-      el: MusicalElement;
-    }
-  | { type: "file"; time: Time; el: File };
+  | { type: "file"; time: Time; el: File }
+  | ({ type: "note"; time: Time; duration: Time; keySig: KeySignature } & Pick<
+      Note,
+      "pitches"
+    >)
+  | { type: "rest"; time: Time };
 export type PlaySegment =
   | {
       type: "staff";
@@ -55,14 +54,20 @@ export const multiPlay = async (
         ppqMap.set(segment.rootObjId, currentPPQ);
       } else {
         for (const musicalElement of segment.elements) {
-          if (musicalElement.type !== "bar") {
+          if (musicalElement.type === "note") {
             arr.push({
-              type: "musicalElement",
+              type: "note",
               time: `${currentPPQ}i`,
               keySig: segment.keySig,
-              el: musicalElement,
+              pitches: musicalElement.pitches,
+              duration: `${musicalElement.duration}n`,
             });
             currentPPQ += (Transport.PPQ * 4) / musicalElement.duration;
+          } else if (musicalElement.type === "rest") {
+            arr.push({
+              type: "rest",
+              time: `${currentPPQ}i`,
+            });
           }
           ppqMap.set(segment.rootObjId, currentPPQ);
         }
@@ -83,18 +88,23 @@ export const play = async (
 ) => {
   const arr: CallBackElement[] = [];
   let currentPPQ = 0;
+  let tied = 0;
   for (const el of elements) {
     if (el.type === "file") {
       arr.push({ type: "file", time: `${currentPPQ}i`, el: el.file });
       // FIXME: fileの再生時間からPPQを計算するべきか、他の方法があるのか
       currentPPQ += await calcPPQFromDurationSec(el.duration);
-    } else if (el.type !== "bar") {
+    } else if (el.type === "note") {
       arr.push({
-        type: "musicalElement",
+        type: "note",
         time: `${currentPPQ}i`,
         keySig,
-        el: { ...el, duration: el.duration ?? duration },
+        pitches: el.pitches,
+        duration: `${el.duration}n`,
       });
+      currentPPQ += (Transport.PPQ * 4) / el.duration;
+    } else if (el.type === "rest") {
+      arr.push({ type: "rest", time: `${currentPPQ}i` });
       currentPPQ += (Transport.PPQ * 4) / el.duration;
     }
   }
@@ -107,15 +117,13 @@ export const play = async (
 const partCallback: ToneEventCallback<CallBackElement> = (time, el) => {
   if (el.type === "file") {
     playFile(el.el);
-  } else {
+  } else if (el.type === "note") {
     const { keySig } = el;
-    if (el.el.type === "note") {
-      sampler.triggerAttackRelease(
-        el.el.pitches.map((v) => convert(keySig, v)),
-        `${el.el.duration}n`,
-        time
-      );
-    }
+    sampler.triggerAttackRelease(
+      el.pitches.map((v) => convert(keySig, v)),
+      el.duration,
+      time
+    );
   }
 };
 
