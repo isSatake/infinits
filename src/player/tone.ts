@@ -8,7 +8,7 @@ import {
   loaded,
   start,
 } from "tone";
-import { Time } from "tone/build/esm/core/type/Units";
+import { Subdivision, Time, TimeObject } from "tone/build/esm/core/type/Units";
 import { FileStyle } from "../layout/types";
 import { convert } from "./convert";
 
@@ -53,8 +53,32 @@ export const multiPlay = async (
         currentPPQ += await calcPPQFromDurationSec(segment.element.duration);
         ppqMap.set(segment.rootObjId, currentPPQ);
       } else {
+        let tiedDuration: TimeObject | undefined = undefined;
+        let tiedPPQ = 0;
         for (const musicalElement of segment.elements) {
           if (musicalElement.type === "note") {
+            if (musicalElement.tie) {
+              const key: Subdivision = `${musicalElement.duration}n`;
+              if (tiedDuration?.[key]) {
+                tiedDuration[key] += 1;
+              } else {
+                tiedDuration = { ...(tiedDuration ?? {}), [key]: 1 };
+              }
+              tiedPPQ += (Transport.PPQ * 4) / musicalElement.duration;
+              if (musicalElement.tie === "end") {
+                arr.push({
+                  type: "note",
+                  time: `${currentPPQ}i`,
+                  keySig: segment.keySig,
+                  pitches: musicalElement.pitches,
+                  duration: tiedDuration,
+                });
+                currentPPQ += tiedPPQ;
+                tiedDuration = undefined;
+                tiedPPQ = 0;
+              }
+              continue;
+            }
             arr.push({
               type: "note",
               time: `${currentPPQ}i`,
@@ -68,6 +92,7 @@ export const multiPlay = async (
               type: "rest",
               time: `${currentPPQ}i`,
             });
+            currentPPQ += (Transport.PPQ * 4) / musicalElement.duration;
           }
           ppqMap.set(segment.rootObjId, currentPPQ);
         }
@@ -81,6 +106,7 @@ export const multiPlay = async (
   Transport.start();
 };
 
+// keyboardしか参照していないので実質単音プレビュー
 export const play = async (
   keySig: KeySignature,
   elements: (MusicalElement | FileStyle)[],
@@ -88,13 +114,36 @@ export const play = async (
 ) => {
   const arr: CallBackElement[] = [];
   let currentPPQ = 0;
-  let tied = 0;
+  let tiedDuration: TimeObject | undefined = undefined;
+  let tiedPPQ = 0;
   for (const el of elements) {
     if (el.type === "file") {
       arr.push({ type: "file", time: `${currentPPQ}i`, el: el.file });
       // FIXME: fileの再生時間からPPQを計算するべきか、他の方法があるのか
       currentPPQ += await calcPPQFromDurationSec(el.duration);
     } else if (el.type === "note") {
+      if (el.tie) {
+        const key: Subdivision = `${el.duration}n`;
+        if (tiedDuration?.[key]) {
+          tiedDuration[key] += 1;
+        } else {
+          tiedDuration = { ...(tiedDuration ?? {}), [key]: 1 };
+        }
+        tiedPPQ += (Transport.PPQ * 4) / el.duration;
+        if (el.tie === "end") {
+          arr.push({
+            type: "note",
+            time: `${currentPPQ}i`,
+            keySig,
+            pitches: el.pitches,
+            duration: tiedDuration,
+          });
+          currentPPQ += tiedPPQ;
+          tiedDuration = undefined;
+          tiedPPQ = 0;
+        }
+        continue;
+      }
       arr.push({
         type: "note",
         time: `${currentPPQ}i`,
