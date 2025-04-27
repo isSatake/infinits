@@ -100,7 +100,7 @@ export const play = async (
         time: `${currentPPQ}i`,
         keySig,
         pitches: el.pitches,
-        duration: `${el.duration}n`,
+        duration: `${duration ?? el.duration}n`,
       });
       currentPPQ += (Transport.PPQ * 4) / el.duration;
     } else if (el.type === "rest") {
