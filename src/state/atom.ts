@@ -1,28 +1,46 @@
-import {
-  ChordRoot,
-  Clef,
-  Duration,
-  KeySignature,
-  MusicalElement,
-} from "@/core/types";
-import { Point } from "@/lib/geometry";
+import { Clef, KeySignature, MusicalElement } from "@/core/types";
 import { CaretStyle } from "@/layout/types";
 import { atom } from "jotai";
 import { useEffect, useRef, useState } from "react";
-import { RootObj, StaffObject } from "@/object";
+import {
+  BeamModes,
+  ChordSelection,
+  ContextMenu,
+  DialogState,
+  FocusState,
+  NoteInputMode,
+  PreviewState,
+  TieModes,
+} from "./types";
+import { Point } from "@/lib/geometry";
+import { RootObj } from "@/object";
 
-// PreviewCanvasの表示
-export type PreviewState = {
-  canvasCenter: Point;
-  staff: StaffObject;
-  elements: MusicalElement[];
-  insertedIndex: number;
-  offsetted: boolean;
+export const objectAtom = {
+  rootObjMap: atom<Map<number, RootObj>>(new Map()),
+  // root obj (=staff) id -> elements
+  elements: atom<Map<number, MusicalElement[]>>(new Map()),
+  connections: atom<Map<number, { from: number; to: number }>>(new Map()),
+  rootObjIdConnections: atom<Map<number, number[]>>(new Map()),
+  uncommitedStaffConnection: atom<
+    { from: number; toPosition: Point } | undefined
+  >(undefined),
 };
-export const previewAtom = atom<PreviewState | undefined>(undefined);
 
-export type FocusState = { rootObjId: number; idx: number };
-export const focusAtom = atom<FocusState>({ rootObjId: 0, idx: 0 });
+export const uiAtom = {
+  preview: atom<PreviewState | undefined>(undefined),
+  focus: atom<FocusState>({ rootObjId: 0, idx: 0 }),
+  caretStyle: atom<CaretStyle[]>([]),
+  contextMenu: atom<ContextMenu | undefined>(undefined),
+  showDialog: atom<DialogState | undefined>(undefined),
+  accidentalModeIdx: atom<number>(0),
+  chordSelection: atom<ChordSelection | undefined>(undefined),
+  noteInputMode: atom<NoteInputMode>("note"),
+  beamMode: atom<BeamModes>("nobeam"),
+  tieMode: atom<TieModes>("notie"),
+  lastKeySig: atom<KeySignature | undefined>(undefined),
+  lastClef: atom<Clef | undefined>(undefined),
+};
+
 export const useFocusHighlighted = (focus: FocusState): boolean => {
   const [highlighted, setHighlighted] = useState<boolean>(true);
   const blinkTimerRef = useRef<number | null>(null);
@@ -35,57 +53,3 @@ export const useFocusHighlighted = (focus: FocusState): boolean => {
   }, [focus]);
   return highlighted;
 };
-
-export const caretStyleAtom = atom<CaretStyle[]>([]);
-
-// staff id -> elements
-export const elementsAtom = atom<Map<number, MusicalElement[]>>(new Map());
-
-export const connectionsAtom = atom<Map<number, { from: number; to: number }>>(
-  new Map()
-);
-export const rootObjIdConnectionsAtom = atom<Map<number, number[]>>(new Map());
-
-export const uncommitedStaffConnectionAtom = atom<
-  { from: number; toPosition: Point } | undefined
->(undefined);
-
-export type ContextMenu = {
-  htmlPoint: Point;
-} & (
-  | { type: "staff"; staffId: number }
-  | { type: "canvas"; desktopPoint: Point }
-);
-export const contextMenuAtom = atom<ContextMenu | undefined>(undefined);
-
-export type DialogState =
-  | {
-      type: "message";
-      title: string;
-      buttons: { label: string; onClick: () => void }[];
-    }
-  | {
-      type: "input";
-      placeholder: string;
-      buttons: { label: string; onClick: (value: string) => void }[];
-    };
-export const showDialogAtom = atom<DialogState | undefined>(undefined);
-
-export const accidentalModeIdxAtom = atom<number>(0);
-
-export type ChordSelection = { duration: Duration; root?: ChordRoot };
-export const chordSelectionAtom = atom<ChordSelection | undefined>(undefined);
-
-export type NoteInputMode = "note" | "rest" | "chord";
-export const noteInputModeAtom = atom<NoteInputMode>("note");
-
-export type BeamModes = "beam" | "nobeam";
-export const beamModeAtom = atom<BeamModes>("nobeam");
-
-export type TieModes = "tie" | "notie";
-export const tieModeAtom = atom<TieModes>("notie");
-
-export const rootObjMapAtom = atom<Map<number, RootObj>>(new Map());
-
-export const lastKeySigAtom = atom<KeySignature | undefined>(undefined);
-export const lastClefAtom = atom<Clef | undefined>(undefined);

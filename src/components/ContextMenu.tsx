@@ -3,12 +3,12 @@ import { useChangeKeyPreviewHandlers } from "@/hooks/input";
 import { useObjIdMapAtom } from "@/hooks/map-atom";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
-import { contextMenuAtom, lastClefAtom, rootObjMapAtom } from "@/state/atom";
+import { objectAtom, uiAtom } from "@/state/atom";
 import { useAtom, useSetAtom } from "jotai";
 import React, { FC, useCallback, useState } from "react";
 
 export const ContextMenu = () => {
-  const [popover, setPopover] = useAtom(contextMenuAtom);
+  const [popover, setPopover] = useAtom(uiAtom.contextMenu);
   const onClose = useCallback(() => setPopover(undefined), []);
 
   return (
@@ -30,7 +30,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   desktopPoint,
   onClose,
 }) => {
-  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
+  const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
   const [mode, setMode] = useState<"default" | "text">("default");
   const [text, setText] = useState("");
 
@@ -116,8 +116,8 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
   staffId,
   onClose,
 }) => {
-  const setLastClef = useSetAtom(lastClefAtom);
-  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
+  const setLastClef = useSetAtom(uiAtom.lastClef);
+  const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
   const staff = rootObjs.get(staffId);
   const onClickDelete = () => {
     rootObjs.remove(staffId);

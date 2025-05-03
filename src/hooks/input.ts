@@ -11,21 +11,7 @@ import {
   Staff,
 } from "@/core/types";
 import { kAccidentalModes } from "@/input";
-import {
-  focusAtom,
-  elementsAtom,
-  PreviewState,
-  caretStyleAtom,
-  previewAtom,
-  accidentalModeIdxAtom,
-  NoteInputMode,
-  noteInputModeAtom,
-  beamModeAtom,
-  tieModeAtom,
-  TieModes,
-  lastKeySigAtom,
-  rootObjMapAtom,
-} from "@/state/atom";
+import { objectAtom, uiAtom } from "@/state/atom";
 import { getPreviewScale, getPreviewWidth } from "@/layout/score-preferences";
 import { useAtomValue, useAtom, useSetAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
@@ -34,6 +20,7 @@ import * as tone from "@/player/tone";
 import { pitchByDistance, yScaleToPitch } from "@/layout/pitch";
 import { clamp } from "@/lib/number";
 import { useObjIdMapAtom } from "./map-atom";
+import { NoteInputMode, PreviewState, TieModes } from "@/state/types";
 
 const composeNewElement = (p: {
   mode: NoteInputMode;
@@ -48,7 +35,7 @@ const composeNewElement = (p: {
 
 // 和音をソート
 const useSortChord: () => (newEl: MusicalElement) => MusicalElement = () => {
-  const caret = useAtomValue(focusAtom);
+  const caret = useAtomValue(uiAtom.focus);
   const baseElements = useBaseElements();
   return useCallback(
     (newEl: MusicalElement) => {
@@ -71,8 +58,8 @@ const useSortChord: () => (newEl: MusicalElement) => MusicalElement = () => {
 };
 
 export const useBaseElements = () => {
-  const elements = useAtomValue(elementsAtom);
-  const caret = useAtomValue(focusAtom);
+  const elements = useAtomValue(objectAtom.elements);
+  const caret = useAtomValue(uiAtom.focus);
   return useMemo(
     () => [...(elements.get(caret.rootObjId) ?? [])],
     [elements, caret.rootObjId]
@@ -98,12 +85,12 @@ export const useElementsComposer: (duration: Duration) => (
 ) => Pick<PreviewState, "elements" | "insertedIndex" | "offsetted"> & {
   caretAdvance: number;
 } = (duration: Duration) => {
-  const caret = useAtomValue(focusAtom);
-  const caretStyle = useAtomValue(caretStyleAtom);
+  const caret = useAtomValue(uiAtom.focus);
+  const caretStyle = useAtomValue(uiAtom.caretStyle);
   const baseElements = useBaseElements();
-  const inputMode = useAtomValue(noteInputModeAtom);
-  const beamMode = useAtomValue(beamModeAtom);
-  const tieMode = useAtomValue(tieModeAtom);
+  const inputMode = useAtomValue(uiAtom.noteInputMode);
+  const beamMode = useAtomValue(uiAtom.beamMode);
+  const tieMode = useAtomValue(uiAtom.tieMode);
   const sortChord = useSortChord();
   return useCallback(
     (newPitches: PitchAcc[], position?: "left" | "right") => {
@@ -145,12 +132,12 @@ export const useElementsComposer: (duration: Duration) => (
 };
 
 export const usePreviewHandlers = (duration: Duration) => {
-  const [preview, setPreview] = useAtom(previewAtom);
-  const accidental = kAccidentalModes[useAtomValue(accidentalModeIdxAtom)];
+  const [preview, setPreview] = useAtom(uiAtom.preview);
+  const accidental = kAccidentalModes[useAtomValue(uiAtom.accidentalModeIdx)];
   const composeElements = useElementsComposer(duration);
-  const [caret, setCaret] = useAtom(focusAtom);
-  const [elMap, setElements] = useAtom(elementsAtom);
-  const staff = useObjIdMapAtom(rootObjMapAtom).get(caret.rootObjId);
+  const [caret, setCaret] = useAtom(uiAtom.focus);
+  const [elMap, setElements] = useAtom(objectAtom.elements);
+  const staff = useObjIdMapAtom(objectAtom.rootObjMap).get(caret.rootObjId);
   const positionRef = useRef<"left" | "right" | undefined>();
 
   return usePointerHandler({
@@ -228,12 +215,12 @@ export const usePreviewHandlers = (duration: Duration) => {
 };
 
 export const useChangeKeyPreviewHandlers = () => {
-  const [preview, setPreview] = useAtom(previewAtom);
-  const caret = useAtomValue(focusAtom);
-  const elMap = useAtomValue(elementsAtom);
-  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
+  const [preview, setPreview] = useAtom(uiAtom.preview);
+  const caret = useAtomValue(uiAtom.focus);
+  const elMap = useAtomValue(objectAtom.elements);
+  const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
   const staff = rootObjs.get(caret.rootObjId);
-  const setLastKeySig = useSetAtom(lastKeySigAtom);
+  const setLastKeySig = useSetAtom(uiAtom.lastKeySig);
 
   return usePointerHandler({
     onDown: (ev) => {

@@ -5,22 +5,14 @@ import { useBaseElements, usePreviewHandlers } from "@/hooks/input";
 import { useAtom, useAtomValue } from "jotai";
 import React, { FC, useCallback, useState } from "react";
 import { usePointerHandler } from "../../hooks/hooks";
-import {
-  beamModeAtom,
-  caretStyleAtom,
-  chordSelectionAtom,
-  elementsAtom,
-  focusAtom,
-  NoteInputMode,
-  noteInputModeAtom,
-  tieModeAtom,
-} from "../../state/atom";
+import { objectAtom, uiAtom } from "../../state/atom";
 import { ChordSelector } from "./chord";
 import { PlayButton } from "./PlayButton";
+import { NoteInputMode } from "@/state/types";
 
 export const Keyboard = () => {
-  const inputMode = useAtomValue(noteInputModeAtom);
-  const chordSelection = useAtomValue(chordSelectionAtom);
+  const inputMode = useAtomValue(uiAtom.noteInputMode);
+  const chordSelection = useAtomValue(uiAtom.chordSelection);
   return (
     <div className="keyboard">
       <div className="keyHeader">
@@ -81,7 +73,7 @@ export const Keyboard = () => {
 };
 
 const InputModeSwitcher = () => {
-  const [noteInputMode, setNoteInputMode] = useAtom(noteInputModeAtom);
+  const [noteInputMode, setNoteInputMode] = useAtom(uiAtom.noteInputMode);
   const modes: NoteInputMode[] = ["note", "rest", "chord"];
 
   const toggleNoteInputMode = () => {
@@ -100,7 +92,7 @@ const InputModeSwitcher = () => {
 };
 
 const NoteKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
+  const noteInputMode = useAtomValue(uiAtom.noteInputMode);
   const previewHandlers = usePreviewHandlers(duration);
   return (
     <WhiteKey {...previewHandlers}>
@@ -110,7 +102,7 @@ const NoteKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
 };
 
 const ChordKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
-  const [rootSelector, setRootSelector] = useAtom(chordSelectionAtom);
+  const [rootSelector, setRootSelector] = useAtom(uiAtom.chordSelection);
   return (
     <WhiteKey
       isActive={rootSelector?.duration === duration}
@@ -124,8 +116,8 @@ const ChordKey: FC<{ duration: 1 | 2 | 4 }> = ({ duration }) => {
 };
 
 const FlagNoteKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
-  const noteInputMode = useAtomValue(noteInputModeAtom);
-  const beamMode = useAtomValue(beamModeAtom);
+  const noteInputMode = useAtomValue(uiAtom.noteInputMode);
+  const beamMode = useAtomValue(uiAtom.beamMode);
   const previewHandlers = usePreviewHandlers(duration);
   return (
     <WhiteKey {...previewHandlers}>
@@ -135,8 +127,8 @@ const FlagNoteKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
 };
 
 const FlagChordKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
-  const [rootSelector, setRootSelector] = useAtom(chordSelectionAtom);
-  const beamMode = useAtomValue(beamModeAtom);
+  const [rootSelector, setRootSelector] = useAtom(uiAtom.chordSelection);
+  const beamMode = useAtomValue(uiAtom.beamMode);
   return (
     <WhiteKey
       isActive={rootSelector?.duration === duration}
@@ -148,9 +140,9 @@ const FlagChordKey: FC<{ duration: 8 | 16 | 32 }> = ({ duration }) => {
 };
 
 const Backspace = () => {
-  const [caret, setCaret] = useAtom(focusAtom);
-  const caretStyle = useAtomValue(caretStyleAtom);
-  const [elMap, setElements] = useAtom(elementsAtom);
+  const [caret, setCaret] = useAtom(uiAtom.focus);
+  const caretStyle = useAtomValue(uiAtom.caretStyle);
+  const [elMap, setElements] = useAtom(objectAtom.elements);
   return (
     <GrayKey
       onClick={() => {
@@ -193,7 +185,7 @@ const Backspace = () => {
 };
 
 const ArrowLeft = () => {
-  const [caret, setCaret] = useAtom(focusAtom);
+  const [caret, setCaret] = useAtom(uiAtom.focus);
   return (
     <GrayKey
       onClick={() => {
@@ -207,8 +199,8 @@ const ArrowLeft = () => {
 };
 
 const ArrowRight = () => {
-  const [caret, setCaret] = useAtom(focusAtom);
-  const carets = useAtomValue(caretStyleAtom);
+  const [caret, setCaret] = useAtom(uiAtom.focus);
+  const carets = useAtomValue(uiAtom.caretStyle);
   return (
     <GrayKey
       onClick={() => {
@@ -222,7 +214,7 @@ const ArrowRight = () => {
 };
 
 const BeamToggle = () => {
-  const [beamMode, setBeamMode] = useAtom(beamModeAtom);
+  const [beamMode, setBeamMode] = useAtom(uiAtom.beamMode);
   // TODO　ダブルクリック→"rock"
   return (
     <GrayKey
@@ -240,10 +232,10 @@ const Dynamics = () => (
 );
 
 const useInputBar: () => (subtype: BarTypes) => void = () => {
-  const [caret, setCaret] = useAtom(focusAtom);
+  const [caret, setCaret] = useAtom(uiAtom.focus);
   const baseElements = useBaseElements();
-  const beamMode = useAtomValue(beamModeAtom);
-  const [elMap, setElements] = useAtom(elementsAtom);
+  const beamMode = useAtomValue(uiAtom.beamMode);
+  const [elMap, setElements] = useAtom(objectAtom.elements);
   return useCallback(
     (subtype: BarTypes) => {
       const { elements, caretAdvance } = inputMusicalElement({
@@ -354,7 +346,7 @@ const Fermata = () => (
 );
 
 const Tie = () => {
-  const [tieMode, setTieMode] = useAtom(tieModeAtom);
+  const [tieMode, setTieMode] = useAtom(uiAtom.tieMode);
   return (
     <GrayKey onClick={() => setTieMode(tieMode === "tie" ? "notie" : "tie")}>
       <div className={`keyImg changeTie ${tieMode}`}>

@@ -3,12 +3,12 @@ import { Keyboard } from "@/components/keyboard/Keyboard";
 import { MainCanvas } from "./MainCanvas";
 import { PreviewCanvas } from "./PreviewCanvas";
 import { useAtomValue } from "jotai";
-import { contextMenuAtom, previewAtom } from "@/state/atom";
+import { uiAtom } from "@/state/atom";
 import { ContextMenu } from "./ContextMenu";
 
 export const App: FC = () => {
-  const preview = useAtomValue(previewAtom);
-  const contextMenu = useAtomValue(contextMenuAtom);
+  const preview = useAtomValue(uiAtom.preview);
+  const contextMenu = useAtomValue(uiAtom.contextMenu);
   useEffect(() => {
     window.addEventListener("contextmenu", (e) => e.preventDefault());
   }, []);

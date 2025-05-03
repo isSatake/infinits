@@ -1,20 +1,14 @@
 import * as tone from "@/player/tone";
-import {
-  connectionsAtom,
-  elementsAtom,
-  focusAtom,
-  rootObjIdConnectionsAtom,
-  rootObjMapAtom,
-} from "@/state/atom";
+import { objectAtom, uiAtom } from "@/state/atom";
 import { useAtomValue } from "jotai";
 import { useObjIdMapAtom } from "./map-atom";
 
 export const usePlayTone: () => () => void = () => {
-  const { map: rootObjs } = useObjIdMapAtom(rootObjMapAtom);
-  const { rootObjId } = useAtomValue(focusAtom);
-  const elementsMap = useAtomValue(elementsAtom);
-  const connections = useObjIdMapAtom(connectionsAtom);
-  const rootObjIdConnections = useAtomValue(rootObjIdConnectionsAtom);
+  const { map: rootObjs } = useObjIdMapAtom(objectAtom.rootObjMap);
+  const { rootObjId } = useAtomValue(uiAtom.focus);
+  const elementsMap = useAtomValue(objectAtom.elements);
+  const connections = useObjIdMapAtom(objectAtom.connections);
+  const rootObjIdConnections = useAtomValue(objectAtom.rootObjIdConnections);
 
   const play = () => {
     const segmentsByPrevId = new Map<number, tone.PlaySegment[]>();
