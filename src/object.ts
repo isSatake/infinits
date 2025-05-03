@@ -11,10 +11,6 @@ export type StaffObject = {
   position: Point;
   staff: Staff;
 };
-export type ScoreObject = {
-  type: "score";
-  position: Point;
-}
 export type FileObject = {
   type: "file";
   position: Point;
@@ -22,4 +18,4 @@ export type FileObject = {
   duration: number;
 };
 
-export type RootObj = StaffObject | ScoreObject | TextObject | FileObject;
+export type RootObj = StaffObject | TextObject | FileObject;
