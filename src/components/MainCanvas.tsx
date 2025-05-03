@@ -25,20 +25,7 @@ import {
 } from "@/layout/types";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  caretStyleAtom,
-  contextMenuAtom,
-  elementsAtom,
-  focusAtom,
-  uncommitedStaffConnectionAtom,
-  useFocusHighlighted,
-  beamModeAtom,
-  lastKeySigAtom,
-  lastClefAtom,
-  rootObjMapAtom,
-  connectionsAtom,
-  rootObjIdConnectionsAtom,
-} from "@/state/atom";
+import { objectAtom, uiAtom, useFocusHighlighted } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
 import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
@@ -67,25 +54,27 @@ const mtxAtom = atom<DOMMatrix>(
 
 export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [elements, setElements] = useAtom(elementsAtom);
+  const [elements, setElements] = useAtom(objectAtom.elements);
   const [styleMap, setStyleMap] = useAtom(paintStyleMapAtom);
-  const connections = useObjIdMapAtom(connectionsAtom);
-  const rootObjIdConnections = useObjIdMapAtom(rootObjIdConnectionsAtom);
-  const uncommitedConnection = useAtomValue(uncommitedStaffConnectionAtom);
-  const [caretStyle, setCaretStyle] = useAtom(caretStyleAtom);
+  const connections = useObjIdMapAtom(objectAtom.connections);
+  const rootObjIdConnections = useObjIdMapAtom(objectAtom.rootObjIdConnections);
+  const uncommitedConnection = useAtomValue(
+    objectAtom.uncommitedStaffConnection
+  );
+  const [caretStyle, setCaretStyle] = useAtom(uiAtom.caretStyle);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
-  const focus = useAtomValue(focusAtom);
+  const focus = useAtomValue(uiAtom.focus);
   const focusHighlighted = useFocusHighlighted(focus);
   const mtx = useAtomValue(mtxAtom);
-  const beamMode = useAtomValue(beamModeAtom);
+  const beamMode = useAtomValue(uiAtom.beamMode);
   const [canvasScale, setCanvasScale] = useState<number>(devicePixelRatio);
   const [canvasSize, setCanvasSize] = useState<Size>(canvasRef.current!);
   const [windowSize, setWindowSize] = useState<Size>({
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
+  const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
 
   const resizeHandler = useCallback((size: Size) => setWindowSize(size), []);
   useResizeHandler(resizeHandler);
@@ -300,15 +289,17 @@ export const MainCanvas = () => {
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(paintStyleMapAtom);
-  const setPopover = useSetAtom(contextMenuAtom);
-  const setCarets = useSetAtom(focusAtom);
-  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
-  const connections = useObjIdMapAtom(connectionsAtom);
-  const rootObjIdConnections = useAtomValue(rootObjIdConnectionsAtom);
-  const setUncommitedConnection = useSetAtom(uncommitedStaffConnectionAtom);
+  const setPopover = useSetAtom(uiAtom.contextMenu);
+  const setCarets = useSetAtom(uiAtom.focus);
+  const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
+  const connections = useObjIdMapAtom(objectAtom.connections);
+  const rootObjIdConnections = useAtomValue(objectAtom.rootObjIdConnections);
+  const setUncommitedConnection = useSetAtom(
+    objectAtom.uncommitedStaffConnection
+  );
   const getRootObjIdOnPoint = usePointingRootObjId();
-  const lastKeySig = useAtomValue(lastKeySigAtom);
-  const lastClef = useAtomValue(lastClefAtom);
+  const lastKeySig = useAtomValue(uiAtom.lastKeySig);
+  const lastClef = useAtomValue(uiAtom.lastClef);
   const desktopState = useRef(new DesktopStateMachine());
   const canvasHandler = useRef(
     new PointerEventStateMachine(desktopState.current.on)
@@ -522,7 +513,7 @@ const usePointingRootObjId = (): ((desktopPoint: Point) => {
   caretIdx?: number;
 } | void) => {
   const styleMap = useAtomValue(paintStyleMapAtom);
-  const rootObjs = useObjIdMapAtom(rootObjMapAtom);
+  const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
   return (
     desktopPoint: Point
   ): { rootObjId: number; caretIdx?: number } | void => {

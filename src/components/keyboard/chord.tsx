@@ -1,10 +1,4 @@
 import { useAtom } from "jotai";
-import {
-  chordSelectionAtom,
-  elementsAtom,
-  focusAtom,
-  rootObjMapAtom,
-} from "@/state/atom";
 import { useAccidentalMode } from "@/hooks/accidental";
 import React, { FC } from "react";
 import {
@@ -21,9 +15,10 @@ import { chordToPitchAcc } from "@/core/chord";
 import * as tone from "@/player/tone";
 import { useElementsComposer } from "@/hooks/input";
 import { useObjIdMapAtom } from "@/hooks/map-atom";
+import { objectAtom, uiAtom } from "@/state/atom";
 
 export const ChordSelector = () => {
-  const [chordSelection, setChordSelection] = useAtom(chordSelectionAtom);
+  const [chordSelection, setChordSelection] = useAtom(uiAtom.chordSelection);
   const accidentalMode = useAccidentalMode();
   const onSelectRoot = (note: RootNote) => {
     setChordSelection({
@@ -87,10 +82,10 @@ const Type: FC<{ type: ChordType; duration: Duration; root: ChordRoot }> = ({
   root,
 }) => {
   const rootName = convertPitchToRoot(root.pitch);
-  const [caret, setCaret] = useAtom(focusAtom);
-  const [elMap, setElements] = useAtom(elementsAtom);
+  const [caret, setCaret] = useAtom(uiAtom.focus);
+  const [elMap, setElements] = useAtom(objectAtom.elements);
   const composeElements = useElementsComposer(duration);
-  const staff = useObjIdMapAtom(rootObjMapAtom).get(caret.rootObjId);
+  const staff = useObjIdMapAtom(objectAtom.rootObjMap).get(caret.rootObjId);
   const handlers = usePointerHandler({
     onUp: () => {
       if (staff?.type !== "staff") return;
