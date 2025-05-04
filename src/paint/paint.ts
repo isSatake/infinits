@@ -1,4 +1,3 @@
-import { Accidental } from "@/core/types";
 import {
   accidentalPathMap,
   downFlagMap,
@@ -35,7 +34,7 @@ import {
   TextStyle,
   TieStyle,
 } from "../layout/types";
-import { addPoint, BBox, Point } from "../lib/geometry";
+import { addPoint, BBox } from "../lib/geometry";
 
 export const initCanvas = ({
   leftPx,
@@ -350,11 +349,15 @@ export const paintStyle = (
   } else if (type === "keySignature") {
     ctx.save();
     for (const acc of element.accs) {
-      paintAccidental({
+      paintAccidental(
+        {
+          type: "accidental",
+          accidental: acc.type,
+          position: { x: acc.position.x, y: acc.position.y },
+        },
         ctx,
-        accidental: acc.type,
-        position: { x: acc.position.x, y: acc.position.y },
-      });
+        "#000"
+      );
     }
     ctx.restore();
   } else if (type === "note") {
