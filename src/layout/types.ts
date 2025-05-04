@@ -37,22 +37,34 @@ export type NoteHeadElement = {
   duration: Duration;
   tie: Point;
 };
+export type NoteStemElement = {
+  type: "stem";
+  position: Point;
+  width: number;
+  height: number;
+};
+export type NoteFlagElement = {
+  type: "flag";
+  position: Point;
+  duration: Duration;
+  direction: "up" | "down";
+};
+export type NoteLedgerElement = {
+  type: "ledger";
+  position: Point;
+  width: number;
+};
+export type NoteAccidentalElement = {
+  type: "accidental";
+  position: Point;
+  accidental: Accidental;
+};
 export type NoteStyleElement =
   | NoteHeadElement
-  | { type: "accidental"; position: Point; accidental: Accidental }
-  | { type: "ledger"; position: Point; width: number }
-  | {
-      type: "flag";
-      position: Point;
-      duration: Duration;
-      direction: "up" | "down";
-    }
-  | {
-      type: "stem";
-      position: Point;
-      width: number;
-      height: number;
-    };
+  | NoteAccidentalElement
+  | NoteLedgerElement
+  | NoteFlagElement
+  | NoteStemElement;
 export type RestStyle = {
   type: "rest";
   rest: Rest;

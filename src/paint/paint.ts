@@ -21,6 +21,11 @@ import {
   ClefStyle,
   ConnectionStyle,
   FileStyle,
+  NoteAccidentalElement,
+  NoteFlagElement,
+  NoteHeadElement,
+  NoteLedgerElement,
+  NoteStemElement,
   NoteStyle,
   PaintElement,
   PaintStyle,
@@ -173,70 +178,99 @@ const paintNote = ({
   const color = element.color ?? "#000";
   for (const noteEl of element.elements) {
     if (noteEl.type === "head") {
-      const { duration, position } = noteEl;
-      ctx.save();
-      ctx.translate(position.x, position.y);
-      const path = noteHeadByDuration(duration);
-      paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color });
-      ctx.restore();
+      paintNoteHead(noteEl, ctx, color);
     } else if (noteEl.type === "ledger") {
-      const { width, position } = noteEl;
-      ctx.save();
-      ctx.translate(position.x, position.y);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = bLedgerLineThickness;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(width, 0);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
+      paintLedger(noteEl, ctx, color);
     } else if (noteEl.type === "accidental") {
-      paintAccidental({ ctx, ...noteEl });
+      paintAccidental(noteEl, ctx, color);
     } else if (noteEl.type === "flag") {
-      const { duration, direction, position } = noteEl;
-      const path =
-        direction === "up"
-          ? upFlagMap().get(duration)
-          : downFlagMap().get(duration);
-      if (path) {
-        paintBravuraPath({
-          ctx,
-          left: position.x,
-          top: position.y,
-          scale: 1,
-          path,
-          color,
-        });
-      }
+      paintFlag(noteEl, ctx, color);
     } else if (noteEl.type === "stem") {
-      const { position, width, height } = noteEl;
-      ctx.save();
-      ctx.translate(position.x + width / 2, position.y);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, height);
-      ctx.stroke();
-      ctx.restore();
+      paintStem(noteEl, ctx, color);
     }
   }
 };
 
-const paintAccidental = ({
-  ctx,
-  accidental,
-  position,
-}: {
-  ctx: CanvasRenderingContext2D;
-  accidental: Accidental;
-  position: Point;
-}) => {
-  const path = accidentalPathMap().get(accidental)!;
+const paintNoteHead = (
+  head: NoteHeadElement,
+  ctx: CanvasRenderingContext2D,
+  color: string
+) => {
+  const { duration, position } = head;
   ctx.save();
   ctx.translate(position.x, position.y);
-  paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color: "#000" });
+  const path = noteHeadByDuration(duration);
+  paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color });
+  ctx.restore();
+};
+
+const paintLedger = (
+  ledger: NoteLedgerElement,
+  ctx: CanvasRenderingContext2D,
+  color: string
+) => {
+  const { width, position } = ledger;
+  ctx.save();
+  ctx.translate(position.x, position.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = bLedgerLineThickness;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(width, 0);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+};
+
+const paintFlag = (
+  flag: NoteFlagElement,
+  ctx: CanvasRenderingContext2D,
+  color: string
+) => {
+  const { duration, direction, position } = flag;
+  const path =
+    direction === "up"
+      ? upFlagMap().get(duration)
+      : downFlagMap().get(duration);
+  if (path) {
+    paintBravuraPath({
+      ctx,
+      left: position.x,
+      top: position.y,
+      scale: 1,
+      path,
+      color,
+    });
+  }
+};
+
+const paintStem = (
+  stem: NoteStemElement,
+  ctx: CanvasRenderingContext2D,
+  color: string
+) => {
+  const { position, width, height } = stem;
+  ctx.save();
+  ctx.translate(position.x + width / 2, position.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, height);
+  ctx.stroke();
+  ctx.restore();
+};
+
+const paintAccidental = (
+  accidental: NoteAccidentalElement,
+  ctx: CanvasRenderingContext2D,
+  color: string
+) => {
+  const { position, accidental: acc } = accidental;
+  const path = accidentalPathMap().get(acc)!;
+  ctx.save();
+  ctx.translate(position.x, position.y);
+  paintBravuraPath({ ctx, left: 0, top: 0, scale: 1, path, color });
   ctx.restore();
 };
 
@@ -295,7 +329,11 @@ export const paintStyle = (
   } else if (type === "keySignature") {
     ctx.save();
     for (const acc of element.accs) {
-      paintAccidental({ ctx, accidental: acc.type, position: {x:acc.position.x,y:acc.position.y} });
+      paintAccidental({
+        ctx,
+        accidental: acc.type,
+        position: { x: acc.position.x, y: acc.position.y },
+      });
     }
     ctx.restore();
   } else if (type === "note") {
