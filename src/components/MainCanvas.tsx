@@ -37,11 +37,16 @@ import { usePrevious } from "@/lib/hooks";
 import { normalizeBeams } from "@/core/beam-2";
 import { clefs, keySignatures } from "@/core/types";
 import { useObjIdMapAtom } from "@/hooks/map-atom";
+import { StaffLayout } from "@/layout/new/types";
+import { layoutStaff } from "@/layout/new/staff";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
   new Map()
 );
+
+// obj id -> layout
+const objLayoutMapAtom = atom<Map<number, StaffLayout>>(new Map());
 
 // staff id -> element bboxes
 const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
@@ -56,6 +61,7 @@ export const MainCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [elements, setElements] = useAtom(objectAtom.elements);
   const [styleMap, setStyleMap] = useAtom(paintStyleMapAtom);
+  const [objLayoutMap, setObjLayoutMap] = useAtom(objLayoutMapAtom);
   const connections = useObjIdMapAtom(objectAtom.connections);
   const rootObjIdConnections = useObjIdMapAtom(objectAtom.rootObjIdConnections);
   const uncommitedConnection = useAtomValue(
@@ -91,6 +97,24 @@ export const MainCanvas = () => {
       setCanvasScale(scale);
     });
   }, [windowSize]);
+
+  // compute layout
+  useEffect(() => {
+    const map = new Map<number, StaffLayout>();
+    for (const [id, obj] of rootObjs.map) {
+      if (obj.type === "staff") {
+        map.set(
+          id,
+          layoutStaff({
+            elements: elements.get(id) ?? [],
+            gapWidth: UNIT,
+            staffObj: obj,
+            pointing,
+          })
+        );
+      }
+    }
+  }, [rootObjs.map, elements, objLayoutMap]);
 
   // element style
   useEffect(() => {

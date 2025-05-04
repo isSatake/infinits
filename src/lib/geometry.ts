@@ -9,6 +9,16 @@ export type BBox = {
 };
 export type Size = { width: number; height: number };
 
+export class BBoxSize {
+  constructor(private bbox: BBox) {}
+  get width(): number {
+    return this.bbox.right - this.bbox.left;
+  }
+  get height(): number {
+    return this.bbox.bottom - this.bbox.top;
+  }
+}
+
 export const magnitude = (p1: Point, p2: Point): number => {
   return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 };
