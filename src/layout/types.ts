@@ -75,9 +75,17 @@ export type BarStyle = {
   bar: Bar;
   elements: BarStyleElement[];
 } & OptionalColor;
-export type BarStyleElement =
-  | { type: "line"; position: Point; height: number; lineWidth: number }
-  | { type: "dot"; position: Point };
+export type BarLine = {
+  type: "line";
+  position: Point;
+  height: number;
+  lineWidth: number;
+};
+export type BarDot = {
+  type: "dot";
+  position: Point;
+};
+export type BarStyleElement = BarLine | BarDot;
 export type BeamStyle = {
   type: "beam";
   nw: Point;

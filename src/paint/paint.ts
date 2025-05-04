@@ -15,6 +15,8 @@ import {
 } from "../font/bravura";
 import { getClefPath } from "../layout/pitch";
 import {
+  BarDot,
+  BarLine,
   BarStyle,
   BeamStyle,
   CaretStyle,
@@ -140,34 +142,53 @@ const paintConnection = (
 /**
  * 小節線描画
  */
-const paintBarline = (ctx: CanvasRenderingContext2D, element: BarStyle) => {
+const paintBar = (ctx: CanvasRenderingContext2D, element: BarStyle) => {
   const color = element.color ?? "#000";
   for (const el of element.elements) {
     ctx.save();
     if (el.type === "line") {
-      ctx.translate(el.position.x + el.lineWidth / 2, el.position.y);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = el.lineWidth;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, el.height);
-      ctx.closePath();
-      ctx.stroke();
+      paintBarLine(el, ctx, color);
     } else {
-      const rad = repeatDotRadius;
-      ctx.translate(el.position.x + rad, el.position.y);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(0, 0, rad, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, UNIT, rad, 0, Math.PI * 2);
-      ctx.fill();
+      paintBarDot(el, ctx, color);
     }
     ctx.restore();
   }
 };
 
+const paintBarDot = (
+  dot: BarDot,
+  ctx: CanvasRenderingContext2D,
+  color: string
+) => {
+  const rad = repeatDotRadius;
+  ctx.save();
+  ctx.translate(dot.position.x + rad, dot.position.y);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(0, 0, rad, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, UNIT, rad, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+};
+
+const paintBarLine = (
+  line: BarLine,
+  ctx: CanvasRenderingContext2D,
+  color: string
+) => {
+  ctx.save();
+  ctx.translate(line.position.x + line.lineWidth / 2, line.position.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = line.lineWidth;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, line.height);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+};
 const paintNote = ({
   ctx,
   element,
@@ -345,7 +366,7 @@ export const paintStyle = (
   } else if (type === "tie") {
     paintTie(ctx, element);
   } else if (type === "bar") {
-    paintBarline(ctx, element);
+    paintBar(ctx, element);
   } else if (type === "gap") {
     // no-op
   } else if (type === "text") {
