@@ -114,6 +114,7 @@ export const MainCanvas = () => {
         );
       }
     }
+    setObjLayoutMap(map);
   }, [rootObjs.map, elements, objLayoutMap]);
 
   // element style

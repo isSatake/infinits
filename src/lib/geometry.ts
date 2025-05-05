@@ -9,13 +9,25 @@ export type BBox = {
 };
 export type Size = { width: number; height: number };
 
-export class BBoxSize {
+export class BBoxSize implements BBox {
   constructor(private bbox: BBox) {}
   get width(): number {
     return this.bbox.right - this.bbox.left;
   }
   get height(): number {
     return this.bbox.bottom - this.bbox.top;
+  }
+  get left(): number {
+    return this.bbox.left;
+  }
+  get top(): number {
+    return this.bbox.top;
+  }
+  get right(): number {
+    return this.bbox.right;
+  }
+  get bottom(): number {
+    return this.bbox.bottom;
   }
 }
 
@@ -97,4 +109,27 @@ export const distanceToLineSegment = ({
   if (t < 0 || t > 1) return;
 
   return magnitude(projection, point);
+};
+
+export const mergeBBoxes = (bboxes: BBox[]): BBox => {
+  let ret: BBox | undefined;
+  for (let b of bboxes) {
+    if (ret) {
+      if (b.left < ret.left) {
+        ret.left = b.left;
+      }
+      if (b.top < ret.top) {
+        ret.top = b.top;
+      }
+      if (b.right > ret.right) {
+        ret.right = b.right;
+      }
+      if (b.bottom > ret.bottom) {
+        ret.bottom = b.bottom;
+      }
+    } else {
+      ret = b;
+    }
+  }
+  return ret!;
 };

@@ -4,6 +4,7 @@ import { CaretOption } from "../types";
 
 export type StaffLayout = {
   type: "staff";
+  // 五線そのものの幅。bboxとは異なる可能性がある
   width: number;
   children: StaffChildren[];
   bbs: BBoxSize;

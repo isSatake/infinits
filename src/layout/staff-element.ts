@@ -14,7 +14,7 @@ import {
   repeatDotRadius,
   UNIT,
 } from "../font/bravura";
-import { BBox, getPathBBox, offsetBBox, Point } from "../lib/geometry";
+import { BBox, getPathBBox, mergeBBoxes, offsetBBox, Point } from "../lib/geometry";
 import {
   accidentalPathMap,
   downFlagMap,
@@ -279,29 +279,6 @@ export const determineNoteStyle = ({
     stemOffsetLeft: leftOfStemOrNotehead,
     bbox,
   };
-};
-
-const mergeBBoxes = (bboxes: BBox[]): BBox => {
-  let ret: BBox | undefined;
-  for (let b of bboxes) {
-    if (ret) {
-      if (b.left < ret.left) {
-        ret.left = b.left;
-      }
-      if (b.top < ret.top) {
-        ret.top = b.top;
-      }
-      if (b.right > ret.right) {
-        ret.right = b.right;
-      }
-      if (b.bottom > ret.bottom) {
-        ret.bottom = b.bottom;
-      }
-    } else {
-      ret = b;
-    }
-  }
-  return ret!;
 };
 
 // note headからはみ出る長さ(片方)
