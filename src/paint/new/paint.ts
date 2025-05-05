@@ -1,5 +1,5 @@
 import { bStaffLineWidth, Path, UNIT } from "@/font/bravura";
-import { ClefLayout, StaffLayout } from "@/layout/new/types";
+import { CaretLayout, ClefLayout, StaffLayout } from "@/layout/new/types";
 import { getClefPath } from "@/layout/pitch";
 import { BBox } from "@/lib/geometry";
 
@@ -51,6 +51,19 @@ const paintClef = (p: {
   const { path } = getClefPath(layout.clef);
   ctx.save();
   paintBravuraPath({ ctx, color: layout.color, path });
+  ctx.restore();
+};
+
+export const paintCaret = (p: {
+  ctx: CanvasRenderingContext2D;
+  caret: CaretLayout;
+  highlighted: boolean;
+}) => {
+  const { ctx, caret, highlighted } = p;
+  const { x, y, width, height } = caret;
+  ctx.save();
+  ctx.fillStyle = highlighted ? "#FF000055" : "#FF000033";
+  ctx.fillRect(x, y, width, height);
   ctx.restore();
 };
 

@@ -1,5 +1,5 @@
 import { Clef } from "@/core/types";
-import { BBox, BBoxSize } from "@/lib/geometry";
+import { BBoxSize, Point, Size } from "@/lib/geometry";
 import { CaretOption } from "../types";
 
 export type StaffLayout = {
@@ -7,7 +7,7 @@ export type StaffLayout = {
   // 五線そのものの幅。bboxとは異なる可能性がある
   width: number;
   children: StaffChildren[];
-  mtx: DOMMatrix;
+  mtx: DOMMatrixReadOnly;
   bbs: BBoxSize;
 };
 
@@ -16,15 +16,19 @@ type StaffChildren = ClefLayout | GapLayout;
 export type ClefLayout = {
   type: "clef";
   clef: Clef;
-  mtx: DOMMatrix;
+  mtx: DOMMatrixReadOnly;
   bbs: BBoxSize;
-} & OptionalColor;
+} & OptionalColor &
+  OptionalCaret;
 
 export type GapLayout = {
   type: "gap";
-  mtx: DOMMatrix;
+  mtx: DOMMatrixReadOnly;
   bbs: BBoxSize;
-  caretOption?: CaretOption;
-};
+} & OptionalCaret;
 
 type OptionalColor = { color?: string };
+type OptionalCaret = { caret?: CaretOption };
+
+export type Caret = { elIdx: number; idx: number; defaultWidth?: boolean };
+export type CaretLayout = { elIdx: number } & Point & Size;

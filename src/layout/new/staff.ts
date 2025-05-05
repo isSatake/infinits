@@ -29,7 +29,17 @@ export const layoutStaff = (p: {
   children.push(clef);
   width += clef.bbs.width;
   mtx = mtx.translate(clef.bbs.width, 0);
-  const tailGap = layoutGap({ mtx, width: gapWidth, height: bStaffHeight });
+  const gap = layoutGap({ mtx, width: gapWidth, height: bStaffHeight });
+  children.push(gap);
+  width += gap.bbs.width;
+  mtx = mtx.translate(gap.bbs.width, 0);
+  let caretIdx = -1;
+  const tailGap = layoutGap({
+    mtx,
+    width: gapWidth,
+    height: bStaffHeight,
+    caretOption: { elIdx: -1, idx: ++caretIdx, defaultWidth: true },
+  });
   children.push(tailGap);
   width += tailGap.bbs.width;
   mtx = mtx.translate(tailGap.bbs.width, 0);

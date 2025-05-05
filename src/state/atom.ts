@@ -14,6 +14,7 @@ import {
 } from "./types";
 import { Point } from "@/lib/geometry";
 import { RootObj } from "@/object";
+import { CaretLayout } from "@/layout/new/types";
 
 export const objectAtom = {
   rootObjMap: atom<Map<number, RootObj>>(new Map()),
@@ -30,6 +31,7 @@ export const uiAtom = {
   preview: atom<PreviewState | undefined>(undefined),
   focus: atom<FocusState>({ rootObjId: 0, idx: 0 }),
   caretStyle: atom<CaretStyle[]>([]),
+  caretLayout: atom<CaretLayout[]>([]),
   contextMenu: atom<ContextMenu | undefined>(undefined),
   showDialog: atom<DialogState | undefined>(undefined),
   accidentalModeIdx: atom<number>(0),

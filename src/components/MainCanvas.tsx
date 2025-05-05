@@ -4,8 +4,9 @@ import { bStaffHeight, UNIT } from "@/font/bravura";
 import { useResizeHandler } from "@/hooks/hooks";
 import { useObjIdMapAtom } from "@/hooks/map-atom";
 import { determineFilePaintStyle } from "@/layout/file";
+import { layoutCaret } from "@/layout/new/caret";
 import { layoutStaff } from "@/layout/new/staff";
-import { StaffLayout } from "@/layout/new/types";
+import { CaretLayout, StaffLayout } from "@/layout/new/types";
 import { getInitScale } from "@/layout/score-preferences";
 import { buildConnectionStyle } from "@/layout/staff";
 import {
@@ -33,7 +34,7 @@ import {
   Size,
 } from "@/lib/geometry";
 import { usePrevious } from "@/lib/hooks";
-import { paint } from "@/paint/new/paint";
+import { paint, paintCaret } from "@/paint/new/paint";
 import { resetCanvas2 } from "@/paint/paint";
 import { objectAtom, uiAtom, useFocusHighlighted } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
@@ -69,6 +70,7 @@ export const MainCanvas = () => {
     objectAtom.uncommitedStaffConnection
   );
   const [caretStyle, setCaretStyle] = useAtom(uiAtom.caretStyle);
+  const [caretLayout, setCaretLayout] = useAtom(uiAtom.caretLayout);
   const [bboxMap, setBBoxMap] = useAtom(bboxAtom);
   const pointing = useAtomValue(pointingAtom);
   const focus = useAtomValue(uiAtom.focus);
@@ -207,6 +209,31 @@ export const MainCanvas = () => {
     pointing,
   ]);
 
+  // caret style 2
+  useEffect(() => {
+    const carets: CaretLayout[] = [];
+    for (const [id, l] of objLayoutMap) {
+      const _mtx = l.mtx;
+      for (const layout of l.children) {
+        if (layout.caret) {
+          const mtx = _mtx.multiply(layout.mtx);
+          const x = mtx.e;
+          const y = mtx.f;
+          const width = layout.bbs.width * mtx.a;
+          const height = layout.bbs.height * mtx.d;
+          carets.push(
+            layoutCaret({
+              caret: layout.caret,
+              carettee: { x, y, width, height },
+            })
+          );
+        }
+      }
+    }
+    console.log("caret", carets);
+    setCaretLayout(carets);
+  }, [objLayoutMap, focus]);
+
   // caret style
   useEffect(() => {
     const id = focus.rootObjId;
@@ -269,8 +296,12 @@ export const MainCanvas = () => {
     for (const [id, layout] of objLayoutMap) {
       paint({ layout, ctx });
     }
+    const caret = caretLayout.at(focus.idx);
+    if (caret) {
+      paintCaret({ ctx, caret, highlighted: focusHighlighted });
+    }
     ctx.restore();
-  }, [mtx, objLayoutMap, canvasSize]);
+  }, [mtx, objLayoutMap, canvasSize, caretLayout, focus, focusHighlighted]);
 
   // paint
   // useEffect(() => {
@@ -317,7 +348,6 @@ export const MainCanvas = () => {
   //   focusHighlighted,
   //   canvasSize,
   // ]);
-
   return (
     <canvas
       id="mainCanvas"
