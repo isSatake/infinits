@@ -7,6 +7,7 @@ export type StaffLayout = {
   // 五線そのものの幅。bboxとは異なる可能性がある
   width: number;
   children: StaffChildren[];
+  mtx: DOMMatrix;
   bbs: BBoxSize;
 };
 

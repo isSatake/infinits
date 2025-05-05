@@ -45,6 +45,6 @@ export const determineFilePaintStyle = (
     element,
     width,
     bbox: { left: 0, right: width, top: 0, bottom: height },
-    caretOption: { elIdx: 0 },
+    // caretOption: { elIdx: 0 },
   };
 };

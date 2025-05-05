@@ -9,11 +9,17 @@ export const paint = (p: {
 }) => {
   const { ctx, layout } = p;
   ctx.save();
-  paintStaff(p);
+  const { a, b, c, d, e, f } = layout.mtx;
+  ctx.transform(a, b, c, d, e, f);
+  paintStaff({ ctx, layout });
   for (const child of layout.children) {
+    ctx.save();
+    const { a, b, c, d, e, f } = child.mtx;
+    ctx.transform(a, b, c, d, e, f);
     if (child.type === "clef") {
       paintClef({ ctx, layout: child });
     }
+    ctx.restore();
   }
   ctx.restore();
 };
@@ -44,7 +50,6 @@ const paintClef = (p: {
   const { ctx, layout } = p;
   const { path } = getClefPath(layout.clef);
   ctx.save();
-  ctx.setTransform(layout.mtx);
   paintBravuraPath({ ctx, color: layout.color, path });
   ctx.restore();
 };

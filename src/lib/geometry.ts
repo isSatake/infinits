@@ -10,24 +10,21 @@ export type BBox = {
 export type Size = { width: number; height: number };
 
 export class BBoxSize implements BBox {
-  constructor(private bbox: BBox) {}
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  constructor(bbox: BBox) {
+    this.left = bbox.left;
+    this.top = bbox.top;
+    this.right = bbox.right;
+    this.bottom = bbox.bottom;
+  }
   get width(): number {
-    return this.bbox.right - this.bbox.left;
+    return this.right - this.left;
   }
   get height(): number {
-    return this.bbox.bottom - this.bbox.top;
-  }
-  get left(): number {
-    return this.bbox.left;
-  }
-  get top(): number {
-    return this.bbox.top;
-  }
-  get right(): number {
-    return this.bbox.right;
-  }
-  get bottom(): number {
-    return this.bbox.bottom;
+    return this.bottom - this.top;
   }
 }
 

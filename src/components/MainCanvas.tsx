@@ -1,20 +1,18 @@
+import { normalizeBeams } from "@/core/beam-2";
+import { clefs, keySignatures } from "@/core/types";
 import { bStaffHeight, UNIT } from "@/font/bravura";
-import {
-  BBox,
-  Point,
-  Size,
-  addPoint,
-  distanceToLineSegment,
-  isPointInBBox,
-  offsetBBox,
-  scaleSize,
-} from "@/lib/geometry";
-import { paintBBox, paintCaret, paintStyle, resetCanvas2 } from "@/paint/paint";
+import { useResizeHandler } from "@/hooks/hooks";
+import { useObjIdMapAtom } from "@/hooks/map-atom";
+import { determineFilePaintStyle } from "@/layout/file";
+import { layoutStaff } from "@/layout/new/staff";
+import { StaffLayout } from "@/layout/new/types";
 import { getInitScale } from "@/layout/score-preferences";
+import { buildConnectionStyle } from "@/layout/staff";
 import {
   determineCaretStyle,
   determineStaffPaintStyle,
 } from "@/layout/staff-element";
+import { determineTextPaintStyle } from "@/layout/text";
 import {
   CaretStyle,
   ConnectionStyle,
@@ -23,22 +21,25 @@ import {
   Pointing,
   RootObjStyle,
 } from "@/layout/types";
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
+import {
+  addPoint,
+  BBox,
+  distanceToLineSegment,
+  isPointInBBox,
+  offsetBBox,
+  Point,
+  scaleSize,
+  Size,
+} from "@/lib/geometry";
+import { usePrevious } from "@/lib/hooks";
+import { paint } from "@/paint/new/paint";
+import { resetCanvas2 } from "@/paint/paint";
 import { objectAtom, uiAtom, useFocusHighlighted } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
-import { useResizeHandler } from "@/hooks/hooks";
 import { PointerEventStateMachine } from "@/state/pointer-state";
-import { determineCanvasScale, resizeCanvas } from "@/lib/canvas";
-import { buildConnectionStyle } from "@/layout/staff";
-import { determineTextPaintStyle } from "@/layout/text";
-import { determineFilePaintStyle } from "@/layout/file";
-import { usePrevious } from "@/lib/hooks";
-import { normalizeBeams } from "@/core/beam-2";
-import { clefs, keySignatures } from "@/core/types";
-import { useObjIdMapAtom } from "@/hooks/map-atom";
-import { StaffLayout } from "@/layout/new/types";
-import { layoutStaff } from "@/layout/new/staff";
+import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 // obj id -> element style
 const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
@@ -114,8 +115,9 @@ export const MainCanvas = () => {
         );
       }
     }
+    console.log("layout", map);
     setObjLayoutMap(map);
-  }, [rootObjs.map, elements, objLayoutMap]);
+  }, [rootObjs.map, elements]);
 
   // element style
   useEffect(() => {
@@ -255,7 +257,7 @@ export const MainCanvas = () => {
     }
   }, [beamMode, focus, elements]);
 
-  // paint
+  // paint layout
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d")!;
     ctx.save();
@@ -264,42 +266,57 @@ export const MainCanvas = () => {
     ctx.scale(canvasScale, canvasScale);
     const { a, b, c, d, e, f } = mtx;
     ctx.transform(a, b, c, d, e, f);
-    for (const [id, obj] of rootObjs.map) {
-      ctx.save();
-      ctx.translate(obj.position.x, obj.position.y);
-      for (const style of styleMap.get(id) ?? []) {
-        const { type } = style.element;
-        paintStyle(ctx, style);
-        paintBBox(ctx, style.bbox);
-        if (
-          type !== "staff" &&
-          type !== "beam" &&
-          type !== "tie" &&
-          type !== "connection"
-        ) {
-          ctx.translate(style.width, 0);
-        }
-      }
-      ctx.restore();
-    }
-    const obj = rootObjs.get(focus.rootObjId);
-    const caret = caretStyle.at(focus.idx);
-    if (obj && caret) {
-      ctx.save();
-      ctx.translate(obj.position.x, obj.position.y);
-      paintCaret({ ctx, scale: 1, caret, highlighted: focusHighlighted });
-      ctx.restore();
+    for (const [id, layout] of objLayoutMap) {
+      paint({ layout, ctx });
     }
     ctx.restore();
-  }, [
-    mtx,
-    rootObjs,
-    styleMap,
-    caretStyle,
-    focus,
-    focusHighlighted,
-    canvasSize,
-  ]);
+  }, [mtx, objLayoutMap, canvasSize]);
+
+  // paint
+  // useEffect(() => {
+  //   const ctx = canvasRef.current?.getContext("2d")!;
+  //   ctx.save();
+  //   resetCanvas2({ ctx, fillStyle: "white" });
+  //   // pointer handlerでdpr考慮しなくて済むように
+  //   ctx.scale(canvasScale, canvasScale);
+  //   const { a, b, c, d, e, f } = mtx;
+  //   ctx.transform(a, b, c, d, e, f);
+  //   for (const [id, obj] of rootObjs.map) {
+  //     ctx.save();
+  //     ctx.translate(obj.position.x, obj.position.y);
+  //     for (const style of styleMap.get(id) ?? []) {
+  //       const { type } = style.element;
+  //       paintStyle(ctx, style);
+  //       paintBBox(ctx, style.bbox);
+  //       if (
+  //         type !== "staff" &&
+  //         type !== "beam" &&
+  //         type !== "tie" &&
+  //         type !== "connection"
+  //       ) {
+  //         ctx.translate(style.width, 0);
+  //       }
+  //     }
+  //     ctx.restore();
+  //   }
+  //   const obj = rootObjs.get(focus.rootObjId);
+  //   const caret = caretStyle.at(focus.idx);
+  //   if (obj && caret) {
+  //     ctx.save();
+  //     ctx.translate(obj.position.x, obj.position.y);
+  //     // paintCaret({ ctx, scale: 1, caret, highlighted: focusHighlighted });
+  //     ctx.restore();
+  //   }
+  //   ctx.restore();
+  // }, [
+  //   mtx,
+  //   rootObjs,
+  //   styleMap,
+  //   caretStyle,
+  //   focus,
+  //   focusHighlighted,
+  //   canvasSize,
+  // ]);
 
   return (
     <canvas

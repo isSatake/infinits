@@ -37,6 +37,7 @@ export const layoutStaff = (p: {
     type: "staff",
     width,
     children,
+    mtx: new DOMMatrix().translate(staffObj.position.x, staffObj.position.y),
     bbs: new BBoxSize(mergeBBoxes(children.map(({ bbs }) => bbs))),
   };
 };
