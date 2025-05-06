@@ -24,6 +24,26 @@ export const paint = (p: {
   ctx.restore();
 };
 
+// for debug
+export const paintBBox = (p: {
+  layout: StaffLayout;
+  ctx: CanvasRenderingContext2D;
+}) => {
+  const { ctx, layout } = p;
+  ctx.save();
+  const { a, b, c, d, e, f } = layout.mtx;
+  ctx.transform(a, b, c, d, e, f);
+  _paintBBox(ctx, layout.bbs);
+  for (const child of layout.children) {
+    ctx.save();
+    const { a, b, c, d, e, f } = child.mtx;
+    ctx.transform(a, b, c, d, e, f);
+    _paintBBox(ctx, child.bbs);
+    ctx.restore();
+  }
+  ctx.restore();
+};
+
 const paintStaff = (p: {
   layout: StaffLayout;
   ctx: CanvasRenderingContext2D;
@@ -67,8 +87,7 @@ export const paintCaret = (p: {
   ctx.restore();
 };
 
-// debug
-export const paintBBox = (
+const _paintBBox = (
   ctx: CanvasRenderingContext2D,
   bbox: BBox,
   color?: string

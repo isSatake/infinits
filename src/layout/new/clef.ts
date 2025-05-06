@@ -18,7 +18,7 @@ export const layoutClef = (p: {
     type: "clef",
     clef,
     mtx: mtx.translate(0, y),
-    bbs: new BBoxSize(offsetBBox(bbox, { y })),
+    bbs: new BBoxSize(bbox),
     ...(pointing ? { color: kPointingColor } : {}),
   };
 };

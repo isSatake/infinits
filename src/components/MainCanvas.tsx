@@ -34,7 +34,7 @@ import {
   Size,
 } from "@/lib/geometry";
 import { usePrevious } from "@/lib/hooks";
-import { paint, paintCaret } from "@/paint/new/paint";
+import { paint, paintBBox, paintCaret } from "@/paint/new/paint";
 import { resetCanvas2 } from "@/paint/paint";
 import { objectAtom, uiAtom, useFocusHighlighted } from "@/state/atom";
 import { DesktopStateMachine, DesktopStateProps } from "@/state/desktop-state";
@@ -295,6 +295,7 @@ export const MainCanvas = () => {
     ctx.transform(a, b, c, d, e, f);
     for (const [id, layout] of objLayoutMap) {
       paint({ layout, ctx });
+      paintBBox({ layout, ctx });
     }
     const caret = caretLayout.at(focus.idx);
     if (caret) {

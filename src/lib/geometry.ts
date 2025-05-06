@@ -51,6 +51,25 @@ export const offsetBBox = (bbox: BBox, offset?: Partial<Point>): BBox => {
   };
 };
 
+export const transformBBox = (bbox: BBox, transform: DOMMatrixReadOnly): BBox => {
+  const points = [
+    { x: bbox.left, y: bbox.top },
+    { x: bbox.right, y: bbox.top },
+    { x: bbox.right, y: bbox.bottom },
+    { x: bbox.left, y: bbox.bottom },
+  ];
+  const transformedPoints = points.map((point) => {
+    const { x, y } = point;
+    const transformedPoint = transform.transformPoint(new DOMPoint(x, y));
+    return { x: transformedPoint.x, y: transformedPoint.y };
+  });
+  const left = Math.min(...transformedPoints.map((p) => p.x));
+  const top = Math.min(...transformedPoints.map((p) => p.y));
+  const right = Math.max(...transformedPoints.map((p) => p.x));
+  const bottom = Math.max(...transformedPoints.map((p) => p.y));
+  return { left, top, right, bottom };
+};
+
 export const getPathBBox = (path: Path, unit: number): BBox => {
   // 左下原点→左上原点に変換
   return {

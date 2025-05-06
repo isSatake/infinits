@@ -5,7 +5,12 @@ import { StaffLayout } from "./types";
 import { bStaffHeight } from "@/font/bravura";
 import { layoutGap } from "./gap";
 import { layoutClef } from "./clef";
-import { BBoxSize, mergeBBoxes } from "@/lib/geometry";
+import {
+  BBoxSize,
+  mergeBBoxes,
+  offsetBBox,
+  transformBBox,
+} from "@/lib/geometry";
 
 export const kPointingColor = "#FF0000";
 
@@ -48,6 +53,8 @@ export const layoutStaff = (p: {
     width,
     children,
     mtx: new DOMMatrix().translate(staffObj.position.x, staffObj.position.y),
-    bbs: new BBoxSize(mergeBBoxes(children.map(({ bbs }) => bbs))),
+    bbs: new BBoxSize(
+      mergeBBoxes(children.map(({ mtx, bbs }) => transformBBox(bbs, mtx)))
+    ),
   };
 };
