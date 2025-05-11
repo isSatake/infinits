@@ -1,13 +1,13 @@
 import { BBoxSize } from "@/lib/geometry";
 import { CaretOption } from "../types";
-import { GapLayout } from "./types";
+import { Layout } from "./types";
 
 export const layoutGap = (p: {
   mtx: DOMMatrix;
   width: number;
   height: number;
   caretOption?: CaretOption;
-}): GapLayout => {
+}): Layout<"gap"> => {
   const { mtx, width, height, caretOption } = p;
   return {
     type: "gap",

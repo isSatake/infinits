@@ -1,16 +1,15 @@
 import { MusicalElement } from "@/core/types";
-import { StaffObject } from "@/object";
-import { Pointing } from "../types";
-import { StaffLayout } from "./types";
 import { bStaffHeight } from "@/font/bravura";
-import { layoutGap } from "./gap";
-import { layoutClef } from "./clef";
 import {
   BBoxSize,
   mergeBBoxes,
-  offsetBBox,
-  transformBBox,
+  transformBBox
 } from "@/lib/geometry";
+import { StaffObject } from "@/object";
+import { Pointing } from "../types";
+import { layoutClef } from "./clef";
+import { layoutGap } from "./gap";
+import { Layout } from "./types";
 
 export const kPointingColor = "#FF0000";
 
@@ -20,10 +19,10 @@ export const layoutStaff = (p: {
   staffObj: StaffObject;
   pointing?: Pointing;
   gap?: { idx: number; width: number };
-}): StaffLayout => {
+}): Layout<"staff"> => {
   const { elements, gapWidth, staffObj, pointing: _pointing } = p;
   const pointing = _pointing?.index === -1 ? _pointing : undefined;
-  const children: StaffLayout["children"] = [];
+  const children: Layout<"staff">["children"] = [];
   let width = 0;
   let mtx = new DOMMatrix();
   const headGap = layoutGap({ mtx, width: gapWidth, height: bStaffHeight });
@@ -50,7 +49,7 @@ export const layoutStaff = (p: {
   mtx = mtx.translate(tailGap.bbs.width, 0);
   return {
     type: "staff",
-    width,
+    properties: { width },
     children,
     mtx: new DOMMatrix().translate(staffObj.position.x, staffObj.position.y),
     bbs: new BBoxSize(

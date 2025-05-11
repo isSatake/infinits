@@ -1,10 +1,10 @@
 import { bStaffLineWidth, Path, UNIT } from "@/font/bravura";
-import { CaretLayout, ClefLayout, StaffLayout } from "@/layout/new/types";
+import { CaretLayout, Layout } from "@/layout/new/types";
 import { getClefPath } from "@/layout/pitch";
 import { BBox } from "@/lib/geometry";
 
 export const paint = (p: {
-  layout: StaffLayout;
+  layout: Layout<"staff">;
   ctx: CanvasRenderingContext2D;
 }) => {
   const { ctx, layout } = p;
@@ -26,7 +26,7 @@ export const paint = (p: {
 
 // for debug
 export const paintBBox = (p: {
-  layout: StaffLayout;
+  layout: Layout<"staff">;
   ctx: CanvasRenderingContext2D;
 }) => {
   const { ctx, layout } = p;
@@ -45,7 +45,7 @@ export const paintBBox = (p: {
 };
 
 const paintStaff = (p: {
-  layout: StaffLayout;
+  layout: Layout<"staff">;
   ctx: CanvasRenderingContext2D;
 }) => {
   const { ctx, layout } = p;
@@ -56,7 +56,7 @@ const paintStaff = (p: {
     ctx.lineWidth = bStaffLineWidth;
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(layout.width, y);
+    ctx.lineTo(layout.properties.width, y);
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
@@ -64,11 +64,11 @@ const paintStaff = (p: {
 };
 
 const paintClef = (p: {
-  layout: ClefLayout;
+  layout: Layout<"clef">;
   ctx: CanvasRenderingContext2D;
 }) => {
   const { ctx, layout } = p;
-  const { path } = getClefPath(layout.clef);
+  const { path } = getClefPath(layout.properties.clef);
   ctx.save();
   paintBravuraPath({ ctx, color: layout.color, path });
   ctx.restore();

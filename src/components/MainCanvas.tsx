@@ -6,7 +6,7 @@ import { useObjIdMapAtom } from "@/hooks/map-atom";
 import { determineFilePaintStyle } from "@/layout/file";
 import { layoutCaret } from "@/layout/new/caret";
 import { layoutStaff } from "@/layout/new/staff";
-import { CaretLayout, StaffLayout } from "@/layout/new/types";
+import { CaretLayout, Layout } from "@/layout/new/types";
 import { getInitScale } from "@/layout/score-preferences";
 import { buildConnectionStyle } from "@/layout/staff";
 import {
@@ -49,7 +49,7 @@ const paintStyleMapAtom = atom<Map<number, PaintStyle<PaintElement>[]>>(
 );
 
 // obj id -> layout
-const objLayoutMapAtom = atom<Map<number, StaffLayout>>(new Map());
+const objLayoutMapAtom = atom<Map<number, Layout<"staff">>>(new Map());
 
 // staff id -> element bboxes
 const bboxAtom = atom<Map<number, { bbox: BBox; elIdx?: number }[]>>(new Map());
@@ -104,7 +104,7 @@ export const MainCanvas = () => {
 
   // compute layout
   useEffect(() => {
-    const map = new Map<number, StaffLayout>();
+    const map = new Map<number, Layout<"staff">>();
     for (const [id, obj] of rootObjs.map) {
       if (obj.type === "staff") {
         map.set(
