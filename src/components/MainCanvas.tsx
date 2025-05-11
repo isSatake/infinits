@@ -32,6 +32,7 @@ import {
   Point,
   scaleSize,
   Size,
+  transformBBox,
 } from "@/lib/geometry";
 import { usePrevious } from "@/lib/hooks";
 import { paint, paintBBox, paintCaret } from "@/paint/new/paint";
@@ -362,6 +363,7 @@ export const MainCanvas = () => {
 const useMainPointerHandler = () => {
   const [mtx, setMtx] = useAtom(mtxAtom);
   const styleMap = useAtomValue(paintStyleMapAtom);
+  const objLayoutMap = useAtomValue(objLayoutMapAtom);
   const setPopover = useSetAtom(uiAtom.contextMenu);
   const setCarets = useSetAtom(uiAtom.focus);
   const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
@@ -399,7 +401,49 @@ const useMainPointerHandler = () => {
     return { objType: style.type, id, offset, caretIdx };
   };
 
-  desktopState.current.getRootObjOnPoint = dndStaff;
+  const getRootObjOnPoint = (desktopPoint: Point) => {
+    // root bboxを絞り込む
+    const objId = objLayoutMap
+      .entries()
+      .find(([_, layout]) =>
+        isPointInBBox(desktopPoint, transformBBox(layout.bbs, layout.mtx))
+      )?.[0];
+    if (objId === undefined) {
+      return;
+    }
+    const parentMtx = objLayoutMap.get(objId)?.mtx;
+    if (!parentMtx) {
+      return;
+    }
+    const child = objLayoutMap
+      .get(objId)
+      ?.children.find((child) =>
+        isPointInBBox(
+          desktopPoint,
+          transformBBox(child.bbs, parentMtx.multiply(child.mtx))
+        )
+      );
+    // childに当たっていなければ無視
+    if (!child) {
+      return;
+    }
+    const obj = rootObjs.get(objId);
+    if (!obj) {
+      return;
+    }
+    const offset = {
+      x: desktopPoint.x - obj.position.x,
+      y: desktopPoint.y - obj.position.y,
+    };
+    return {
+      objType: "staff" as const,
+      id: objId,
+      offset,
+      caretIdx: child.caret?.idx,
+    };
+  };
+
+  desktopState.current.getRootObjOnPoint = getRootObjOnPoint;
   desktopState.current.getConnectionOnPoint = (desktopPoint: Point) => {
     const connStyleMap = new Map<number, PaintStyle<ConnectionStyle>[]>();
     for (const [id, styles] of styleMap) {
