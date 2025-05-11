@@ -20,5 +20,6 @@ export const layoutClef = (p: {
     mtx: mtx.translate(0, y),
     bbs: new BBoxSize(bbox),
     ...(pointing ? { color: kPointingColor } : {}),
+    children: [],
   };
 };

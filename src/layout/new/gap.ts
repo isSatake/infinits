@@ -14,5 +14,6 @@ export const layoutGap = (p: {
     mtx,
     bbs: new BBoxSize({ left: 0, top: 0, right: width, bottom: height }),
     caret: caretOption,
+    children: [],
   };
 };

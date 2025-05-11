@@ -6,7 +6,7 @@ import { useObjIdMapAtom } from "@/hooks/map-atom";
 import { determineFilePaintStyle } from "@/layout/file";
 import { layoutCaret } from "@/layout/new/caret";
 import { layoutStaff } from "@/layout/new/staff";
-import { CaretLayout, Layout } from "@/layout/new/types";
+import { CaretLayout, Layout, LayoutType } from "@/layout/new/types";
 import { getInitScale } from "@/layout/score-preferences";
 import { buildConnectionStyle } from "@/layout/staff";
 import {
@@ -401,6 +401,31 @@ const useMainPointerHandler = () => {
     return { objType: style.type, id, offset, caretIdx };
   };
 
+  type Result = { ret: Layout<LayoutType>; child?: Result };
+
+  const getObjOnPointRecursive = (
+    desktopPoint: Point,
+    layouts: Layout<LayoutType>[],
+    parentMtx: DOMMatrix = new DOMMatrix()
+  ) => {
+    let ret: Result | undefined;
+    for (const layout of layouts) {
+      const mtx = parentMtx.multiply(layout.mtx);
+      if (isPointInBBox(desktopPoint, transformBBox(layout.bbs, mtx))) {
+        ret = { ret: layout };
+        const child = getObjOnPointRecursive(
+          desktopPoint,
+          layout.children,
+          mtx
+        );
+        if (child) {
+          ret.child = child;
+        }
+      }
+    }
+    return ret;
+  };
+
   const getRootObjOnPoint = (desktopPoint: Point) => {
     // root bboxを絞り込む
     const objId = objLayoutMap
@@ -435,6 +460,10 @@ const useMainPointerHandler = () => {
       x: desktopPoint.x - obj.position.x,
       y: desktopPoint.y - obj.position.y,
     };
+    console.log(
+      "recursive",
+      getObjOnPointRecursive(desktopPoint, objLayoutMap.values().toArray())
+    );
     return {
       objType: "staff" as const,
       id: objId,
