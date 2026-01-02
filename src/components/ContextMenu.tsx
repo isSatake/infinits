@@ -151,6 +151,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
             <button onClick={onClickChangeClef}>Change Clef</button>
           </>
         )}
+        {staff?.type === "file" && <button>Extract Melody</button>}
         <button onClick={onClickDelete}>Delete</button>
       </div>
     </>
