@@ -186,9 +186,13 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     audioBuffer.getChannelData(0).set(monoPCM);
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(audioCtx.destination);
-    source.start();
     // HPF
+    const hpFilter = audioCtx.createBiquadFilter();
+    hpFilter.type = "highpass";
+    hpFilter.frequency.value = 300;
+    hpFilter.Q.value = 0.707;
+    source.connect(hpFilter).connect(audioCtx.destination);
+    source.start();
     // BasicPitchでピッチ検出
   };
   return (
