@@ -16,6 +16,9 @@ const buildOptions = {
   minify: env === "prd",
   sourcemap: true,
   outfile: "./public/index.js",
+  format: "esm",
+  mainFields: ["module", "main"],
+  conditions: ["module", "import", "default"],
 };
 
 if (isWatch) {

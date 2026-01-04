@@ -5,6 +5,7 @@ import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
 import { objectAtom, uiAtom } from "@/state/atom";
 import { useAtom, useSetAtom } from "jotai";
+import { Input, BlobSource, ALL_FORMATS, AudioBufferSink } from "mediabunny";
 import React, { FC, useCallback, useState } from "react";
 
 export const ContextMenu = () => {
@@ -76,7 +77,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
           </>
         )}
         {mode === "text" && (
-          <Input
+          <TextInput
             placeholder="Add Text"
             value={text}
             onChange={setText}
@@ -88,7 +89,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   );
 };
 
-const Input: FC<{
+const TextInput: FC<{
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
@@ -139,6 +140,57 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
       };
     });
   };
+  const onClickExtractMelody = async () => {
+    // フォーカス中fileの参照
+    if (staff?.type !== "file") return;
+    const { file } = staff;
+    // mediabunnyでdemux
+    const input = new Input({
+      source: new BlobSource(file),
+      formats: ALL_FORMATS,
+    });
+    const track = await input.getPrimaryAudioTrack();
+    if (!track) return;
+    const chCount = track.numberOfChannels;
+    const bufferSink = new AudioBufferSink(track);
+    // monoralize
+    const chunk: Float32Array[] = [];
+    let total = 0;
+    for await (const { buffer } of bufferSink.buffers()) {
+      const ch0 = buffer.getChannelData(0);
+      const mono: Float32Array = new Float32Array(ch0.length);
+      if (chCount === 1) {
+        mono.set(ch0);
+      } else {
+        const ch1 = buffer.getChannelData(1);
+        for (let i = 0; i < ch0.length; i++) {
+          mono[i] = (ch0[i] + ch1[i]) / 2;
+        }
+      }
+      chunk.push(mono);
+      total += mono.length;
+    }
+    const monoPCM = new Float32Array(total);
+    let offset = 0;
+    for (const c of chunk) {
+      monoPCM.set(c, offset);
+      offset += c.length;
+    }
+    // play for debug
+    const audioCtx = new AudioContext();
+    const audioBuffer = audioCtx.createBuffer(
+      1,
+      monoPCM.length,
+      track.sampleRate
+    );
+    audioBuffer.getChannelData(0).set(monoPCM);
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioCtx.destination);
+    source.start();
+    // HPF
+    // BasicPitchでピッチ検出
+  };
   return (
     <>
       <div className="header">
@@ -151,7 +203,9 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
             <button onClick={onClickChangeClef}>Change Clef</button>
           </>
         )}
-        {staff?.type === "file" && <button>Extract Melody</button>}
+        {staff?.type === "file" && (
+          <button onClick={onClickExtractMelody}>Extract Melody</button>
+        )}
         <button onClick={onClickDelete}>Delete</button>
       </div>
     </>

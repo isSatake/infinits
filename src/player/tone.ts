@@ -1,24 +1,17 @@
 import { Duration, KeySignature, MusicalElement, Note } from "@/core/types";
-import {
-  Part,
-  Player,
-  Sampler,
-  ToneEventCallback,
-  Transport,
-  loaded,
-  start,
-} from "tone";
-import { Subdivision, Time, TimeObject } from "tone/build/esm/core/type/Units";
+import * as Tone from "tone";
 import { FileStyle } from "../layout/types";
 import { convert } from "./convert";
 
 type CallBackElement =
-  | { type: "file"; time: Time; el: File }
-  | ({ type: "note"; time: Time; duration: Time; keySig: KeySignature } & Pick<
-      Note,
-      "pitches"
-    >)
-  | { type: "rest"; time: Time };
+  | { type: "file"; time: Tone.Unit.Time; el: File }
+  | ({
+      type: "note";
+      time: Tone.Unit.Time;
+      duration: Tone.Unit.Time;
+      keySig: KeySignature;
+    } & Pick<Note, "pitches">)
+  | { type: "rest"; time: Tone.Unit.Time };
 export type PlaySegment =
   | {
       type: "staff";
@@ -36,7 +29,8 @@ export type PlaySegment =
 export const multiPlay = async (
   segmentsByPrevId: Map<number, PlaySegment[]>
 ) => {
-  const parts: Part<CallBackElement>[] = [];
+  const transport = Tone.getTransport();
+  const parts: Tone.Part<CallBackElement>[] = [];
   // id -> ppq
   const ppqMap = new Map<number, number>();
 
@@ -53,18 +47,18 @@ export const multiPlay = async (
         currentPPQ += await calcPPQFromDurationSec(segment.element.duration);
         ppqMap.set(segment.rootObjId, currentPPQ);
       } else {
-        let tiedDuration: TimeObject | undefined = undefined;
+        let tiedDuration: Tone.Unit.TimeObject | undefined = undefined;
         let tiedPPQ = 0;
         for (const musicalElement of segment.elements) {
           if (musicalElement.type === "note") {
             if (musicalElement.tie) {
-              const key: Subdivision = `${musicalElement.duration}n`;
+              const key: Tone.Unit.Subdivision = `${musicalElement.duration}n`;
               if (tiedDuration?.[key]) {
                 tiedDuration[key] += 1;
               } else {
                 tiedDuration = { ...(tiedDuration ?? {}), [key]: 1 };
               }
-              tiedPPQ += (Transport.PPQ * 4) / musicalElement.duration;
+              tiedPPQ += (transport.PPQ * 4) / musicalElement.duration;
               if (musicalElement.tie === "end") {
                 arr.push({
                   type: "note",
@@ -86,24 +80,24 @@ export const multiPlay = async (
               pitches: musicalElement.pitches,
               duration: `${musicalElement.duration}n`,
             });
-            currentPPQ += (Transport.PPQ * 4) / musicalElement.duration;
+            currentPPQ += (transport.PPQ * 4) / musicalElement.duration;
           } else if (musicalElement.type === "rest") {
             arr.push({
               type: "rest",
               time: `${currentPPQ}i`,
             });
-            currentPPQ += (Transport.PPQ * 4) / musicalElement.duration;
+            currentPPQ += (transport.PPQ * 4) / musicalElement.duration;
           }
           ppqMap.set(segment.rootObjId, currentPPQ);
         }
       }
-      const part = new Part<CallBackElement>(partCallback, arr);
+      const part = new Tone.Part<CallBackElement>(partCallback, arr);
       parts.push(part);
     }
   }
-  await start();
+  await Tone.start();
   parts.forEach((part) => part.start());
-  Transport.start();
+  transport.start();
 };
 
 // keyboardしか参照していないので実質単音プレビュー
@@ -112,9 +106,10 @@ export const play = async (
   elements: (MusicalElement | FileStyle)[],
   duration?: Duration
 ) => {
+  const transport = Tone.getTransport();
   const arr: CallBackElement[] = [];
   let currentPPQ = 0;
-  let tiedDuration: TimeObject | undefined = undefined;
+  let tiedDuration: Tone.Unit.TimeObject | undefined = undefined;
   let tiedPPQ = 0;
   for (const el of elements) {
     if (el.type === "file") {
@@ -123,13 +118,13 @@ export const play = async (
       currentPPQ += await calcPPQFromDurationSec(el.duration);
     } else if (el.type === "note") {
       if (el.tie) {
-        const key: Subdivision = `${el.duration}n`;
+        const key: Tone.Unit.Subdivision = `${el.duration}n`;
         if (tiedDuration?.[key]) {
           tiedDuration[key] += 1;
         } else {
           tiedDuration = { ...(tiedDuration ?? {}), [key]: 1 };
         }
-        tiedPPQ += (Transport.PPQ * 4) / el.duration;
+        tiedPPQ += (transport.PPQ * 4) / el.duration;
         if (el.tie === "end") {
           arr.push({
             type: "note",
@@ -151,19 +146,19 @@ export const play = async (
         pitches: el.pitches,
         duration: `${duration ?? el.duration}n`,
       });
-      currentPPQ += (Transport.PPQ * 4) / el.duration;
+      currentPPQ += (transport.PPQ * 4) / el.duration;
     } else if (el.type === "rest") {
       arr.push({ type: "rest", time: `${currentPPQ}i` });
-      currentPPQ += (Transport.PPQ * 4) / el.duration;
+      currentPPQ += (transport.PPQ * 4) / el.duration;
     }
   }
-  const part = new Part<CallBackElement>(partCallback, arr);
-  await start();
+  const part = new Tone.Part<CallBackElement>(partCallback, arr);
+  await Tone.start();
   part.start();
-  Transport.start();
+  transport.start();
 };
 
-const partCallback: ToneEventCallback<CallBackElement> = (time, el) => {
+const partCallback: Tone.ToneEventCallback<CallBackElement> = (time, el) => {
   if (el.type === "file") {
     playFile(el.el);
   } else if (el.type === "note") {
@@ -176,7 +171,7 @@ const partCallback: ToneEventCallback<CallBackElement> = (time, el) => {
   }
 };
 
-const sampler = new Sampler({
+const sampler = new Tone.Sampler({
   urls: {
     A0: "A0.mp3",
     C1: "C1.mp3",
@@ -215,13 +210,14 @@ const sampler = new Sampler({
 
 const playFile = async (file: File) => {
   const url = URL.createObjectURL(file);
-  const player = new Player(url).toDestination();
-  loaded()
+  const player = new Tone.Player(url).toDestination();
+  Tone.loaded()
     .then(() => player.start())
     .finally(() => URL.revokeObjectURL(url));
 };
 
 const calcPPQFromDurationSec = async (durationSec: number) => {
-  const quarterNoteDuration = 60 / Transport.bpm.value; // 4分音符の長さ（秒）
-  return Math.round((durationSec / quarterNoteDuration) * Transport.PPQ);
+  const transport = Tone.getTransport();
+  const quarterNoteDuration = 60 / transport.bpm.value; // 4分音符の長さ（秒）
+  return Math.round((durationSec / quarterNoteDuration) * transport.PPQ);
 };

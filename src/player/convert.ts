@@ -1,8 +1,11 @@
 import { KeySignature, PitchAcc, rootNotes } from "@/core/types";
-import { Frequency } from "tone/build/esm/core/type/Units";
-
+import * as Tone from "tone";
 const accs = { sharp: "#", dSharp: "##", natural: "", flat: "b", dFlat: "bb" };
-export const convert = (keySig: KeySignature, pa: PitchAcc): Frequency => {
+
+export const convert = (
+  keySig: KeySignature,
+  pa: PitchAcc
+): Tone.Unit.Frequency => {
   const { pitch, accidental } = pa;
   const oct = Math.floor(pitch / 7) + 4;
   const mod = pitch % rootNotes.length;
