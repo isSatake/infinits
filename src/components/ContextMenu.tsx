@@ -4,6 +4,12 @@ import { useObjIdMapAtom } from "@/hooks/map-atom";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
 import { objectAtom, uiAtom } from "@/state/atom";
+import {
+  addPitchBendsToNoteEvents,
+  BasicPitch,
+  noteFramesToTime,
+  outputToNotesPoly,
+} from "@spotify/basic-pitch";
 import { useAtom, useSetAtom } from "jotai";
 import { Input, BlobSource, ALL_FORMATS, AudioBufferSink } from "mediabunny";
 import React, { FC, useCallback, useState } from "react";
@@ -178,12 +184,8 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     }
     // play for debug
     const audioCtx = new AudioContext();
-    const audioBuffer = audioCtx.createBuffer(
-      1,
-      monoPCM.length,
-      track.sampleRate
-    );
-    audioBuffer.getChannelData(0).set(monoPCM);
+    const audioBuffer = await to22050HzAudioBuffer(monoPCM, track.sampleRate);
+    // audioBuffer.getChannelData(0).set(monoPCM);
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
     // HPF
@@ -194,6 +196,26 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     source.connect(hpFilter).connect(audioCtx.destination);
     source.start();
     // BasicPitchでピッチ検出
+    const bp = new BasicPitch("/model/model.json");
+    const frames: number[][] = [];
+    const onsets: number[][] = [];
+    const contours: number[][] = [];
+    await bp.evaluateModel(
+      audioBuffer,
+      (f: number[][], o: number[][], c: number[][]) => {
+        frames.push(...f);
+        onsets.push(...o);
+        contours.push(...c);
+      },
+      (p: number) => console.log(`${Math.round(p * 100)}%`)
+    );
+    const notes = noteFramesToTime(
+      addPitchBendsToNoteEvents(
+        contours,
+        outputToNotesPoly(frames, onsets, 0.25, 0.25, 5)
+      )
+    );
+    console.log(notes);
   };
   return (
     <>
@@ -215,3 +237,27 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     </>
   );
 };
+
+async function to22050HzAudioBuffer(
+  pcm: Float32Array<ArrayBuffer>,
+  inputSampleRate: number
+): Promise<AudioBuffer> {
+  const duration = pcm.length / inputSampleRate;
+
+  const offline = new OfflineAudioContext(
+    1, // mono
+    Math.ceil(duration * 22050),
+    22050
+  );
+
+  const buffer = offline.createBuffer(1, pcm.length, inputSampleRate);
+  buffer.copyToChannel(pcm, 0);
+
+  const src = offline.createBufferSource();
+  src.buffer = buffer;
+  src.connect(offline.destination);
+  src.start();
+
+  const rendered = await offline.startRendering();
+  return rendered; // ← sampleRate === 22050
+}

@@ -1,4 +1,6 @@
 import * as esbuild from "esbuild";
+import fs from "fs/promises";
+import path from "path";
 
 const isWatch = process.argv[2] === "-w";
 const env = isWatch ? "dev" : "prd";
@@ -21,6 +23,12 @@ const buildOptions = {
   conditions: ["module", "import", "default"],
 };
 
+// @spotify/basic-pitchのモデルをコピー
+await copyDir(
+  "./node_modules/@spotify/basic-pitch/model",
+  "./public/model"
+);
+
 if (isWatch) {
   const plugins = [
     {
@@ -40,4 +48,15 @@ if (isWatch) {
   await ctx.watch();
 } else {
   await esbuild.build(buildOptions).catch(onError).then(onSucceeded);
+}
+
+async function copyDir(src, dest) {
+  await fs.mkdir(dest, { recursive: true });
+  const entries = await fs.readdir(src, { withFileTypes: true });
+  for (const e of entries) {
+    const s = path.join(src, e.name);
+    const d = path.join(dest, e.name);
+    if (e.isDirectory()) await copyDir(s, d);
+    else await fs.copyFile(s, d);
+  }
 }
