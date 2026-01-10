@@ -1,4 +1,12 @@
-import { clefPitches, clefs } from "@/core/types";
+import {
+  clefPitches,
+  clefs,
+  Duration,
+  keys,
+  keySignatures,
+  Note,
+} from "@/core/types";
+import { UNIT } from "@/font/bravura";
 import { useChangeKeyPreviewHandlers } from "@/hooks/input";
 import { useObjIdMapAtom } from "@/hooks/map-atom";
 import { getAudioDurationSec } from "@/lib/file";
@@ -10,6 +18,7 @@ import {
   noteFramesToTime,
   outputToNotesPoly,
 } from "@spotify/basic-pitch";
+import { NoteEvent, NoteEventTime } from "@spotify/basic-pitch/types/toMidi";
 import { useAtom, useSetAtom } from "jotai";
 import { Input, BlobSource, ALL_FORMATS, AudioBufferSink } from "mediabunny";
 import React, { FC, useCallback, useState } from "react";
@@ -125,6 +134,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
 }) => {
   const setLastClef = useSetAtom(uiAtom.lastClef);
   const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
+  const setElements = useSetAtom(objectAtom.elements);
   const staff = rootObjs.get(staffId);
   const onClickDelete = () => {
     rootObjs.remove(staffId);
@@ -216,6 +226,26 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
       )
     );
     console.log(notes);
+
+    // staffオブジェクトの追加
+    const staffId = rootObjs.add({
+      type: "staff",
+      position: { x: staff.position.x, y: staff.position.y + UNIT * 5 },
+      staff: { type: "staff", clef: clefs.G, keySignature: keySignatures.C },
+    });
+
+    // staffにnote追加
+    setElements((elementsMap) => {
+      const elements = elementsMap.get(staffId) || [];
+      for (const note of notes) {
+        const noteEl = convertNoteEventToNoteEl(note);
+        elements.push(noteEl);
+      }
+      elementsMap.set(staffId, elements);
+      return elementsMap;
+    });
+
+    onClose();
   };
   return (
     <>
@@ -261,3 +291,38 @@ async function to22050HzAudioBuffer(
   const rendered = await offline.startRendering();
   return rendered; // ← sampleRate === 22050
 }
+
+const convertNoteEventToNoteEl = (ev: NoteEventTime): Note => {
+  // Convert MIDI pitch to app pitch (C4 (middle C) = 0, MIDI 60 = C4)
+  const pitch = ev.pitchMidi - 60;
+
+  // Convert duration in seconds to note duration (1, 2, 4, 8, 16, 32)
+  // Assuming 120 BPM (2 beats per second), where quarter note = 0.5 seconds
+  // const beatDuration = 0.5; // quarter note at 120 BPM
+  // 80BPMに変更
+  const beatDuration = 0.75; // quarter note at 80 BPM
+  const durationInBeats = ev.durationSeconds / beatDuration;
+
+  // Find closest duration value
+  // duration: 1=whole(4beats), 2=half(2beats), 4=quarter(1beat), 8=eighth(0.5beats), 16=sixteenth(0.25beats), 32=32nd(0.125beats)
+  let duration: Duration;
+  if (durationInBeats >= 3) {
+    duration = 1; // whole note
+  } else if (durationInBeats >= 1.5) {
+    duration = 2; // half note
+  } else if (durationInBeats >= 0.75) {
+    duration = 4; // quarter note
+  } else if (durationInBeats >= 0.375) {
+    duration = 8; // eighth note
+  } else if (durationInBeats >= 0.1875) {
+    duration = 16; // sixteenth note
+  } else {
+    duration = 32; // 32nd note
+  }
+
+  return {
+    type: "note",
+    duration,
+    pitches: [{ pitch }],
+  };
+};
