@@ -1,8 +1,11 @@
 export const durations = [1, 2, 4, 8, 16, 32] as const;
 export type Duration = (typeof durations)[number];
 
-// 全音
-// C4 (middleC) = 0
+/**
+ * 全音で表したピッチ
+ * C4 (middle C) = 0, D4 = 1, E4 = 2, …
+ * C5 = 7, D5 = 8, …
+ */
 export type Pitch = number;
 
 export const kAccidentals = [
