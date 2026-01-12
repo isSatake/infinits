@@ -5,7 +5,7 @@ import { NoteEventTime } from "@spotify/basic-pitch";
 export const extractNoteEvents = async (
   audioBuffer: AudioBuffer
 ): Promise<bp.NoteEventTime[]> => {
-  const model = new bp.BasicPitch("/model/model.json");
+  const model = new bp.BasicPitch("./model/model.json");
   const frames: number[][] = [];
   const onsets: number[][] = [];
   const contours: number[][] = [];
