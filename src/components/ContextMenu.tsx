@@ -1,6 +1,13 @@
-import { clefPitches, clefs } from "@/core/types";
+import { clefPitches, clefs, keySignatures } from "@/core/types";
+import { UNIT } from "@/font/bravura";
 import { useChangeKeyPreviewHandlers } from "@/hooks/input";
 import { useObjIdMapAtom } from "@/hooks/map-atom";
+import { prepareAudioBuffer } from "@/lib/audio";
+import {
+  convertNoteEventToNoteEl,
+  extractNoteEvents,
+  groupNoteEvents as groupNotesByTime,
+} from "@/lib/basicpitch";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
 import { objectAtom, uiAtom } from "@/state/atom";
@@ -76,7 +83,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
           </>
         )}
         {mode === "text" && (
-          <Input
+          <TextInput
             placeholder="Add Text"
             value={text}
             onChange={setText}
@@ -88,7 +95,7 @@ const CanvasContextMenu: FC<{ desktopPoint: Point; onClose: () => void }> = ({
   );
 };
 
-const Input: FC<{
+const TextInput: FC<{
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
@@ -118,6 +125,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
 }) => {
   const setLastClef = useSetAtom(uiAtom.lastClef);
   const rootObjs = useObjIdMapAtom(objectAtom.rootObjMap);
+  const setElements = useSetAtom(objectAtom.elements);
   const staff = rootObjs.get(staffId);
   const onClickDelete = () => {
     rootObjs.remove(staffId);
@@ -139,6 +147,27 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
       };
     });
   };
+  const onClickPitchHints = async () => {
+    if (staff?.type !== "file") return;
+    const buf = await prepareAudioBuffer(staff.file);
+    const rawEv = await extractNoteEvents(buf);
+    const notes = groupNotesByTime(rawEv);
+    const staffId = rootObjs.add({
+      type: "staff",
+      position: { x: staff.position.x, y: staff.position.y + UNIT * 5 },
+      staff: { type: "staff", clef: clefs.G, keySignature: keySignatures.C },
+    });
+    setElements((elementsMap) => {
+      const elements = elementsMap.get(staffId) || [];
+      for (const v of notes) {
+        const noteEl = convertNoteEventToNoteEl(v);
+        elements.push(noteEl);
+      }
+      elementsMap.set(staffId, elements);
+      return elementsMap;
+    });
+    onClose();
+  };
   return (
     <>
       <div className="header">
@@ -150,6 +179,9 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
             <button {...useChangeKeyPreviewHandlers()}>Change Key</button>
             <button onClick={onClickChangeClef}>Change Clef</button>
           </>
+        )}
+        {staff?.type === "file" && (
+          <button onClick={onClickPitchHints}>Pitch Hints</button>
         )}
         <button onClick={onClickDelete}>Delete</button>
       </div>

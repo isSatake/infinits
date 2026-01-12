@@ -8,8 +8,8 @@
 
 /out/
 
-/public/index.js
-/public/index.js.map
+/public/index.*
+/public/model
 
 .DS_Store
 *.pem
