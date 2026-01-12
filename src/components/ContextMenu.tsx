@@ -147,7 +147,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
       };
     });
   };
-  const onClickExtractMelody = async () => {
+  const onClickPitchHints = async () => {
     if (staff?.type !== "file") return;
     const buf = await prepareAudioBuffer(staff.file);
     const rawEv = await extractNoteEvents(buf);
@@ -181,7 +181,7 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
           </>
         )}
         {staff?.type === "file" && (
-          <button onClick={onClickExtractMelody}>Extract Melody</button>
+          <button onClick={onClickPitchHints}>Pitch Hints</button>
         )}
         <button onClick={onClickDelete}>Delete</button>
       </div>
