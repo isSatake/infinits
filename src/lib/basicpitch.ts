@@ -1,4 +1,4 @@
-import { Accidental, Note, Duration } from "@/core/types";
+import { Accidental, Note } from "@/core/types";
 import * as bp from "@spotify/basic-pitch";
 import { NoteEventTime } from "@spotify/basic-pitch";
 
@@ -23,7 +23,7 @@ export const extractNoteEvents = async (
     .noteFramesToTime(
       bp.addPitchBendsToNoteEvents(
         contours,
-        bp.outputToNotesPoly(frames, onsets, 0.5, 0.3, 11, true, null, 440)
+        bp.outputToNotesPoly(frames, onsets, 0.5, 0.3, 11, true)
       )
     )
     .reverse();
@@ -69,34 +69,29 @@ const midiPitchToAppPitch = (
 
   return { pitch, accidental };
 };
-export const convertNoteEventToNoteEl = (ev: NoteEventTime): Note => {
-  // Convert MIDI pitch to app pitch (C4 (middle C) = 0, MIDI 60 = C4)
-  const { pitch, accidental } = midiPitchToAppPitch(ev.pitchMidi);
-
-  // Convert duration in seconds to note duration (1, 2, 4, 8, 16, 32)
-  const beatDuration = 0.75; // quarter note at 80 BPM
-  const durationInBeats = ev.durationSeconds / beatDuration;
-
-  // Find closest duration value
-  // duration: 1=whole(4beats), 2=half(2beats), 4=quarter(1beat), 8=eighth(0.5beats), 16=sixteenth(0.25beats), 32=32nd(0.125beats)
-  let duration: Duration;
-  if (durationInBeats >= 3) {
-    duration = 1; // whole note
-  } else if (durationInBeats >= 1.5) {
-    duration = 2; // half note
-  } else if (durationInBeats >= 0.75) {
-    duration = 4; // quarter note
-  } else if (durationInBeats >= 0.375) {
-    duration = 8; // eighth note
-  } else if (durationInBeats >= 0.1875) {
-    duration = 16; // sixteenth note
-  } else {
-    duration = 32; // 32nd note
-  }
-
+export const convertNoteEventToNoteEl = (evs: NoteEventTime[]): Note => {
   return {
     type: "note",
-    duration,
-    pitches: [{ pitch, accidental }],
+    duration: 8, // 仮で固定
+    pitches: evs.map((ev) => midiPitchToAppPitch(ev.pitchMidi)),
   };
+};
+
+/**
+ *  同じタイミングの音をグループ化 (0.05秒以内)
+ */
+export const groupNoteEvents = (notes: NoteEventTime[]): NoteEventTime[][] => {
+  const groupedNotes: (typeof notes)[] = [];
+  for (const note of notes) {
+    const lastGroup = groupedNotes.at(-1);
+    if (
+      lastGroup &&
+      Math.abs(note.startTimeSeconds - lastGroup[0].startTimeSeconds) < 0.1
+    ) {
+      lastGroup.push(note);
+    } else {
+      groupedNotes.push([note]);
+    }
+  }
+  return groupedNotes;
 };

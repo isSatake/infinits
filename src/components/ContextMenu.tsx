@@ -2,12 +2,16 @@ import { clefPitches, clefs, keySignatures } from "@/core/types";
 import { UNIT } from "@/font/bravura";
 import { useChangeKeyPreviewHandlers } from "@/hooks/input";
 import { useObjIdMapAtom } from "@/hooks/map-atom";
-import { convertNoteEventToNoteEl, extractNoteEvents } from "@/lib/basicpitch";
+import { prepareAudioBuffer } from "@/lib/audio";
+import {
+  convertNoteEventToNoteEl,
+  extractNoteEvents,
+  groupNoteEvents as groupNotesByTime,
+} from "@/lib/basicpitch";
 import { getAudioDurationSec } from "@/lib/file";
 import { Point } from "@/lib/geometry";
 import { objectAtom, uiAtom } from "@/state/atom";
 import { useAtom, useSetAtom } from "jotai";
-import { Input, BlobSource, ALL_FORMATS, AudioBufferSink } from "mediabunny";
 import React, { FC, useCallback, useState } from "react";
 
 export const ContextMenu = () => {
@@ -144,74 +148,24 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     });
   };
   const onClickExtractMelody = async () => {
-    // フォーカス中fileの参照
     if (staff?.type !== "file") return;
-    const { file } = staff;
-    // mediabunnyでdemux
-    const input = new Input({
-      source: new BlobSource(file),
-      formats: ALL_FORMATS,
-    });
-    const track = await input.getPrimaryAudioTrack();
-    if (!track) return;
-    const chCount = track.numberOfChannels;
-    const bufferSink = new AudioBufferSink(track);
-    // monoralize
-    const chunk: Float32Array[] = [];
-    let total = 0;
-    for await (const { buffer } of bufferSink.buffers()) {
-      const ch0 = buffer.getChannelData(0);
-      const mono: Float32Array = new Float32Array(ch0.length);
-      if (chCount === 1) {
-        mono.set(ch0);
-      } else {
-        const ch1 = buffer.getChannelData(1);
-        for (let i = 0; i < ch0.length; i++) {
-          mono[i] = (ch0[i] + ch1[i]) / 2;
-        }
-      }
-      chunk.push(mono);
-      total += mono.length;
-    }
-    const monoPCM = new Float32Array(total);
-    let offset = 0;
-    for (const c of chunk) {
-      monoPCM.set(c, offset);
-      offset += c.length;
-    }
-    // play for debug
-    const audioCtx = new AudioContext();
-    const audioBuffer = await to22050HzAudioBuffer(monoPCM, track.sampleRate);
-    // audioBuffer.getChannelData(0).set(monoPCM);
-    const source = audioCtx.createBufferSource();
-    source.buffer = audioBuffer;
-    // HPF
-    const hpFilter = audioCtx.createBiquadFilter();
-    hpFilter.type = "highpass";
-    hpFilter.frequency.value = 300;
-    hpFilter.Q.value = 0.707;
-    source.connect(hpFilter).connect(audioCtx.destination);
-    source.start();
-    const notes = await extractNoteEvents(audioBuffer);
-
-    // staffオブジェクトの追加
+    const buf = await prepareAudioBuffer(staff.file);
+    const rawEv = await extractNoteEvents(buf);
+    const notes = groupNotesByTime(rawEv);
     const staffId = rootObjs.add({
       type: "staff",
       position: { x: staff.position.x, y: staff.position.y + UNIT * 5 },
       staff: { type: "staff", clef: clefs.G, keySignature: keySignatures.C },
     });
-
-    // staffにnote追加
     setElements((elementsMap) => {
       const elements = elementsMap.get(staffId) || [];
-      for (const note of notes) {
-        const noteEl = convertNoteEventToNoteEl(note);
+      for (const v of notes) {
+        const noteEl = convertNoteEventToNoteEl(v);
         elements.push(noteEl);
       }
       elementsMap.set(staffId, elements);
       return elementsMap;
     });
-
     onClose();
   };
   return (
@@ -234,27 +188,3 @@ const StaffContextMenu: FC<{ staffId: number; onClose: () => void }> = ({
     </>
   );
 };
-
-async function to22050HzAudioBuffer(
-  pcm: Float32Array<ArrayBuffer>,
-  inputSampleRate: number
-): Promise<AudioBuffer> {
-  const duration = pcm.length / inputSampleRate;
-
-  const offline = new OfflineAudioContext(
-    1, // mono
-    Math.ceil(duration * 22050),
-    22050
-  );
-
-  const buffer = offline.createBuffer(1, pcm.length, inputSampleRate);
-  buffer.copyToChannel(pcm, 0);
-
-  const src = offline.createBufferSource();
-  src.buffer = buffer;
-  src.connect(offline.destination);
-  src.start();
-
-  const rendered = await offline.startRendering();
-  return rendered; // ← sampleRate === 22050
-}
